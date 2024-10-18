@@ -40,6 +40,12 @@ dependencies:
   shared_preferences: ^2.2.3
   provider: ^6.1.2
   flutter_advanced_switch: ^3.1.0
+  table_calendar: ^3.0.9
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.1
+  syncfusion_flutter_gauges: ^27.1.53
+  syncfusion_flutter_core: ^27.1.53
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +74,7 @@ flutter:
     - assets/images/user.png
     - assets/images/light.png
     - assets/images/dark.png
+    - assets/images/shepherd.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

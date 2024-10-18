@@ -57,7 +57,7 @@ class AuthInputField extends StatelessWidget {
                   icon: Icon(
                       hidePassword ? Icons.visibility_off : Icons.visibility),
                   color: isDark
-                      ? Colors.white.withOpacity(0.4)
+                      ? Colors.white.withOpacity(0.8)
                       : Colors.black.withOpacity(0.4),
                 )
               : null,

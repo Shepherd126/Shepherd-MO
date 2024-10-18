@@ -17,6 +17,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -27,7 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: ProfileMenuWidget(
         icon: Icons.dark_mode,
-        iconColor: Colors.black,
+        iconColor: isDark ? Colors.white : Colors.black,
         onTap: () {
           _showBottomSheet(context);
         },
@@ -49,7 +53,6 @@ class _SettingsPageState extends State<SettingsPage> {
               (isSystemMode &&
                   MediaQuery.of(context).platformBrightness == Brightness.dark);
 
-          // Sync the controllers before showing the modal
           _themeController.value = isDark;
           _systemController.value = isSystemMode;
           return Wrap(

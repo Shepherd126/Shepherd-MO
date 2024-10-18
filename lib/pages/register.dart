@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:shepherd_mo/models/auth_model.dart';
 import 'package:shepherd_mo/pages/login.dart';
+import 'package:shepherd_mo/providers/provider.dart';
 import 'package:shepherd_mo/widgets/auth_input_field.dart';
 import 'package:shepherd_mo/widgets/gradient_text.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
@@ -53,7 +55,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _uiSetup(BuildContext context) {
-    var isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
@@ -75,7 +80,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     Expanded(
                       child: Column(
                         children: <Widget>[
-                          Icon(Icons.lock, size: (screenWidth * 0.2)),
+                          Image.asset(
+                            'assets/images/shepherd.png',
+                            width: screenWidth * 0.3,
+                            height: screenWidth * 0.3,
+                          ),
                           Align(
                             alignment: Alignment.center,
                             child: GradientText(
@@ -174,6 +183,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                     shape: const RoundedRectangleBorder(),
                                     minimumSize:
                                         Size(screenWidth, screenHeight * 0.06),
+                                    elevation: 3,
+                                    shadowColor:
+                                        isDark ? Colors.white : Colors.black,
+                                    side: BorderSide(
+                                        width: 0.5,
+                                        color: Colors.grey.shade400),
                                   ),
                                   onPressed: () async {
                                     _emailFocus.unfocus();
@@ -215,6 +230,10 @@ class _RegisterPageState extends State<RegisterPage> {
                               minimumSize:
                                   Size(screenWidth, screenHeight * 0.06),
                               shape: const RoundedRectangleBorder(),
+                              elevation: 3,
+                              shadowColor: isDark ? Colors.white : Colors.black,
+                              side: BorderSide(
+                                  width: 0.5, color: Colors.grey.shade400),
                             ),
                             icon: Image.asset('assets/images/google_icon.png',
                                 width: screenWidth * 0.06,
