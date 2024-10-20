@@ -42,7 +42,7 @@ class Shepherd extends StatelessWidget {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: notifier.themeMode,
-            home: const TaskPage(),
+            home: const HomePage(),
             getPages: AppRoutes.routes,
             navigatorKey: navigatorKey,
           );
