@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/providers/provider.dart';
 import 'package:shepherd_mo/widgets/profile_menu_widget.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,6 +17,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final _themeController = ValueNotifier<bool>(false);
   final _systemController = ValueNotifier<bool>(false);
+  final LocaleController localeController = Get.find<LocaleController>();
 
   @override
   Widget build(BuildContext context) {
@@ -21,27 +25,42 @@ class _SettingsPageState extends State<SettingsPage> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    double unitHeightValue = MediaQuery.of(context).size.height * 0.01;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Settings',
+          AppLocalizations.of(context)!.settings,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         centerTitle: true,
       ),
-      body: ProfileMenuWidget(
-        icon: Icons.dark_mode,
-        iconColor: isDark ? Colors.white : Colors.black,
-        onTap: () {
-          _showBottomSheet(context);
-        },
-        title: 'Dark Mode',
-        endIcon: false,
+      body: Column(
+        children: [
+          ProfileMenuWidget(
+            icon: Icons.dark_mode,
+            iconColor: isDark ? Colors.white : Colors.black,
+            onTap: () {
+              _showThemeBottomSheet(context);
+            },
+            title: AppLocalizations.of(context)!.darkMode,
+            endIcon: false,
+          ),
+          ProfileMenuWidget(
+            icon: Icons.language,
+            iconColor: isDark ? Colors.white : Colors.black,
+            onTap: () {
+              _showLanguageBottomSheet(context);
+            },
+            title: AppLocalizations.of(context)!.language,
+            endIcon: false,
+          ),
+        ],
       ),
     );
   }
 
-  void _showBottomSheet(BuildContext context) {
+  void _showThemeBottomSheet(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     showModalBottomSheet(
@@ -57,34 +76,42 @@ class _SettingsPageState extends State<SettingsPage> {
           _systemController.value = isSystemMode;
           return Wrap(
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.red,
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                  onPressed: () {
-                    // Close the bottom sheet
-                    Navigator.pop(context);
-                  },
+                ),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.red,
+                    ),
+                    onPressed: () {
+                      Get.back(); // Use GetX to close the modal
+                    },
+                  ),
                 ),
               ),
               ListTile(
                 leading: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                title: const Text('Theme Mode'),
+                title: Text(AppLocalizations.of(context)!.darkMode),
                 trailing: AdvancedSwitch(
                   controller: _themeController,
                   activeColor: Colors.blue,
                   inactiveColor: Colors.yellow,
                   activeChild: Text(
-                    'Dark',
+                    AppLocalizations.of(context)!.dark,
                     style: TextStyle(
                       fontSize: screenHeight * 0.02,
                     ),
                   ),
                   inactiveChild: Text(
-                    'Light',
+                    AppLocalizations.of(context)!.light,
                     style: TextStyle(
                         color: Colors.black, fontSize: screenHeight * 0.02),
                   ),
@@ -117,14 +144,14 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('System Mode'),
+                title: Text(AppLocalizations.of(context)!.systemMode),
                 trailing: AdvancedSwitch(
                   controller: _systemController,
                   activeColor: Colors.blue,
                   inactiveColor: Colors.grey,
-                  activeChild: Text('On',
+                  activeChild: Text(AppLocalizations.of(context)!.on,
                       style: TextStyle(fontSize: screenHeight * 0.02)),
-                  inactiveChild: Text('Off',
+                  inactiveChild: Text(AppLocalizations.of(context)!.off,
                       style: TextStyle(fontSize: screenHeight * 0.02)),
                   borderRadius: BorderRadius.all(Radius.circular(30)),
                   width: 90.0,
@@ -166,6 +193,62 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         },
       ),
+    );
+  }
+
+  void _showLanguageBottomSheet(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context, listen: false);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.red,
+                    ),
+                    onPressed: () {
+                      Get.back(); // Use GetX to close the modal
+                    },
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(AppLocalizations.of(context)!.english),
+                onTap: () {
+                  localeController.changeLanguage('en');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(AppLocalizations.of(context)!.vietnamese),
+                onTap: () {
+                  localeController.changeLanguage('vi');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

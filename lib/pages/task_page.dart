@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shepherd_mo/widgets/activity_card.dart';
-import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:provider/provider.dart';
+import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/widgets/task_card.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -48,6 +49,10 @@ class _TaskPageState extends State<TaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
@@ -97,7 +102,11 @@ class _TaskPageState extends State<TaskPage> {
                         ),
                         // Status chip
                         Chip(
-                          label: Text("On Going"),
+                          label: Text(
+                            "On Going",
+                            style: TextStyle(
+                                color: isDark ? Colors.black : Colors.white),
+                          ),
                           backgroundColor: Colors.blue.shade50,
                           side: BorderSide.none,
                           shape: RoundedRectangleBorder(
@@ -106,67 +115,7 @@ class _TaskPageState extends State<TaskPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Text(
-                      'Progress',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: screenHeight * 0.025),
-                    ),
                     // Progress indicator
-                    SizedBox(
-                      height: screenHeight * 0.22,
-                      child: ClipRect(
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SfRadialGauge(
-                            axes: <RadialAxis>[
-                              RadialAxis(
-                                startAngle: 120,
-                                endAngle: 60,
-                                minimum: 0,
-                                maximum: 100,
-                                showLabels: true,
-                                maximumLabels: 2,
-                                showLastLabel: true,
-                                axisLineStyle: AxisLineStyle(
-                                  thickness: 0.25,
-                                  thicknessUnit: GaugeSizeUnit.factor,
-                                  color: Colors.grey.shade200,
-                                ),
-                                pointers: <GaugePointer>[
-                                  RangePointer(
-                                    value: 80,
-                                    width: 0.25,
-                                    sizeUnit: GaugeSizeUnit.factor,
-                                    gradient: SweepGradient(
-                                      colors: [
-                                        Colors.greenAccent.shade700,
-                                        Colors.greenAccent.shade400,
-                                        Colors.greenAccent
-                                      ],
-                                      stops: [0.25, 0.5, 0.75],
-                                    ),
-                                    enableAnimation: true,
-                                  ),
-                                ],
-                                annotations: const <GaugeAnnotation>[
-                                  GaugeAnnotation(
-                                    widget: Text(
-                                      '80%',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
                   ],
                 ),
               ),
@@ -258,23 +207,23 @@ class _TaskPageState extends State<TaskPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 children: [
-                  ActivityCard(
-                    title: 'Dashboard design for admin',
+                  TaskCard(
+                    title: 'Task 1',
                     startDate: '10/10/2024',
                     endDate: '15/10/2024',
                   ),
-                  ActivityCard(
-                    title: 'Konom web application',
+                  TaskCard(
+                    title: 'Task 2',
                     startDate: '12/10/2024',
                     endDate: '15/10/2024',
                   ),
-                  ActivityCard(
-                    title: 'Research and development',
+                  TaskCard(
+                    title: 'Task 3',
                     startDate: '13/10/2024',
                     endDate: '16/10/2024',
                   ),
-                  ActivityCard(
-                    title: 'Event booking application',
+                  TaskCard(
+                    title: 'Task 4',
                     startDate: '14/10/2024',
                     endDate: '20/10/2024',
                   ),

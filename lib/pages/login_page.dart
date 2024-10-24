@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:shepherd_mo/models/auth_model.dart';
-import 'package:shepherd_mo/pages/register.dart';
+import 'package:shepherd_mo/models/auth.dart';
+import 'package:shepherd_mo/pages/register_page.dart';
 import 'package:shepherd_mo/providers/provider.dart';
 import 'package:shepherd_mo/widgets/auth_input_field.dart';
 import 'package:shepherd_mo/widgets/gradient_text.dart';

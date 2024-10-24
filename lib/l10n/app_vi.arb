@@ -1,0 +1,12 @@
+{
+    "language" : "Ngôn ngữ",
+    "english" : "Tiếng Anh",
+    "vietnamese" : "Tiếng Việt",
+    "settings" : "Cài đặt",
+    "darkMode": "Chế độ tối",
+    "systemMode": "Hệ thống",
+    "light": "Sáng",
+    "dark": "Tối",
+    "on": "Bật",
+    "off": "Tắt"
+}

@@ -22,12 +22,14 @@ class ProfileMenuWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
 
     return ListTile(
       onTap: onTap,
       leading: Container(
-        width: 40,
-        height: 40,
+        width: screenHeight * 0.03,
+        height: screenHeight * 0.03,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
           color: Colors.grey.shade500.withOpacity(0.1),
@@ -38,12 +40,13 @@ class ProfileMenuWidget extends StatelessWidget {
         ),
       ),
       title: Text(title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+          style: TextStyle(
+                  fontSize: screenHeight * 0.0215, fontWeight: FontWeight.bold)
               .apply(color: textColor)),
       trailing: endIcon
           ? Container(
-              width: 40,
-              height: 40,
+              width: screenHeight * 0.0215,
+              height: screenHeight * 0.0215,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
               ),

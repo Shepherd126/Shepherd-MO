@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:shepherd_mo/pages/home.dart';
-import 'package:shepherd_mo/pages/settings.dart';
+import 'package:shepherd_mo/pages/home_page.dart';
+import 'package:shepherd_mo/pages/settings_page.dart';
 
 class AppRoutes {
   static const String home = '/home';

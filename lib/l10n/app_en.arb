@@ -1,0 +1,12 @@
+{
+    "language" : "Language",
+    "english" : "English",
+    "vietnamese" : "Vietnamese",
+    "settings" : "Settings",
+    "darkMode": "Dark Mode",
+    "systemMode": "System Mode",
+    "light": "Light",
+    "dark": "Dark",
+    "on": "On",
+    "off": "Off"
+}
