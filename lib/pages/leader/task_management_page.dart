@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/models/task.dart';
 import 'package:shepherd_mo/providers/provider.dart';
 import 'package:shepherd_mo/widgets/task_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -15,24 +16,32 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   int selectedIndex = -1;
   final List<Map<String, dynamic>> statusList = [
     {
-      'label': 'To Do',
-      'count': 45,
+      'label': 'All',
+      'count': 4,
       'backgroundColor': Colors.blue,
       'labelColor': Colors.black,
       'countBackgroundColor': Colors.white,
       'countTextColor': Colors.black
     },
     {
+      'label': 'To Do',
+      'count': 1,
+      'backgroundColor': Colors.yellow,
+      'labelColor': Colors.black,
+      'countBackgroundColor': Colors.white,
+      'countTextColor': Colors.black
+    },
+    {
       'label': 'In Progress',
-      'count': 10,
-      'backgroundColor': Colors.green,
+      'count': 1,
+      'backgroundColor': Colors.blue,
       'labelColor': Colors.black,
       'countBackgroundColor': Colors.white,
       'countTextColor': Colors.black
     },
     {
       'label': 'In Review',
-      'count': 5,
+      'count': 1,
       'backgroundColor': Colors.orange,
       'labelColor': Colors.black,
       'countBackgroundColor': Colors.white,
@@ -40,13 +49,37 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
     },
     {
       'label': 'Done',
-      'count': 3,
-      'backgroundColor': Colors.grey,
+      'count': 1,
+      'backgroundColor': Colors.green,
       'labelColor': Colors.black,
       'countBackgroundColor': Colors.white,
       'countTextColor': Colors.black
     },
   ];
+  List<Task> tasks = [
+    Task(
+        title: 'Task 1',
+        description:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        status: 'To Do'),
+    Task(
+        title: 'Task 2',
+        description:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        status: 'In Progres'),
+    Task(
+        title: 'Task 3',
+        description:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        status: 'To do'),
+    Task(
+        title: 'In Review',
+        description:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        status: 'Done'),
+  ];
+  List<String> users = ['Nguyễn Văn A', 'Nguyễn Thị B', 'Trần Văn C'];
+  void onSubmit(String name, String description, String user) {}
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +90,15 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigating
+          showTaskDialog(context: context, users: users, onSubmit: onSubmit);
+        },
+        backgroundColor: Colors.orange,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add),
+      ),
       appBar: AppBar(
         title: Text(
           'Tasks',
@@ -188,7 +230,6 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                 ],
               ),
             ),
-
             SizedBox(height: screenHeight * 0.025),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -255,32 +296,18 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
               ),
             ),
             SizedBox(height: screenHeight * 0.02),
-            // Expanded ListView for Activities with no glow
             Expanded(
-              child: ListView(
+              child: ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  TaskCard(
-                    title: 'Task 1',
-                    startDate: '10/10/2024',
-                    endDate: '15/10/2024',
-                  ),
-                  TaskCard(
-                    title: 'Task 2',
-                    startDate: '12/10/2024',
-                    endDate: '15/10/2024',
-                  ),
-                  TaskCard(
-                    title: 'Task 3',
-                    startDate: '13/10/2024',
-                    endDate: '16/10/2024',
-                  ),
-                  TaskCard(
-                    title: 'Task 4',
-                    startDate: '14/10/2024',
-                    endDate: '20/10/2024',
-                  ),
-                ],
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return TaskCard(
+                    title: task.title,
+                    description: task.description,
+                    status: task.status,
+                  );
+                },
               ),
             ),
           ],
@@ -288,6 +315,131 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
       ),
     );
   }
+}
+
+Future<void> showTaskDialog({
+  required BuildContext context,
+  String? initialName,
+  String? initialDescription,
+  String? selectedUser,
+  required List<String> users, // List of users to assign
+  required Function(String name, String description, String assignedUser)
+      onSubmit,
+}) async {
+  final TextEditingController nameController =
+      TextEditingController(text: initialName);
+  final TextEditingController descriptionController =
+      TextEditingController(text: initialDescription);
+  String? assignedUser = selectedUser;
+
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true, // Allows the dialog to take full height if needed
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Dialog Title
+              Text(
+                initialName == null ? 'Create Task' : 'Edit Task',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+
+              // Name Field
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Task Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 10),
+
+              // Description Field
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 4,
+              ),
+              SizedBox(height: 10),
+
+              // Assign to User Field
+              DropdownButtonFormField<String>(
+                value: assignedUser,
+                onChanged: (String? newValue) {
+                  assignedUser = newValue;
+                },
+                items: users.map<DropdownMenuItem<String>>((String user) {
+                  return DropdownMenuItem<String>(
+                    value: user,
+                    child: Text(user),
+                  );
+                }).toList(),
+                decoration: InputDecoration(
+                  labelText: 'Assign to User',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Dialog Actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      if (nameController.text.isNotEmpty &&
+                          descriptionController.text.isNotEmpty &&
+                          assignedUser != null) {
+                        onSubmit(nameController.text,
+                            descriptionController.text, assignedUser!);
+                        Navigator.of(context).pop(); // Close the dialog
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Please fill all fields')),
+                        );
+                      }
+                    },
+                    child: Text('Save'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Colors.blue, // Distinct color for Save button
+                    ),
+                  ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                    child: Text('Cancel'),
+                    style: TextButton.styleFrom(
+                      backgroundColor:
+                          Colors.red, // Distinct color for Cancel button
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class ChartData {

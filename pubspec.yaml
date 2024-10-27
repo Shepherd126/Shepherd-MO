@@ -47,6 +47,7 @@ dependencies:
   syncfusion_flutter_gauges: ^27.1.53
   syncfusion_flutter_core: ^27.1.53
   syncfusion_flutter_charts: ^27.1.53
+  expandable_text: ^2.3.0
 
 dev_dependencies:
   flutter_test:

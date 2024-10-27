@@ -6,16 +6,14 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/task.dart';
-import 'package:shepherd_mo/pages/settings_page.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
+import 'package:shepherd_mo/pages/settings_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/providers/provider.dart';
 import 'package:shepherd_mo/widgets/activity_card.dart';
 import 'package:shepherd_mo/widgets/gradient_text.dart';
 import 'package:shepherd_mo/widgets/organization_card.dart';
 import 'package:shepherd_mo/widgets/profile_menu_widget.dart';
-import 'package:shepherd_mo/widgets/status_button.dart';
-import 'package:shepherd_mo/widgets/task_card.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -82,19 +80,13 @@ class _HomeState extends State<HomePage> {
           appBar: AppBar(
             backgroundColor: Colors.grey.shade300,
             forceMaterialTransparency: true,
-            leading: Padding(
-              padding: EdgeInsets.only(left: screenWidth * 0.02),
-              child: Image.asset(
-                'assets/images/shepherd.png',
-                scale: screenWidth * 0.02,
-              ),
-            ),
+            automaticallyImplyLeading: false,
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 1),
                 child: Stack(
                   children: <Widget>[
-                    Container(
+                    SizedBox(
                       width: screenWidth * 0.15,
                       height: screenWidth * 0.15,
                       child: IconButton(
@@ -125,22 +117,33 @@ class _HomeState extends State<HomePage> {
                 ),
               ),
             ],
-            title: GradientText(
-              'Shepherd',
-              style: TextStyle(
-                fontSize: screenWidth * 0.08,
-                fontWeight: FontWeight.bold,
-                color: Colors.amber[800],
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: const [0.2, 0.8],
-                colors: [
-                  Colors.orange.shade900,
-                  Colors.orange.shade600,
-                ],
-              ),
+            title: Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
+                  child: Image.asset(
+                    'assets/images/shepherd.png',
+                    scale: screenHeight * 0.015,
+                  ),
+                ),
+                GradientText(
+                  'Shepherd',
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.08,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber[800],
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0.2, 0.8],
+                    colors: [
+                      Colors.orange.shade900,
+                      Colors.orange.shade600,
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           body: IndexedStack(
@@ -398,6 +401,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
     Task(title: "Event 2", description: "Description"),
     Task(title: "Event 3", description: "Description"),
   ];
+  final LocaleController localeController = Get.find();
 
   void _onDaySelected(DateTime day, DateTime focusedDay) {
     if (mounted) {
@@ -406,8 +410,6 @@ class _ScheduleTabState extends State<ScheduleTab> {
       });
     }
   }
-
-  final LocaleController localeController = Get.find();
 
   @override
   void initState() {
@@ -423,7 +425,26 @@ class _ScheduleTabState extends State<ScheduleTab> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    bool isLeader = true;
     return Scaffold(
+      floatingActionButton: isLeader
+          ? FloatingActionButton(
+              onPressed: () {
+                // Navigating
+              },
+              backgroundColor: Colors.orange,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add),
+            )
+          : null,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: Text(
+          'Event',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5.0),
         child: Column(
@@ -595,6 +616,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   DateTime focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
   final LocaleController localeController = Get.find<LocaleController>();
+  bool isLeader = true;
 
   final List<String> organizations = [
     'Ban Thường Vụ',
@@ -647,7 +669,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   }
 
   void onTapActivity() {
-    Get.to(() => const TaskPage(),
+    Get.to(() => isLeader ? const TaskManagementPage() : const TaskPage(),
         id: 3, transition: Transition.rightToLeftWithFade);
   }
 
@@ -659,10 +681,20 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
+      floatingActionButton: isLeader
+          ? FloatingActionButton(
+              onPressed: () {
+                // Navigating
+              },
+              backgroundColor: Colors.orange,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add),
+            )
+          : null,
       appBar: AppBar(
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: Text(
           'Activities',
           style: Theme.of(context).textTheme.headlineMedium,
@@ -812,8 +844,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                 selectedDayPredicate: (day) => isSameDay(day, selectedDay),
                 onDaySelected: _onDaySelected,
 
-                // Format change handling
-
                 // When the calendar header is tapped
                 onHeaderTapped: (focusedDay) {
                   if (mounted) {
@@ -847,27 +877,26 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                     status: 'Completed',
                     onTap: () {
                       onTapActivity();
-                      print('Activity tapped');
                     },
                   ),
                   ActivityCard(
                     title: 'Activity 2',
-                    startDate: '23/10/2024',
-                    endDate: '23/10/2024',
+                    startDate: '24/10/2024',
+                    endDate: '25/10/2024',
                     status: 'In Progress',
                     onTap: onTapActivity,
                   ),
                   ActivityCard(
                     title: 'Activity 3',
-                    startDate: '23/10/2024',
-                    endDate: '23/10/2024',
+                    startDate: '25/10/2024',
+                    endDate: '26/10/2024',
                     status: 'Pending',
                     onTap: onTapActivity,
                   ),
                   ActivityCard(
                     title: 'Activity 4',
-                    startDate: '23/10/2024',
-                    endDate: '23/10/2024',
+                    startDate: '28/10/2024',
+                    endDate: '29/10/2024',
                     status: 'Completed',
                     onTap: onTapActivity,
                   ),
@@ -897,6 +926,7 @@ class _MenuTabState extends State<MenuTab> {
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         centerTitle: true,
         title: Text('Menu', style: Theme.of(context).textTheme.headlineMedium),
         actions: const [],
