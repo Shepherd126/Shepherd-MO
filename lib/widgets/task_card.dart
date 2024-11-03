@@ -5,7 +5,7 @@ class TaskCard extends StatefulWidget {
   final String description;
   final String? status; // Optional status with default as null
 
-  TaskCard({
+  const TaskCard({super.key, 
     required this.title,
     required this.description,
     this.status,
@@ -68,7 +68,7 @@ class _TaskCardState extends State<TaskCard> {
         tilePadding: EdgeInsets.all(screenHeight * 0.018),
         title: Text(
           widget.title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -117,7 +117,7 @@ class _TaskCardState extends State<TaskCard> {
                         ),
                         child: Text(
                           getButtonText(),
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],

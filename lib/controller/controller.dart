@@ -15,7 +15,7 @@ class BottomNavController extends GetxController {
 class LocaleController extends GetxController {
   static const String _localeKey = 'selectedLocale';
 
-  var _currentLocale = Locale('en', 'US').obs;
+  final _currentLocale = const Locale('en', 'US').obs;
 
   Locale get currentLocale => _currentLocale.value;
 
@@ -33,7 +33,7 @@ class LocaleController extends GetxController {
         _currentLocale.value = systemLocale;
       } else {
         // Default to English if system locale is unsupported
-        _currentLocale.value = Locale('en', 'US');
+        _currentLocale.value = const Locale('en', 'US');
       }
     } else if (languageCode != null) {
       // Use the saved preference (either 'vi' or 'en')
@@ -46,7 +46,7 @@ class LocaleController extends GetxController {
               systemLocale.languageCode == 'en')) {
         _currentLocale.value = systemLocale;
       } else {
-        _currentLocale.value = Locale('en', 'US');
+        _currentLocale.value = const Locale('en', 'US');
       }
     }
     print('Saved Preference Locale: $languageCode');

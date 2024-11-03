@@ -10,7 +10,7 @@ class StatusButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  StatusButton({
+  const StatusButton({super.key, 
     required this.label,
     required this.count,
     required this.backgroundColor,
@@ -43,7 +43,7 @@ class StatusButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -58,7 +58,7 @@ class StatusButton extends StatelessWidget {
             ),
             SizedBox(width: screenWidth * 0.02),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: countBackgroundColor,
                 borderRadius: BorderRadius.circular(15),

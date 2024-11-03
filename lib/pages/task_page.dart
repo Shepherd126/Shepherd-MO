@@ -205,7 +205,7 @@ class _TaskPageState extends State<TaskPage> {
                 fontSize: screenHeight * 0.025,
               ),
             ),
-            ExpandableText(
+            const ExpandableText(
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
               expandText: 'Show More',
               collapseText: 'Show Less',
@@ -253,7 +253,7 @@ class _TaskPageState extends State<TaskPage> {
                     ),
                     SizedBox(width: screenWidth * 0.02),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: selectedIndex == index
                             ? Colors.white.withOpacity(0.5)

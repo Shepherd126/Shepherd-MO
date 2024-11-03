@@ -91,8 +91,8 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        heroTag: 'task',
         onPressed: () {
-          // Navigating
           showTaskDialog(context: context, users: users, onSubmit: onSubmit);
         },
         backgroundColor: Colors.orange,
@@ -165,7 +165,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                         child: Align(
                           alignment: Alignment.topCenter,
                           child: SfCircularChart(
-                            legend: Legend(
+                            legend: const Legend(
                                 isVisible: true,
                                 position: LegendPosition.bottom),
                             series: <CircularSeries>[
@@ -185,7 +185,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                                 xValueMapper: (ChartData data, _) =>
                                     data.status,
                                 yValueMapper: (ChartData data, _) => data.value,
-                                dataLabelSettings: DataLabelSettings(
+                                dataLabelSettings: const DataLabelSettings(
                                   isVisible: false,
                                   textStyle: TextStyle(
                                       fontSize: 12,
@@ -197,7 +197,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                             annotations: <CircularChartAnnotation>[
                               CircularChartAnnotation(
                                 widget: Container(
-                                  child: Text(
+                                  child: const Text(
                                     '80%',
                                     style: TextStyle(
                                       fontSize: 24,
@@ -226,7 +226,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                         fontWeight: FontWeight.bold,
                         fontSize: screenHeight * 0.025),
                   ),
-                  Text('Activity Description'),
+                  const Text('Activity Description'),
                 ],
               ),
             ),
@@ -259,7 +259,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                           ),
                           SizedBox(width: screenWidth * 0.02),
                           Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: selectedIndex == index
@@ -335,7 +335,7 @@ Future<void> showTaskDialog({
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true, // Allows the dialog to take full height if needed
-    shape: RoundedRectangleBorder(
+    shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (BuildContext context) {
@@ -353,30 +353,30 @@ Future<void> showTaskDialog({
               // Dialog Title
               Text(
                 initialName == null ? 'Create Task' : 'Edit Task',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               // Name Field
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Task Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               // Description Field
               TextField(
                 controller: descriptionController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Description',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 4,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               // Assign to User Field
               DropdownButtonFormField<String>(
@@ -390,12 +390,12 @@ Future<void> showTaskDialog({
                     child: Text(user),
                   );
                 }).toList(),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Assign to User',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Dialog Actions
               Row(
@@ -411,26 +411,26 @@ Future<void> showTaskDialog({
                         Navigator.of(context).pop(); // Close the dialog
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Please fill all fields')),
+                          const SnackBar(content: Text('Please fill all fields')),
                         );
                       }
                     },
-                    child: Text('Save'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           Colors.blue, // Distinct color for Save button
                     ),
+                    child: const Text('Save'),
                   ),
                   SizedBox(width: MediaQuery.of(context).size.width * 0.02),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(); // Close the dialog
                     },
-                    child: Text('Cancel'),
                     style: TextButton.styleFrom(
                       backgroundColor:
                           Colors.red, // Distinct color for Cancel button
                     ),
+                    child: const Text('Cancel'),
                   ),
                 ],
               ),

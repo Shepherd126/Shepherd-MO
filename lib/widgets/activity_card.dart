@@ -7,7 +7,7 @@ class ActivityCard extends StatelessWidget {
   final String status;
   final VoidCallback onTap;
 
-  ActivityCard({
+  const ActivityCard({super.key, 
     required this.title,
     required this.startDate,
     required this.endDate,

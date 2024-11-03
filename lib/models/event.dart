@@ -1,32 +1,28 @@
 class Event {
-  final String id;
-  final String eventName;
-  final String ceremonyId;
-  final String description;
-  final DateTime fromDate;
-  final DateTime toDate;
-  final bool isPublic;
-  final bool allowVolunteers;
-  final String recurringType;
-  final String status;
-  final double totalCost;
-  final DateTime? approvalDate;
-  final String approvedBy;
+  String? id;
+  String? eventName;
+  String? ceremonyId;
+  String? description;
+  DateTime? fromDate;
+  DateTime? toDate;
+  bool? isPublic;
+  String? status;
+  double? totalCost;
+  DateTime? approvalDate;
+  String? approvedBy;
 
   Event({
-    required this.id,
-    required this.eventName,
-    required this.ceremonyId,
-    required this.description,
-    required this.fromDate,
-    required this.toDate,
-    required this.isPublic,
-    required this.allowVolunteers,
-    required this.recurringType,
-    required this.status,
-    required this.totalCost,
+    this.id,
+    this.eventName,
+    this.ceremonyId,
+    this.description,
+    this.fromDate,
+    this.toDate,
+    this.isPublic,
+    this.status,
+    this.totalCost,
     this.approvalDate,
-    required this.approvedBy,
+    this.approvedBy,
   });
 
   // Factory constructor to parse from JSON (for fetching from API)
@@ -36,13 +32,12 @@ class Event {
       eventName: json['eventName'],
       ceremonyId: json['ceremonyId'],
       description: json['description'],
-      fromDate: DateTime.parse(json['fromDate']),
-      toDate: DateTime.parse(json['toDate']),
+      fromDate:
+          json['fromDate'] != null ? DateTime.parse(json['fromDate']) : null,
+      toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
       isPublic: json['isPublic'],
-      allowVolunteers: json['allowVolunteers'],
-      recurringType: json['recurringType'],
       status: json['status'],
-      totalCost: json['totalCost'].toDouble(),
+      totalCost: json['totalCost']?.toDouble(),
       approvalDate: json['approvalDate'] != null
           ? DateTime.parse(json['approvalDate'])
           : null,
@@ -57,15 +52,31 @@ class Event {
       'eventName': eventName,
       'ceremonyId': ceremonyId,
       'description': description,
-      'fromDate': fromDate.toIso8601String(),
-      'toDate': toDate.toIso8601String(),
+      'fromDate': fromDate?.toIso8601String(),
+      'toDate': toDate?.toIso8601String(),
       'isPublic': isPublic,
-      'allowVolunteers': allowVolunteers,
-      'recurringType': recurringType,
       'status': status,
       'totalCost': totalCost,
       'approvalDate': approvalDate?.toIso8601String(),
       'approvedBy': approvedBy,
     };
+  }
+
+  @override
+  String toString() {
+    return '''
+Event Details:
+  ID: $id
+  Name: $eventName
+  Ceremony ID: $ceremonyId
+  Description: $description
+  From Date: ${fromDate != null ? fromDate.toString() : 'N/A'}
+  To Date: ${toDate != null ? toDate.toString() : 'N/A'}
+  Is Public: ${isPublic != null ? (isPublic! ? 'Yes' : 'No') : 'N/A'}
+  Status: $status
+  Total Cost: ${totalCost != null ? '$totalCost VND' : 'N/A'}
+  Approval Date: ${approvalDate != null ? approvalDate.toString() : 'N/A'}
+  Approved By: $approvedBy
+    ''';
   }
 }
