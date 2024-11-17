@@ -5,23 +5,24 @@ import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/controller/controller.dart';
-import 'package:shepherd_mo/pages/event_detail.dart';
-import 'package:shepherd_mo/pages/home_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
 import 'package:shepherd_mo/pages/token_check.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/route/route.dart';
 import 'package:shepherd_mo/theme/dark_theme.dart';
 import 'package:shepherd_mo/theme/light_theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/utils/toast.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final localeController = Get.put(LocaleController());
+  Get.put(AuthorizationController());
+  Get.put(TaskController());
   await localeController.loadPreferredLocale();
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'token');
@@ -46,6 +47,7 @@ class Shepherd extends StatelessWidget {
       child: Consumer<UIProvider>(
         builder: (context, UIProvider notifier, child) {
           return GetMaterialApp(
+            navigatorObservers: [routeObserver],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,

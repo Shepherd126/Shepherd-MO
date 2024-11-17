@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 
 class EventDetailsBackground extends StatelessWidget {
+  const EventDetailsBackground({super.key});
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+
+    // Get theme mode
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final Color gradientStartColor = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Colors.white.withOpacity(0.4);
+    final Color gradientEndColor = isDarkMode
+        ? Colors.black.withOpacity(0.0)
+        : Colors.black.withOpacity(0.4);
 
     return Align(
       alignment: Alignment.topCenter,
@@ -16,9 +27,30 @@ class EventDetailsBackground extends StatelessWidget {
               'assets/images/stained_glass_window.jpg',
               fit: BoxFit.cover,
               width: screenWidth,
-              height: screenHeight * 0.5,
-              color: Color.fromARGB(134, 0, 0, 0), // Semi-transparent overlay
+              height: screenHeight * 0.45,
+              color: isDarkMode
+                  ? const Color.fromARGB(133, 42, 41, 41)
+                  : const Color.fromARGB(0, 0, 0, 0),
               colorBlendMode: BlendMode.darken,
+            ),
+            // Add a radial gradient overlay along the curved edge
+            Positioned.fill(
+              child: ClipPath(
+                clipper: ImageClipper(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomLeft,
+                      end: Alignment(0.05, -0.1),
+                      colors: [
+                        gradientStartColor, // Start color for blending
+                        gradientEndColor, // Fully transparent at the edges
+                      ],
+                      stops: [0.3, 1], // Control the gradient spread
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -33,18 +65,15 @@ class ImageClipper extends CustomClipper<Path> {
     final path = Path();
 
     // Define starting and ending points
-    Offset curveStartingPoint =
-        Offset(0, 40); // Lower start for a more dramatic curve
-    Offset curveEndPoint = Offset(
-        size.width, size.height * 0.88); // Higher endpoint for rounded shape
+    Offset curveStartingPoint = const Offset(0, 40);
+    Offset curveEndPoint = Offset(size.width, size.height * 0.88);
 
     // Define rounder control points for smoother curve
     path.lineTo(curveStartingPoint.dx, curveStartingPoint.dy);
     path.quadraticBezierTo(
-      size.width *
-          0.25, // Control point closer to the start for a tighter curve
-      size.height * 0.8, // Lifted up for a rounder middle arc
-      curveEndPoint.dx, // Close to the endpoint for a smooth transition
+      size.width * 0.25,
+      size.height * 0.8,
+      curveEndPoint.dx,
       curveEndPoint.dy,
     );
     path.quadraticBezierTo(

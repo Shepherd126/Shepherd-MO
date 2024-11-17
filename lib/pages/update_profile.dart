@@ -8,7 +8,7 @@ import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
-  const UpdateProfileScreen({Key? key}) : super(key: key);
+  const UpdateProfileScreen({super.key});
 
   @override
   _UpdateProfileScreenState createState() => _UpdateProfileScreenState();
@@ -164,7 +164,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                                     isApiCallProcess = true;
                                   });
                                   final id = loginInfo.id;
-                                  final statusCode = 1;
+                                  const statusCode = 1;
                                   //await apiService.updateUser(id!, user);
                                   if (statusCode == 200) {
                                     Fluttertoast.showToast(

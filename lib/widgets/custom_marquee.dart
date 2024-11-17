@@ -4,14 +4,14 @@ import 'package:marquee/marquee.dart';
 class CustomMarquee extends StatefulWidget {
   final String text;
 
-  CustomMarquee({required this.text});
+  const CustomMarquee({super.key, required this.text});
 
   @override
   _CustomMarqueeState createState() => _CustomMarqueeState();
 }
 
 class _CustomMarqueeState extends State<CustomMarquee> {
-  ScrollController _controller = ScrollController();
+  final ScrollController _controller = ScrollController();
   final marqueeKey = GlobalKey();
 
   @override
@@ -40,7 +40,7 @@ class _CustomMarqueeState extends State<CustomMarquee> {
       );
     } catch (e) {
       print("Marquee error: $e");
-      return Text("Error loading marquee"); // Fallback UI
+      return const Text("Error loading marquee"); // Fallback UI
     }
   }
 }

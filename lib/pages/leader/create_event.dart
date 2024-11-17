@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/models/ceremony.dart';
 import 'package:shepherd_mo/models/event.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/models/group.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/widgets/custom_checkbox.dart';
 import 'package:shepherd_mo/widgets/datetime_picker.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/widgets/search_dialog.dart';
-import 'package:shepherd_mo/widgets/search_widget.dart';
+import 'package:shepherd_mo/widgets/search_group_dialog.dart';
+import 'package:shepherd_mo/widgets/search_ceremony_dialog.dart';
 
 class CreateEditEventPage extends StatefulWidget {
   final Event? event; // If event is provided, the page is for editing
@@ -27,7 +29,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
   var totalCostController = TextEditingController();
   var ceremonyController = TextEditingController();
   var groupController = TextEditingController();
-  final FocusNode _eventFocus = FocusNode();
+  final FocusNode _eventNameFocus = FocusNode();
   final FocusNode _descriptionFocus = FocusNode();
   final FocusNode _ceremonyFocus = FocusNode();
   final FocusNode _groupFocus = FocusNode();
@@ -62,24 +64,10 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context, bool isFromDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: isFromDate
-          ? (fromDate ?? DateTime.now())
-          : (toDate ?? DateTime.now()),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        if (isFromDate) {
-          fromDate = picked;
-        } else {
-          toDate = picked;
-        }
-      });
-    }
+  void handleCheckboxChanged(bool value) {
+    setState(() {
+      event.isPublic = value;
+    });
   }
 
   @override
@@ -96,12 +84,15 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.event == null
-              ? '${AppLocalizations.of(context)!.create} ${AppLocalizations.of(context)!.event}'
-              : '${AppLocalizations.of(context)!.edit} ${AppLocalizations.of(context)!.event}',
+              ? '${localizations.create} ${localizations.event.toLowerCase()}'
+              : '${localizations.edit} ${localizations.event.toLowerCase()}',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         centerTitle: true,
@@ -113,24 +104,42 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
           child: ListView(
             children: [
               Text(
-                AppLocalizations.of(context)!.name,
+                localizations.name,
                 style: const TextStyle(fontSize: 16.0),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 5),
+              SizedBox(height: screenHeight * 0.005),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  color: isDark ? Colors.black : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10.0),
+                  border: isDark
+                      ? Border.all(
+                          color: Colors.grey
+                              .withOpacity(0.3), // Border color in dark mode
+                          width: 1, // Border width
+                        )
+                      : null, // No border in light mode
+                  boxShadow: !isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey
+                                .withOpacity(0.2), // Shadow color in light mode
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: Offset(-2, 2), // Shadow on left and bottom
+                          ),
+                        ]
+                      : [], // No shadow in dark mode
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: const EdgeInsets.only(left: 20.0),
                   child: TextFormField(
-                    focusNode: _eventFocus,
+                    focusNode: _eventNameFocus,
                     controller: eventNameController,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
-                        return AppLocalizations.of(context)!.required;
+                        return localizations.required;
                       }
                       return null;
                     },
@@ -142,53 +151,61 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                         Icons.event,
                       ),
                       border: InputBorder.none,
-                      labelText: AppLocalizations.of(context)!.name,
-                      hintText: AppLocalizations.of(context)!.eventNameHint,
+                      labelText: localizations.name,
+                      hintText: localizations.eventNameHint,
+                      suffixIcon: eventNameController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                eventNameController.clear();
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Text(
-                AppLocalizations.of(context)!.dateAndTime,
-                style: const TextStyle(fontSize: 16.0),
+                localizations.dateAndTime,
+                style: TextStyle(fontSize: screenHeight * 0.016),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 5),
+              SizedBox(height: screenHeight * 0.005),
               Row(
                 children: [
                   DatePickerField(
-                    label: AppLocalizations.of(context)!.startDate,
+                    label: localizations.startDate,
                     hintText:
-                        '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.startDate.toLowerCase()}',
+                        '${localizations.enter} ${localizations.startDate.toLowerCase()}',
                     onDateSelected: (DateTime? date) {
                       fromDate = date;
                     },
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: screenWidth * 0.01),
                   TimePickerField(
-                    label: AppLocalizations.of(context)!.startTime,
+                    label: localizations.startTime,
                     hintText:
-                        '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.startTime.toLowerCase()}',
+                        '${localizations.enter} ${localizations.startTime.toLowerCase()}',
                     onTimeSelected: (TimeOfDay? time) {
                       fromTime = time;
                     },
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Row(
                 children: [
                   DatePickerField(
-                    label: AppLocalizations.of(context)!.endDate,
+                    label: localizations.endDate,
                     hintText:
-                        '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.endDate.toLowerCase()}',
+                        '${localizations.enter} ${localizations.endDate.toLowerCase()}',
                     onDateSelected: (DateTime? date) {
                       toDate = date;
                     },
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return AppLocalizations.of(context)!.required;
+                        return localizations.required;
                       }
                       if (fromDate != null) {
                         DateTime endDate = DateTime.parse(value);
@@ -199,11 +216,11 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: screenWidth * 0.01),
                   TimePickerField(
-                    label: AppLocalizations.of(context)!.endTime,
+                    label: localizations.endTime,
                     hintText:
-                        '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.endTime.toLowerCase()}',
+                        '${localizations.enter} ${localizations.endTime.toLowerCase()}',
                     onTimeSelected: (TimeOfDay? time) {
                       toTime = time;
                     },
@@ -213,20 +230,38 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Text(
-                AppLocalizations.of(context)!.description,
+                localizations.description,
                 style: const TextStyle(fontSize: 16.0),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 5),
+              SizedBox(height: screenHeight * 0.005),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  color: isDark ? Colors.black : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10.0),
+                  border: isDark
+                      ? Border.all(
+                          color: Colors.grey
+                              .withOpacity(0.3), // Border color in dark mode
+                          width: 1, // Border width
+                        )
+                      : null, // No border in light mode
+                  boxShadow: !isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey
+                                .withOpacity(0.2), // Shadow color in light mode
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: Offset(-2, 2), // Shadow on left and bottom
+                          ),
+                        ]
+                      : [], // No shadow in dark mode
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: const EdgeInsets.only(left: 20.0),
                   child: TextFormField(
                     minLines: 4,
                     maxLines: null,
@@ -234,7 +269,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                     controller: descriptionController,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
-                        return AppLocalizations.of(context)!.required;
+                        return localizations.required;
                       }
                       return null;
                     },
@@ -242,31 +277,59 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                       event.description = input!.trim();
                     },
                     decoration: InputDecoration(
-                        icon: const Icon(
-                          Icons.description_outlined,
-                        ),
-                        border: InputBorder.none,
-                        labelText: AppLocalizations.of(context)!.description,
-                        hintText: AppLocalizations.of(context)!.descriptionHint,
-                        alignLabelWithHint: false),
+                      icon: const Icon(
+                        Icons.description_outlined,
+                      ),
+                      border: InputBorder.none,
+                      labelText: localizations.description,
+                      hintText: localizations.descriptionHint,
+                      alignLabelWithHint: false,
+                      suffixIcon: descriptionController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                descriptionController.clear();
+                              },
+                            )
+                          : null,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               CustomCheckboxField(
                 enabledIcon: const Icon(Icons.public),
                 disabledIcon: const Icon(Icons.public_off),
-                enabledLabel: AppLocalizations.of(context)!.public,
-                disabledLabel: AppLocalizations.of(context)!.private,
+                enabledLabel: localizations.public,
+                disabledLabel: localizations.private,
+                onChanged: handleCheckboxChanged,
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  color: isDark ? Colors.black : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10.0),
+                  border: isDark
+                      ? Border.all(
+                          color: Colors.grey
+                              .withOpacity(0.3), // Border color in dark mode
+                          width: 1, // Border width
+                        )
+                      : null, // No border in light mode
+                  boxShadow: !isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey
+                                .withOpacity(0.2), // Shadow color in light mode
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: Offset(-2, 2), // Shadow on left and bottom
+                          ),
+                        ]
+                      : [], // No shadow in dark mode
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: const EdgeInsets.only(left: 20.0),
                   child: TextFormField(
                     keyboardType: TextInputType.number,
                     focusNode: _totalCostFocus,
@@ -292,21 +355,47 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                         Icons.event,
                       ),
                       border: InputBorder.none,
-                      labelText: AppLocalizations.of(context)!.totalCost,
+                      labelText: localizations.totalCost,
                       hintText:
-                          '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.totalCost.toLowerCase()}',
+                          '${localizations.enter} ${localizations.totalCost.toLowerCase()}',
+                      suffixIcon: totalCostController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                totalCostController.clear();
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  color: isDark ? Colors.black : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10.0),
+                  border: isDark
+                      ? Border.all(
+                          color: Colors.grey
+                              .withOpacity(0.3), // Border color in dark mode
+                          width: 1, // Border width
+                        )
+                      : null, // No border in light mode
+                  boxShadow: !isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey
+                                .withOpacity(0.2), // Shadow color in light mode
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: Offset(-2, 2), // Shadow on left and bottom
+                          ),
+                        ]
+                      : [], // No shadow in dark mode
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: const EdgeInsets.only(left: 20.0),
                   child: TextFormField(
                     readOnly: true,
                     focusNode: _ceremonyFocus,
@@ -317,13 +406,13 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                     decoration: InputDecoration(
                       icon: const Icon(Icons.event_available),
                       border: InputBorder.none,
-                      labelText: AppLocalizations.of(context)!.ceremony,
+                      labelText: localizations.ceremony,
                       hintText:
-                          '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.ceremony.toLowerCase()}',
+                          '${localizations.enter} ${localizations.ceremony.toLowerCase()}',
                       // Conditionally add a clear icon at the end
                       suffixIcon: ceremonyController.text.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.clear),
+                              icon: const Icon(Icons.clear),
                               onPressed: () {
                                 ceremonyController
                                     .clear(); // Clear the controller's text
@@ -334,14 +423,32 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.01),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  color: isDark ? Colors.black : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10.0),
+                  border: isDark
+                      ? Border.all(
+                          color: Colors.grey
+                              .withOpacity(0.3), // Border color in dark mode
+                          width: 1, // Border width
+                        )
+                      : null, // No border in light mode
+                  boxShadow: !isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey
+                                .withOpacity(0.2), // Shadow color in light mode
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: Offset(-2, 2), // Shadow on left and bottom
+                          ),
+                        ]
+                      : [], // No shadow in dark mode
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: const EdgeInsets.only(left: 20.0),
                   child: TextFormField(
                     readOnly: true,
                     focusNode: _groupFocus,
@@ -354,14 +461,22 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                         Icons.people,
                       ),
                       border: InputBorder.none,
-                      labelText: AppLocalizations.of(context)!.group,
+                      labelText: localizations.group,
                       hintText:
-                          '${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.group.toLowerCase()}',
+                          '${localizations.enter} ${localizations.group.toLowerCase()}',
+                      suffixIcon: groupController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                groupController.clear();
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenHeight * 0.02),
               ElevatedButton(
                 onPressed: () {
                   print(event.toString());
@@ -370,7 +485,9 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                   backgroundColor: WidgetStateProperty.all(Colors.orange),
                 ),
                 child: Text(
-                  widget.event == null ? 'Create Event' : 'Update Event',
+                  widget.event == null
+                      ? '${localizations.create} ${localizations.event.toLowerCase()}'
+                      : '${localizations.edit} ${localizations.event.toLowerCase()}',
                 ),
               ),
             ],
@@ -382,24 +499,24 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
 
   // Function to show the dialog
   void showCeremonyDialog(BuildContext context) async {
-    final ceremony = await showDialog<Map<String, dynamic>>(
+    final ceremony = await showDialog<Ceremony>(
       context: context,
       builder: (BuildContext context) {
-        return const SearchListDialog();
+        return const CeremonyListDialog();
       },
     );
 
     if (ceremony != null) {
-      event.ceremonyId = ceremony["id"].toString();
-      ceremonyController.text = ceremony["name"];
+      event.ceremonyId = ceremony.id;
+      ceremonyController.text = ceremony.name;
     }
   }
 
   void showGroupDialog(BuildContext context) async {
-    final groups = await showDialog<Map<String, dynamic>>(
+    final groups = await showDialog<List<Group>>(
       context: context,
       builder: (BuildContext context) {
-        return const GroupListDialog(apiToken: 'String');
+        return const GroupListDialog();
       },
     );
   }

@@ -49,9 +49,6 @@ class LocaleController extends GetxController {
         _currentLocale.value = const Locale('en', 'US');
       }
     }
-    print('Saved Preference Locale: $languageCode');
-    print('System Locale on Load: ${Get.deviceLocale}');
-    print('Selected App Locale: ${_currentLocale.value}');
 
     // Update the app locale
     Get.updateLocale(_currentLocale.value);
@@ -87,5 +84,27 @@ class LocaleController extends GetxController {
         CalendarFormat.week: 'Week',
       };
     }
+  }
+}
+
+class AuthorizationController extends GetxController {
+  var isAuthorized = false.obs;
+  var isLeader = false.obs;
+
+  // Method to update authorization status
+  void updateAuthorizationStatus(bool newStatus) {
+    isAuthorized.value = newStatus;
+  }
+
+  void updateGroupAuthorizationStatus(bool newStatus) {
+    isLeader.value = newStatus;
+  }
+}
+
+class TaskController extends GetxController {
+  var shouldRefresh = false.obs;
+
+  void setShouldRefresh(bool value) {
+    shouldRefresh.value = value;
   }
 }

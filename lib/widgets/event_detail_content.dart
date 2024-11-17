@@ -5,6 +5,8 @@ import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EventDetailsContent extends StatelessWidget {
+  const EventDetailsContent({super.key});
+
   @override
   Widget build(BuildContext context) {
     final event = Provider.of<Event>(context);
@@ -16,7 +18,7 @@ class EventDetailsContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SizedBox(height: 100),
+          const SizedBox(height: 100),
 
           // Event Name with custom text style and shadows for readability
           Padding(
@@ -28,7 +30,7 @@ class EventDetailsContent extends StatelessWidget {
                 fontSize: screenHeight * 0.03,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
-                shadows: [
+                shadows: const [
                   Shadow(
                     offset: Offset(1, 1),
                     color: Colors.black26,
@@ -39,7 +41,7 @@ class EventDetailsContent extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
 
           // Status row with custom padding
           Padding(
@@ -57,7 +59,7 @@ class EventDetailsContent extends StatelessWidget {
                   ),
                   Icon(Icons.star,
                       color: Colors.white, size: screenHeight * 0.02),
-                  SizedBox(width: 5),
+                  const SizedBox(width: 5),
                   Text(
                     event.status!,
                     style: TextStyle(
@@ -88,12 +90,11 @@ class EventDetailsContent extends StatelessWidget {
                         style: TextStyle(
                           fontSize: screenHeight * 0.02,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
                         ),
                       ),
                       Text(
                         textAlign: TextAlign.right,
-                        event.isPublic!
+                        event.isPublic ?? true
                             ? AppLocalizations.of(context)!.public
                             : AppLocalizations.of(context)!.private,
                         style: TextStyle(
@@ -141,7 +142,6 @@ class EventDetailsContent extends StatelessWidget {
                   style: TextStyle(
                     fontSize: screenHeight * 0.02,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
                   ),
                 ),
                 Text(
@@ -171,7 +171,6 @@ class EventDetailsContent extends StatelessWidget {
             children: [
               Icon(
                 Icons.event,
-                color: const Color(0xFF6B4E71),
                 size: screenHeight * 0.025,
               ),
               SizedBox(width: screenHeight * 0.01),
@@ -179,7 +178,6 @@ class EventDetailsContent extends StatelessWidget {
                 "$label:",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF6B4E71),
                   fontSize: screenHeight * 0.02,
                 ),
               ),

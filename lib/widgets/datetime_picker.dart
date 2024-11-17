@@ -31,9 +31,9 @@ class _DatePickerFieldState extends State<DatePickerField> {
 
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    ThemeData pickerTheme = isDarkMode
+    ThemeData pickerTheme = isDark
         ? ThemeData.dark().copyWith(
             colorScheme: ColorScheme.dark(
               primary: Colors.teal,
@@ -56,10 +56,28 @@ class _DatePickerFieldState extends State<DatePickerField> {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
+          color: isDark ? Colors.black : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10.0),
+          border: isDark
+              ? Border.all(
+                  color:
+                      Colors.grey.withOpacity(0.3), // Border color in dark mode
+                  width: 1, // Border width
+                )
+              : null, // No border in light mode
+          boxShadow: !isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.grey
+                        .withOpacity(0.2), // Shadow color in light mode
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: Offset(-2, 2), // Shadow on left and bottom
+                  ),
+                ]
+              : [], // No shadow in dark mode
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        padding: const EdgeInsets.only(left: 20.0),
         child: TextFormField(
           readOnly: true,
           controller: _controller,
@@ -91,6 +109,14 @@ class _DatePickerFieldState extends State<DatePickerField> {
             border: InputBorder.none,
             labelText: widget.label,
             hintText: widget.hintText,
+            suffixIcon: _controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _controller.clear();
+                    },
+                  )
+                : null,
           ),
         ),
       ),
@@ -187,6 +213,14 @@ class _TimePickerFieldState extends State<TimePickerField> {
             border: InputBorder.none,
             labelText: widget.label,
             hintText: widget.hintText,
+            suffixIcon: _controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _controller.clear();
+                    },
+                  )
+                : null,
           ),
         ),
       ),

@@ -3,7 +3,7 @@ import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/controller/controller.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/widgets/profile_menu_widget.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 

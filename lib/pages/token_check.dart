@@ -6,8 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TokenCheckPage extends StatelessWidget {
   final bool isTokenExpired;
-  const TokenCheckPage({Key? key, required this.isTokenExpired})
-      : super(key: key);
+  const TokenCheckPage({super.key, required this.isTokenExpired});
 
   @override
   Widget build(BuildContext context) {

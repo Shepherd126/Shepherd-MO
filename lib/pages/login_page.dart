@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/models/auth.dart';
 import 'package:shepherd_mo/pages/home_page.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/auth_input_field.dart';
 import 'package:shepherd_mo/widgets/gradient_text.dart';
@@ -293,14 +293,12 @@ class _LoginPageState extends State<LoginPage> {
       },
       body: jsonEncode(requestModel),
     );
-    print(jsonEncode(requestModel));
 
     final responseData = json.decode(response.body);
 
     if (response.statusCode == 200 && responseData['success'] == true) {
       // Parse the response to the LoginResponseModel
       final loginResponse = LoginResponseModel.fromJson(responseData);
-      print(loginResponse);
 
       // Show success snackbar
       showToast("Login Successful");
@@ -310,6 +308,10 @@ class _LoginPageState extends State<LoginPage> {
       // Save user information to SharedPreferences
       if (loginResponse.user != null) {
         prefs.setString('loginInfo', jsonEncode(loginResponse.user));
+      }
+      if (loginResponse.listGroupRole != null) {
+        prefs.setString(
+            'loginUserGroups', jsonEncode(loginResponse.listGroupRole));
       }
 
       // Navigate to HomePage

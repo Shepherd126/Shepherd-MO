@@ -5,7 +5,8 @@ class TaskCard extends StatefulWidget {
   final String description;
   final String? status; // Optional status with default as null
 
-  const TaskCard({super.key, 
+  const TaskCard({
+    super.key,
     required this.title,
     required this.description,
     this.status,

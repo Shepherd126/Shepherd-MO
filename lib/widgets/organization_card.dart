@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:marquee/marquee.dart';
 import 'package:shepherd_mo/widgets/custom_marquee.dart';
 
 class OrganizationCard extends StatefulWidget {
@@ -27,9 +26,9 @@ class _OrganizationCardState extends State<OrganizationCard> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    final localizations = AppLocalizations.of(context);
-    final membersText = localizations?.members ?? 'Members';
-    final detailsText = localizations?.details ?? 'Details';
+    final localizations = AppLocalizations.of(context)!;
+    final membersText = localizations.member ?? localizations.noData;
+    final detailsText = localizations.details ?? localizations.noData;
 
     double calculateTextWidth(String text, TextStyle style) {
       final TextPainter textPainter = TextPainter(
@@ -58,7 +57,7 @@ class _OrganizationCardState extends State<OrganizationCard> {
           );
 
     return Padding(
-      padding: EdgeInsets.only(right: screenWidth * 0.05),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Container(
         width: screenWidth * 0.5,
         padding: EdgeInsets.all(screenWidth * 0.03),
@@ -75,7 +74,7 @@ class _OrganizationCardState extends State<OrganizationCard> {
               '${widget.membersCount} $membersText',
               style: const TextStyle(color: Colors.black),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: screenHeight * 0.02),
             ElevatedButton(
               onPressed: widget.onDetailsPressed,
               style: ElevatedButton.styleFrom(

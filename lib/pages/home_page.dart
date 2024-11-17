@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -8,26 +11,29 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/models/activity.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group.dart';
-import 'package:shepherd_mo/models/task.dart';
+import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/user.dart';
-import 'package:shepherd_mo/pages/event_detail.dart';
+import 'package:shepherd_mo/pages/group_members_page.dart';
 import 'package:shepherd_mo/pages/leader/create_event.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
 import 'package:shepherd_mo/pages/settings_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/activity_card.dart';
-import 'package:shepherd_mo/widgets/gradient_text.dart';
+import 'package:shepherd_mo/widgets/custom_appbar.dart';
+import 'package:shepherd_mo/widgets/empty_data.dart';
+import 'package:shepherd_mo/widgets/event_card.dart';
 import 'package:shepherd_mo/widgets/organization_card.dart';
 import 'package:shepherd_mo/widgets/profile_menu_widget.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
+import 'package:shepherd_mo/widgets/upcoming_card.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
@@ -57,6 +63,7 @@ class _HomeState extends State<HomePage> {
   ];
 
   late List<GlobalKey<NavigatorState>> navigatorKeys;
+  Timer? _roleUpdateTimer;
 
   void _onTabTapped(int index) {
     if (controller.selectedIndex.value == index) {
@@ -68,6 +75,7 @@ class _HomeState extends State<HomePage> {
 
   @override
   void dispose() {
+    _roleUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -78,6 +86,41 @@ class _HomeState extends State<HomePage> {
       tabs.length,
       (index) => GlobalKey<NavigatorState>(),
     );
+    _startRoleUpdateTaskIfLoggedIn();
+  }
+
+  Future<void> _startRoleUpdateTaskIfLoggedIn() async {
+    bool loggedIn = await isUserLoggedIn();
+    ApiService apiService = ApiService();
+
+    if (loggedIn) {
+      // Fetch and update roles immediately
+      await apiService.fetchAndCompareGroupRoles(null);
+      await _updateAuthorizationStatus();
+
+      // Set up periodic task every 5 seconds
+      _roleUpdateTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
+        await apiService.fetchAndCompareGroupRoles(null);
+        await _updateAuthorizationStatus();
+        print('Fetched roles');
+      });
+    }
+  }
+
+  Future<void> _updateAuthorizationStatus() async {
+    bool isAuthorized = await checkUserRoles();
+    bool isLeader = await checkGroupUserRoles();
+    print(isAuthorized);
+    print(isLeader);
+    Get.find<AuthorizationController>().updateAuthorizationStatus(isAuthorized);
+    Get.find<AuthorizationController>()
+        .updateGroupAuthorizationStatus(isLeader);
+  }
+
+  Future<bool> isUserLoggedIn() async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    return token != null;
   }
 
   @override
@@ -88,78 +131,13 @@ class _HomeState extends State<HomePage> {
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
 
     return Obx(
       () => Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.grey.shade300,
-          forceMaterialTransparency: true,
-          automaticallyImplyLeading: false,
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 1),
-              child: Stack(
-                children: <Widget>[
-                  SizedBox(
-                    width: screenWidth * 0.15,
-                    height: screenWidth * 0.15,
-                    child: IconButton(
-                      onPressed: () {
-                        // Handle notification button press
-                      },
-                      icon: Icon(
-                        Icons.notifications_none,
-                        size: screenWidth * 0.075,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 13,
-                    top: 12,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      constraints: BoxConstraints(
-                        minWidth: screenWidth * 0.035,
-                        minHeight: screenWidth * 0.035,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          title: Row(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
-                child: Image.asset(
-                  'assets/images/shepherd.png',
-                  scale: screenHeight * 0.015,
-                ),
-              ),
-              GradientText(
-                'Shepherd',
-                style: TextStyle(
-                  fontSize: screenWidth * 0.08,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber[800],
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  stops: const [0.2, 0.8],
-                  colors: [
-                    Colors.orange.shade900,
-                    Colors.orange.shade600,
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        appBar: CustomAppBar(
+            screenWidth: MediaQuery.of(context).size.width,
+            screenHeight: MediaQuery.of(context).size.height),
         body: IndexedStack(
           index: controller.selectedIndex.value,
           children: List.generate(
@@ -180,7 +158,7 @@ class _HomeState extends State<HomePage> {
             GButton(
               icon: Icons.home,
               iconActiveColor: const Color(0xFFEEC05C),
-              text: AppLocalizations.of(context)!.home,
+              text: localizations.home,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
@@ -189,16 +167,16 @@ class _HomeState extends State<HomePage> {
             GButton(
               icon: Icons.chat,
               iconActiveColor: const Color(0xFFEEC05C),
-              text: AppLocalizations.of(context)!.message,
+              text: localizations.message,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
               ),
             ),
             GButton(
-              icon: Icons.schedule,
+              icon: Icons.event,
               iconActiveColor: const Color(0xFFEEC05C),
-              text: AppLocalizations.of(context)!.schedule,
+              text: localizations.event,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
@@ -207,7 +185,7 @@ class _HomeState extends State<HomePage> {
             GButton(
               icon: Icons.wysiwyg,
               iconActiveColor: const Color(0xFFEEC05C),
-              text: AppLocalizations.of(context)!.activity,
+              text: localizations.activity,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
@@ -216,7 +194,7 @@ class _HomeState extends State<HomePage> {
             GButton(
               icon: Icons.menu,
               iconActiveColor: const Color(0xFFEEC05C),
-              text: AppLocalizations.of(context)!.menu,
+              text: localizations.menu,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
@@ -305,7 +283,7 @@ class _HomeTabState extends State<HomeTab> {
       return await apiService.fetchGroups(
         searchKey: '',
         pageNumber: 1,
-        pageSize: 5,
+        pageSize: 20,
         userId: loginInfo!.id,
       );
     } finally {
@@ -348,6 +326,7 @@ class _HomeTabState extends State<HomeTab> {
     final bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -359,8 +338,9 @@ class _HomeTabState extends State<HomeTab> {
                 alignment: Alignment.topLeft,
                 child: Text(
                   greetingMessage,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: screenHeight * 0.025,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -368,7 +348,7 @@ class _HomeTabState extends State<HomeTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    AppLocalizations.of(context)?.group ?? 'Group',
+                    localizations.group ?? 'Group',
                     style: TextStyle(
                       fontSize: screenHeight * 0.03,
                       fontWeight: FontWeight.bold,
@@ -398,13 +378,19 @@ class _HomeTabState extends State<HomeTab> {
                             Align(
                                 alignment: Alignment.topLeft,
                                 child: Text(
-                                    'Bạn đang trong ${groups.length} đoàn thể')),
+                                    'Bạn đang ở trong ${groups.length} đoàn thể')),
                             SizedBox(height: screenHeight * 0.02),
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
-                                children: groups.map((group) {
-                                  final cardColor = group.priority
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: groups.asMap().entries.map((entry) {
+                                  int index = entry.key;
+                                  var group = entry.value;
+
+                                  // Set color based on index
+                                  final cardColor = index % 2 == 0
                                       ? Colors.lightBlue.shade200
                                       : Colors.purple.shade200;
 
@@ -416,6 +402,10 @@ class _HomeTabState extends State<HomeTab> {
                                     onDetailsPressed: () {
                                       print(
                                           "Details for ${group.groupName} pressed");
+                                      Get.to(() => GroupDetail(group: group),
+                                          id: 0,
+                                          transition:
+                                              Transition.rightToLeftWithFade);
                                     },
                                   );
                                 }).toList(),
@@ -428,11 +418,35 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                   SizedBox(height: screenHeight * 0.03),
                   Text(
-                    AppLocalizations.of(context)!.upcomingEvent,
+                    "${localizations.event} & ${localizations.activity}",
                     style: TextStyle(
                       fontSize: screenHeight * 0.03,
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      UpcomingCard(
+                        icon: Icon(Icons.event,
+                            size: screenHeight * 0.09, color: Colors.black),
+                        color: const Color(0xFFEEC05C),
+                        title: localizations.upcomingEvents,
+                        onCardPressed: () {
+                          //View all Upcoming
+                        },
+                      ),
+                      UpcomingCard(
+                        icon: Icon(Icons.wysiwyg,
+                            size: screenHeight * 0.09, color: Colors.black),
+                        color: const Color(0xFFEEC05C),
+                        title: localizations.upcomingActivities,
+                        onCardPressed: () {
+                          //View all Upcoming
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -487,7 +501,9 @@ class _ScheduleTabState extends State<ScheduleTab> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   bool headerTappedCalled = false;
 
-  final LocaleController localeController = Get.find();
+  final localeController = Get.find<LocaleController>();
+  final authorizationController = Get.find<AuthorizationController>();
+
   bool isLoading = true;
   Map<DateTime, List<Event>> eventsByDate = {};
   List<Event> selectedEvents = [];
@@ -498,8 +514,8 @@ class _ScheduleTabState extends State<ScheduleTab> {
     });
     try {
       final apiService = ApiService();
-      eventsByDate = await apiService.fetchEventsCalendar(
-          focusedDay.toString(), "", 1, "false", "false");
+      eventsByDate = await apiService.fetchEventsCalendar(focusedDay.toString(),
+          "", _calendarFormat == CalendarFormat.week ? 0 : 1, "false", "false");
     } finally {
       setState(() {
         isLoading = false;
@@ -524,18 +540,17 @@ class _ScheduleTabState extends State<ScheduleTab> {
           DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
 
       selectedEvents = eventsByDate[date] ?? [];
-      print(selectedEvents);
     });
   }
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('vi');
     fetchEvents();
     _updateSelectedDayEvents();
   }
 
+  @override
   Widget build(BuildContext context) {
     return ProgressHUD(
         inAsyncCall: isLoading, opacity: 0.3, child: _uiSetup(context));
@@ -548,11 +563,10 @@ class _ScheduleTabState extends State<ScheduleTab> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
-    bool isLeader = true;
-    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      floatingActionButton: isLeader
+      floatingActionButton: authorizationController.isAuthorized.value
           ? FloatingActionButton(
               heroTag: 'schedule',
               onPressed: () {
@@ -568,7 +582,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         title: Text(
-          AppLocalizations.of(context)!.event,
+          localizations.event,
           style: Theme.of(context).textTheme.headlineMedium,
         ),
       ),
@@ -645,6 +659,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                       _calendarFormat = format;
                       focusedDay = selectedDay;
                     });
+                    fetchEvents();
                   }
                 },
                 // Calendar builders to customize markers
@@ -652,8 +667,8 @@ class _ScheduleTabState extends State<ScheduleTab> {
                   markerBuilder: (context, day, events) {
                     if (events.isNotEmpty) {
                       return Container(
-                        width: 15,
-                        height: 15,
+                        width: screenHeight * 0.021,
+                        height: screenHeight * 0.021,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.red[700],
@@ -661,8 +676,10 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         ),
                         child: Text(
                           '${events.length}',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: screenHeight * 0.011,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
@@ -682,8 +699,8 @@ class _ScheduleTabState extends State<ScheduleTab> {
                     setState(() {
                       selectedDay = today;
                       focusedDay = today;
-                      _updateSelectedDayEvents();
                     });
+                    fetchEvents();
                   }
                 },
 
@@ -699,7 +716,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
             ),
             Expanded(
               child: selectedEvents.isEmpty
-                  ? Center(child: Text(AppLocalizations.of(context)!.noEvent))
+                  ? EmptyData(message: localizations.noEvent)
                   : ListView.builder(
                       itemCount: selectedEvents.length,
                       itemBuilder: (context, index) {
@@ -707,118 +724,11 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               vertical: 4.0, horizontal: 8.0),
-                          child: Card(
-                            elevation: 2.0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ExpansionTile(
-                              title: Text(
-                                event.eventName!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: screenHeight * 0.019,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.event, size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
-                                          "${AppLocalizations.of(context)!.start}: ${DateFormat('dd/MM/yyyy').format(event.fromDate!)} | ${DateFormat('HH:mm').format(event.fromDate!)}"),
-                                    ],
-                                  ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.event_available, size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
-                                          "${AppLocalizations.of(context)!.end}: ${DateFormat('dd/MM/yyyy').format(event.toDate!)} | ${DateFormat('HH:mm').format(event.toDate!)}"),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              leading:
-                                  const Icon(Icons.event, color: Colors.orange),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0, vertical: 8.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${event.description}",
-                                        style: TextStyle(
-                                          color: isDark
-                                              ? Colors.grey[300]
-                                              : Colors.grey[700],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "Status: ${event.status}",
-                                        style: TextStyle(color: Colors.blue),
-                                      ),
-                                      if (event.isPublic != null)
-                                        Text("Public: ${event.isPublic}"),
-                                      if (event.totalCost != null)
-                                        Text("Total Cost: ${event.totalCost}"),
-                                      if (event.approvedBy != null)
-                                        Text(
-                                            "Approved By: ${event.approvedBy}"),
-                                      if (event.approvalDate != null)
-                                        Text(
-                                            "Approval Date: ${DateFormat('MMM d, yyyy').format(event.approvalDate!)}"),
-                                      // Action buttons
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Get.to(
-                                                  () => EventDetailsPage(
-                                                      eventId: event.id!),
-                                                  id: 2,
-                                                  transition: Transition
-                                                      .rightToLeftWithFade);
-                                            },
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .details),
-                                          ),
-                                          isLeader
-                                              ? Row(
-                                                  children: [
-                                                    SizedBox(
-                                                        width:
-                                                            screenWidth * 0.02),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        // Handle edit logic
-                                                      },
-                                                      child: Text(
-                                                          AppLocalizations.of(
-                                                                  context)!
-                                                              .edit),
-                                                    )
-                                                  ],
-                                                )
-                                              : SizedBox.shrink()
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          child: EventCard(
+                              event: event,
+                              screenHeight: screenHeight,
+                              isDark: isDark,
+                              screenWidth: screenWidth),
                         );
                       },
                     ),
@@ -839,148 +749,231 @@ class ActivitiesTab extends StatefulWidget {
 
 class _ActivitiesTabState extends State<ActivitiesTab> {
   String? selectedOrganization;
-  final List<String> status = ['To Do', 'In Progress', 'Review', 'Done'];
   int selectedIndex = -1;
   DateTime today = DateTime.now();
   DateTime selectedDay = DateTime.now();
   DateTime focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
+  bool isLoading = true;
+  Map<DateTime, List<Activity>> activitiesByDate = {};
+  List<Activity> selectedActivities = [];
   final LocaleController localeController = Get.find<LocaleController>();
-  bool isLeader = true;
+  final authorizationController = Get.find<AuthorizationController>();
 
-  final List<String> organizations = [
-    'Ban Thường Vụ',
-    'Ban Ca Đoàn',
-    'Ban Tương Tế',
-    'Ban Phụng Vụ',
-  ];
-
-  final List<Map<String, dynamic>> statusList = [
-    {
-      'label': 'To Do',
-      'count': 45,
-      'backgroundColor': Colors.blue,
-      'labelColor': Colors.black,
-      'countBackgroundColor': Colors.white,
-      'countTextColor': Colors.black
-    },
-    {
-      'label': 'In Progress',
-      'count': 10,
-      'backgroundColor': Colors.green,
-      'labelColor': Colors.black,
-      'countBackgroundColor': Colors.white,
-      'countTextColor': Colors.black
-    },
-    {
-      'label': 'In Review',
-      'count': 5,
-      'backgroundColor': Colors.orange,
-      'labelColor': Colors.black,
-      'countBackgroundColor': Colors.white,
-      'countTextColor': Colors.black
-    },
-    {
-      'label': 'Done',
-      'count': 3,
-      'backgroundColor': Colors.grey,
-      'labelColor': Colors.black,
-      'countBackgroundColor': Colors.white,
-      'countTextColor': Colors.black
-    },
-  ];
-
+  Future<List<GroupRole>>? userGroups;
+  User? loginInfo;
   void _onDaySelected(DateTime day, DateTime focusedDay) {
     if (mounted) {
       setState(() {
         selectedDay = day;
+        this.focusedDay = focusedDay;
+        _updateSelectedDayActivities();
       });
     }
   }
 
-  void onTapActivity() {
-    Get.to(() => isLeader ? const TaskManagementPage() : const TaskPage(),
-        id: 3, transition: Transition.rightToLeftWithFade);
+  Future<void> initializeData() async {
+    setState(() {
+      isLoading = true;
+    });
+    userGroups = loadUserGroupInfo();
+  }
+
+  Future<List<Group>> fetchGroups() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      // Assuming the ApiService fetchGroups function requires parameters
+      final apiService = ApiService();
+      return await apiService.fetchGroups(
+        searchKey: '',
+        pageNumber: 1,
+        pageSize: 20,
+        userId: loginInfo!.id,
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<List<GroupRole>> loadUserGroupInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userGroups = prefs.getString("loginUserGroups");
+    List<GroupRole> loginUserGroupsList = [];
+    if (userGroups != null) {
+      List<dynamic> decodedJson = jsonDecode(userGroups);
+      loginUserGroupsList = decodedJson
+          .map((item) => GroupRole.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return loginUserGroupsList;
+  }
+
+  Future<void> loadUserInfo() async {
+    final user = await getLoginInfoFromPrefs();
+
+    if (user != null) {
+      setState(() {
+        loginInfo = user;
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> fetchActivities() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      final apiService = ApiService();
+      activitiesByDate = await apiService.fetchActivitiesCalendar(
+          focusedDay.toString(),
+          selectedOrganization,
+          _calendarFormat == CalendarFormat.week ? 0 : 1,
+          "true",
+          "false");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+      _updateSelectedDayActivities();
+    }
+  }
+
+  void _updateSelectedDayActivities() {
+    setState(() {
+      final date =
+          DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+
+      selectedActivities = activitiesByDate[date] ?? [];
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initializeData();
+    fetchActivities();
   }
 
   @override
   Widget build(BuildContext context) {
+    return ProgressHUD(
+        inAsyncCall: isLoading, opacity: 0.3, child: _uiSetup(context));
+  }
+
+  Widget _uiSetup(BuildContext context) {
     final uiProvider = Provider.of<UIProvider>(context);
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
-      floatingActionButton: isLeader
-          ? FloatingActionButton(
-              heroTag: 'activity',
-              onPressed: () {
-                // Navigating
-              },
-              backgroundColor: Colors.orange,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add),
-            )
-          : null,
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
-          AppLocalizations.of(context)!.activity,
+          localizations.activity,
           style: Theme.of(context).textTheme.headlineMedium,
         ),
-        forceMaterialTransparency: true,
-        elevation: 0, // Remove the shadow effect
+        elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
       ),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
           children: [
-            // Dropdown Menu
+            // Dropdown Menu with FutureBuilder
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.blueAccent, width: 2),
+                border: Border.all(
+                    color:
+                        isDark ? Colors.orangeAccent : Colors.orange.shade600,
+                    width: 2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  hint: const Text("Choose your organization"),
-                  value: selectedOrganization,
-                  isExpanded: true,
-                  icon: const Icon(Icons.arrow_drop_down,
-                      color: Colors.blueAccent),
-                  iconSize: 30,
-                  dropdownColor: Colors.white,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  items: organizations.map((String organization) {
-                    return DropdownMenuItem<String>(
-                      value: organization,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.group, color: Colors.blue),
-                          const SizedBox(width: 10),
-                          Text(organization),
+              child: FutureBuilder<List<GroupRole>>(
+                future: userGroups, // Replace with your method to fetch groups
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Text(localizations.noParticipatedGroup);
+                  } else {
+                    final userGroups = snapshot.data!;
+                    return DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        hint: Text(localizations.allCurrentlyUserOrganizations),
+                        value: selectedOrganization,
+                        isExpanded: true,
+                        focusColor: Colors.orange,
+                        icon: const Icon(Icons.arrow_drop_down),
+                        iconSize: screenHeight * 0.025,
+                        dropdownColor: isDark ? Colors.black : Colors.white,
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.016,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        items: [
+                          DropdownMenuItem<String>(
+                            value: "All", // Special value for "All" option
+                            child: Row(
+                              children: [
+                                const Icon(Icons.group),
+                                SizedBox(width: screenWidth * 0.03),
+                                Text(
+                                  localizations.allCurrentlyUserOrganizations,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...userGroups.map((GroupRole userGroup) {
+                            return DropdownMenuItem<String>(
+                              value: userGroup.groupId,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.group),
+                                  SizedBox(width: screenWidth * 0.03),
+                                  Text(
+                                    userGroup.groupName,
+                                    style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
                         ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedOrganization =
+                                newValue == "All" ? null : newValue;
+                            isLoading = true;
+                          });
+                          fetchActivities();
+                        },
                       ),
                     );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedOrganization = newValue;
-                    });
-                  },
-                ),
+                  }
+                },
               ),
             ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-            // Horizontal scrolling
+            SizedBox(height: screenHeight * 0.02),
+            // Horizontal scrolling with TableCalendar (or other widget)
             Obx(
               () => TableCalendar(
                 locale: localeController.currentLocale.languageCode,
@@ -1016,6 +1009,10 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                     }
                   },
                 ),
+                eventLoader: (day) {
+                  final date = DateTime(day.year, day.month, day.day);
+                  return activitiesByDate[date] ?? [];
+                },
 
                 // Customizing Calendar Appearance
                 calendarStyle: CalendarStyle(
@@ -1046,9 +1043,9 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                       _calendarFormat = format;
                       focusedDay = selectedDay;
                     });
+                    fetchActivities();
                   }
                 },
-
                 // Calendar builders to customize markers
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, day, events) {
@@ -1057,14 +1054,17 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                         width: 15,
                         height: 15,
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.orange,
+                        decoration: BoxDecoration(
+                          color: Colors.red[700],
                           shape: BoxShape.circle,
                         ),
                         child: Text(
                           '${events.length}',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black,
+                            fontSize: screenHeight * 0.011,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
                         ),
                       );
@@ -1084,6 +1084,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                       selectedDay = today;
                       focusedDay = today;
                     });
+                    fetchActivities();
                   }
                 },
 
@@ -1094,48 +1095,106 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                     focusedDay =
                         newFocusedDay; // Update the focused day without affecting selectedDay
                   });
+                  fetchActivities();
                 },
               ),
             ),
 
             SizedBox(height: MediaQuery.of(context).size.height * 0.02),
             // Expanded ListView for Activities with no glow
+
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  ActivityCard(
-                    title: 'Activity 1',
-                    startDate: '23/10/2024',
-                    endDate: '23/10/2024',
-                    status: 'Completed',
-                    onTap: () {
-                      onTapActivity();
-                    },
-                  ),
-                  ActivityCard(
-                    title: 'Activity 2',
-                    startDate: '24/10/2024',
-                    endDate: '25/10/2024',
-                    status: 'In Progress',
-                    onTap: onTapActivity,
-                  ),
-                  ActivityCard(
-                    title: 'Activity 3',
-                    startDate: '25/10/2024',
-                    endDate: '26/10/2024',
-                    status: 'Pending',
-                    onTap: onTapActivity,
-                  ),
-                  ActivityCard(
-                    title: 'Activity 4',
-                    startDate: '28/10/2024',
-                    endDate: '29/10/2024',
-                    status: 'Completed',
-                    onTap: onTapActivity,
-                  ),
-                ],
-              ),
+              child: selectedActivities.isEmpty
+                  ? EmptyData(message: localizations.noActivity)
+                  : ListView.builder(
+                      itemCount: selectedActivities.length,
+                      itemBuilder: (context, index) {
+                        final activity = selectedActivities[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0, horizontal: 8.0),
+                          child: ActivityCard(
+                            title: activity.activityName!,
+                            startDate: activity.startTime!,
+                            endDate: activity.endTime!,
+                            status: activity.status!,
+                            onTap: () async {
+                              // Check if an organization is selected
+                              if (selectedOrganization == null ||
+                                  selectedOrganization!.isEmpty) {
+                                // Show a dialog prompting the user to select an organization
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text("Select Organization"),
+                                      content: Text(
+                                          "Please choose an organization to continue."),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: Text("OK"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                                return; // Exit the onTap function if no organization is selected
+                              }
+
+                              try {
+                                // Await the userGroups Future to get the actual list
+                                final userGroupList = await userGroups;
+
+                                // Check the user's role in the selected organization
+                                final userGroup = userGroupList!.firstWhere(
+                                  (group) =>
+                                      group.groupId == selectedOrganization,
+                                );
+
+                                final isLeader = userGroup.roleName ==
+                                        "Trưởng nhóm" ||
+                                    userGroup.roleName ==
+                                        "Thành viên"; // Adjust role name check as needed
+                                Get.to(
+                                  () => isLeader
+                                      ? TaskManagementPage(
+                                          activityId: activity.id,
+                                          activityName: activity.activityName!,
+                                          group: userGroup)
+                                      : TaskPage(
+                                          activityId: activity.id,
+                                          activityName: activity.activityName!,
+                                          group: userGroup),
+                                  id: 3,
+                                  transition: Transition.rightToLeftWithFade,
+                                );
+                              } catch (e) {
+                                // Handle potential errors
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text("Error"),
+                                      content: Text(
+                                          "Failed to load user groups: $e"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: Text("OK"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -1251,6 +1310,8 @@ class _MenuTabState extends State<MenuTab> {
                       await SharedPreferences.getInstance();
                   await storage.delete(key: 'token');
                   prefs.remove('loginInfo');
+                  prefs.remove('loginUserGroups');
+
                   showToast("Logged Out Successfully");
                   Get.off(const LoginPage());
                 },

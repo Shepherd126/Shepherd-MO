@@ -1,12 +1,34 @@
-import 'package:expandable_text/expandable_text.dart';
 import 'package:flutter/material.dart';
+import 'package:expandable_text/expandable_text.dart';
+import 'package:get/get.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/constant/constant.dart';
+import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/models/activity.dart';
+import 'package:shepherd_mo/models/event.dart';
+import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
-import 'package:shepherd_mo/providers/provider.dart';
+import 'package:shepherd_mo/pages/update_progress.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:shepherd_mo/services/get_login.dart';
+import 'package:shepherd_mo/widgets/empty_data.dart';
+import 'package:shepherd_mo/widgets/end_of_line.dart';
 import 'package:shepherd_mo/widgets/task_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TaskPage extends StatefulWidget {
-  const TaskPage({super.key});
+  final String activityId;
+  final String activityName;
+  final GroupRole group;
+
+  const TaskPage(
+      {super.key,
+      required this.activityId,
+      required this.activityName,
+      required this.group});
 
   @override
   State<TaskPage> createState() => _TaskPageState();
@@ -14,56 +36,124 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPageState extends State<TaskPage> {
   int selectedIndex = 0;
+  final PagingController<int, Task> _pagingController =
+      PagingController(firstPageKey: 1);
+  final int _pageSize = 10;
+  String? eventId;
+  Future<Map<String, dynamic>>? _initialData;
+  final taskController = Get.find<TaskController>();
 
   final List<Map<String, dynamic>> statusList = [
-    {'label': 'All', 'count': 4, 'backgroundColor': Colors.blue},
-    {'label': 'To Do', 'count': 1, 'backgroundColor': Colors.yellow},
-    {'label': 'In Progress', 'count': 1, 'backgroundColor': Colors.blue},
-    {'label': 'In Review', 'count': 1, 'backgroundColor': Colors.orange},
-    {'label': 'Done', 'count': 1, 'backgroundColor': Colors.green},
+    {'label': 'All', 'backgroundColor': Colors.blue},
+    {'label': 'To Do', 'backgroundColor': Colors.yellow},
+    {'label': 'In Progress', 'backgroundColor': Colors.blue},
+    {'label': 'Review', 'backgroundColor': Colors.orange},
+    {'label': 'Done', 'backgroundColor': Colors.green},
   ];
-
-  List<Task> tasks = [
-    Task(
-        title: 'Task 1',
-        description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        status: 'To Do'),
-    Task(
-        title: 'Task 2',
-        description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        status: 'In Progress'),
-    Task(
-        title: 'Task 3',
-        description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        status: 'In Review'),
-    Task(
-        title: 'Task 4',
-        description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        status: 'Done'),
-  ];
-
-  List<Task> filteredTasks = [];
+  List<Task> _allTasks = [];
 
   @override
   void initState() {
-    filterTasks();
     super.initState();
-  }
-
-  void filterTasks() {
-    setState(() {
-      if (selectedIndex == 0) {
-        filteredTasks = tasks; // Show all tasks
-      } else {
-        String selectedStatus = statusList[selectedIndex]['label'];
-        filteredTasks =
-            tasks.where((task) => task.status == selectedStatus).toList();
+    _initialData = fetchData();
+    _pagingController.addPageRequestListener((pageKey) {
+      if (eventId != null) {
+        _fetchTasks(pageKey);
       }
     });
+  }
+
+  Future<Map<String, dynamic>> fetchData() async {
+    ApiService apiService = ApiService();
+    final results =
+        await apiService.fetchActivities(searchKey: widget.activityId) ?? [];
+    final data = results.first;
+
+    setState(() {
+      eventId = data['event']['id'];
+    });
+
+    return {
+      'activity': Activity.fromJson(data),
+      'event': Event.fromJson(data['event']),
+    };
+  }
+
+  Future<void> _fetchTasks(int pageKey) async {
+    final apiService = ApiService();
+    String selectedStatus =
+        selectedIndex == 0 ? '' : statusList[selectedIndex]['label'];
+    final loginInfo = await getLoginInfoFromPrefs();
+
+    try {
+      final newTasks = await apiService.fetchTasks(
+        searchKey: '',
+        pageNumber: pageKey,
+        pageSize: _pageSize,
+        groupId: widget.group.groupId,
+        activityId: widget.activityId,
+        eventId: eventId,
+        userId: loginInfo!.id,
+        status: selectedStatus,
+      );
+
+      if (selectedIndex == 0) {
+        _allTasks = newTasks;
+        _updateTaskCounts();
+      } else {
+        _updateTaskCounts();
+      }
+      final isLastPage = newTasks.length < _pageSize;
+      if (isLastPage) {
+        _pagingController.appendLastPage(newTasks);
+      } else {
+        final nextPageKey = pageKey + 1;
+        _pagingController.appendPage(newTasks, nextPageKey);
+      }
+    } catch (error) {
+      _pagingController.error = error;
+    }
+  }
+
+  void _updateTaskCounts() {
+    final taskCounts = {
+      'All': _allTasks.length,
+      'To Do': _allTasks.where((task) => task.status == 'To Do').length,
+      'In Progress':
+          _allTasks.where((task) => task.status == 'In Progress').length,
+      'Review': _allTasks.where((task) => task.status == 'Review').length,
+      'Done': _allTasks.where((task) => task.status == 'Done').length,
+    };
+
+    setState(() {
+      for (var status in statusList) {
+        status['count'] = taskCounts[status['label']] ?? 0;
+      }
+    });
+  }
+
+  String formatEventDateRange(DateTime? fromDate, DateTime? toDate) {
+    if (fromDate == null || toDate == null) return 'Invalid date range';
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    final timeFormat = DateFormat('HH:mm');
+    final date = dateFormat.format(fromDate);
+    final fromTime = timeFormat.format(fromDate);
+    final toTime = timeFormat.format(toDate);
+    return '$date | $fromTime - $toTime';
+  }
+
+  Future<void> _refreshList() async {
+    _pagingController.refresh();
+  }
+
+  void _filterTasksByStatus() {
+    _pagingController.refresh();
+  }
+
+  @override
+  void dispose() {
+    _pagingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -72,114 +162,178 @@ class _TaskPageState extends State<TaskPage> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
-
+    final localizations = AppLocalizations.of(context)!;
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Tasks',
+          localizations.task,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         centerTitle: true,
+        elevation: 4,
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-        child: Column(
-          children: [
-            // Header Card with Event Details
-            _buildEventHeaderCard(screenWidth, isDark),
-            SizedBox(height: screenHeight * 0.02),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _initialData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final activity = snapshot.data!['activity'] as Activity;
+            final event = snapshot.data!['event'] as Event;
 
-            // Activity Details Section
-            _buildActivityDetails(screenHeight, screenWidth),
-
-            // Section Title
-            Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                child: Text(
-                  'Tasks',
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Event Header Card
+                  _buildEventHeaderCard(
+                    screenWidth,
+                    screenHeight,
+                    isDark,
+                    event,
+                    localizations,
                   ),
-                ),
-              ),
-            ),
 
-            // Filtered Task List
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                itemCount: filteredTasks.length,
-                itemBuilder: (context, index) {
-                  final task = filteredTasks[index];
-                  return TaskCard(
-                    title: task.title,
-                    description: task.description,
-                    status: task.status,
-                  );
-                },
-              ),
-            ),
+                  // Activity Details
+                  _buildActivityDetails(screenHeight, screenWidth, activity,
+                      localizations, isDark),
 
-            // Status Chips Row for Filtering
-            _buildStatusChipsRow(screenWidth, screenHeight),
-          ],
-        ),
+                  // Tasks Section with Heading and Status Chips
+                  Container(
+                    padding: EdgeInsets.only(
+                        top: screenWidth * 0.04,
+                        left: screenWidth * 0.04,
+                        right: screenWidth * 0.04),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey.shade900 : Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTasksHeading(
+                            screenHeight, screenWidth, localizations),
+                        _buildStatusChipsRow(
+                            screenWidth, screenHeight, localizations, isDark),
+                      ],
+                    ),
+                  ),
+
+                  // Expanded Task List to take up remaining height
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.only(
+                        bottom: screenWidth * 0.03,
+                        left: screenWidth * 0.03,
+                        right: screenWidth * 0.03,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade900 : Colors.white,
+                      ),
+                      child: RefreshIndicator(
+                        onRefresh: _refreshList,
+                        child: PagedListView<int, Task>(
+                          pagingController: _pagingController,
+                          builderDelegate: PagedChildBuilderDelegate<Task>(
+                            itemBuilder: (context, task, index) => TaskCard(
+                              title: task.activityName ?? localizations.noData,
+                              description:
+                                  task.description ?? localizations.noData,
+                              status: task.status,
+                            ),
+                            firstPageProgressIndicatorBuilder: (_) =>
+                                const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            newPageProgressIndicatorBuilder: (_) =>
+                                const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            noItemsFoundIndicatorBuilder: (context) =>
+                                EmptyData(message: localizations.noTask),
+                            noMoreItemsIndicatorBuilder: (_) => Padding(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.02),
+                              child: EndOfListWidget(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            return EmptyData(message: localizations.noTask);
+          }
+        },
       ),
     );
   }
 
-  Widget _buildEventHeaderCard(double screenWidth, bool isDark) {
+  Widget _buildEventHeaderCard(double screenWidth, double screenHeight,
+      bool isDark, Event event, AppLocalizations localizations) {
     return Card(
+      color: isDark ? Colors.grey.shade900 : Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(screenWidth * 0.02),
+        borderRadius: BorderRadius.circular(12),
       ),
-      elevation: 5,
+      margin: EdgeInsets.only(bottom: screenHeight * 0.01),
       child: Padding(
         padding: EdgeInsets.all(screenWidth * 0.03),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Project title, time, and status
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Event Name",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                Expanded(
+                  child: Text(
+                    event.eventName ?? localizations.noData,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: screenHeight * 0.02,
                     ),
-                    SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 16),
-                        SizedBox(width: 5),
-                        Text("10:00 am - 12:00 pm"),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-                // Status Chip
                 Chip(
                   label: Text(
-                    "On Going",
-                    style:
-                        TextStyle(color: isDark ? Colors.black : Colors.white),
+                    event.status ?? 'Scheduled',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: screenHeight * 0.016),
                   ),
-                  backgroundColor: Colors.blue.shade400,
-                  side: BorderSide.none,
+                  backgroundColor: _getStatusColor(event.status),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: screenHeight * 0.005),
+            Divider(
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                thickness: 1),
+            SizedBox(height: screenHeight * 0.005),
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 20, color: Colors.blueGrey),
+                SizedBox(width: 8),
+                Text(
+                  formatEventDateRange(event.fromDate, event.toDate),
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.017,
+                    color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -190,28 +344,78 @@ class _TaskPageState extends State<TaskPage> {
     );
   }
 
-  Widget _buildActivityDetails(double screenHeight, double screenWidth) {
-    return Align(
-      alignment: Alignment.topLeft,
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'Scheduled':
+        return Colors.blueAccent;
+      case 'In Progress':
+        return Colors.orangeAccent;
+      case 'Completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildActivityDetails(double screenHeight, double screenWidth,
+      Activity activity, AppLocalizations localizations, bool isDark) {
+    return Card(
+      color: isDark ? Colors.grey.shade900 : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: EdgeInsets.only(bottom: screenHeight * 0.01),
       child: Padding(
         padding: EdgeInsets.all(screenWidth * 0.03),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Activity Name',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: screenHeight * 0.025,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    activity.activityName ?? localizations.noData,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: screenHeight * 0.02,
+                      color: isDark
+                          ? Colors.blueGrey.shade100
+                          : Colors.blueGrey.shade900,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.03,
+                    vertical: screenHeight * 0.005,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Const.primaryGoldenColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    widget.group.groupName,
+                    style: TextStyle(
+                      fontSize: screenHeight * 0.016,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                )
+              ],
             ),
-            const ExpandableText(
-              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-              expandText: 'Show More',
-              collapseText: 'Show Less',
-              linkColor: Colors.blue,
-              animation: true,
-              textScaleFactor: 1.1,
+            SizedBox(height: screenHeight * 0.005),
+            ExpandableText(
+              activity.description ?? localizations.noData,
+              expandText: localizations.showMore,
+              collapseText: localizations.showLess,
+              maxLines: 2,
+              linkColor: Colors.blueAccent,
+              style: TextStyle(
+                fontSize: screenHeight * 0.016,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -219,75 +423,83 @@ class _TaskPageState extends State<TaskPage> {
     );
   }
 
-  Widget _buildStatusChipsRow(double screenWidth, double screenHeight) {
-    double chipSpacing = screenWidth * 0.03;
-    double fontSize = screenWidth * 0.04;
-    double countFontSize = screenWidth * 0.035;
-
+  Widget _buildStatusChipsRow(double screenWidth, double screenHeight,
+      AppLocalizations localizations, bool isDark) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Wrap(
-          spacing: chipSpacing,
+        child: Row(
           children: List<Widget>.generate(
             statusList.length,
             (int index) {
               var status = statusList[index];
-              return ChoiceChip(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      status['label'],
-                      style: TextStyle(
-                        color: selectedIndex == index
-                            ? Colors.white
-                            : Colors.black,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
-                      ),
+              int taskCount = status['count'] ?? 0;
+
+              return Padding(
+                padding: EdgeInsets.only(right: screenWidth * 0.02),
+                child: ChoiceChip(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  showCheckmark: false,
+                  label: Text(
+                    "${status['label']} ($taskCount)", // Display label with count
+                    style: TextStyle(
+                      color:
+                          selectedIndex == index ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w600,
+                      fontSize: screenHeight * 0.017,
                     ),
-                    SizedBox(width: screenWidth * 0.02),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: selectedIndex == index
-                            ? Colors.white.withOpacity(0.5)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${status['count']}',
-                        style: TextStyle(
-                          color: selectedIndex == index
-                              ? Colors.black
-                              : Colors.grey.shade700,
-                          fontSize: countFontSize,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                  selectedColor: status['backgroundColor'],
+                  backgroundColor:
+                      isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                  selected: selectedIndex == index,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      selectedIndex = index;
+                      _filterTasksByStatus();
+                    });
+                  },
                 ),
-                showCheckmark: false,
-                selectedColor: status['backgroundColor'],
-                backgroundColor: Colors.grey.shade300,
-                selected: selectedIndex == index,
-                onSelected: (bool selected) {
-                  setState(() {
-                    selectedIndex = selected ? index : 0;
-                    filterTasks();
-                  });
-                },
               );
             },
-          ).toList(),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTasksHeading(
+      double screenHeight, double screenWidth, AppLocalizations localizations) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          localizations.task,
+          style: TextStyle(
+            fontSize: screenHeight * 0.025,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Get.to(() => UpdateProgress(tasks: _allTasks),
+                id: 3, transition: Transition.rightToLeftWithFade);
+          },
+          style: TextButton.styleFrom(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+          child: Text(
+            localizations.updateProgress,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        )
+      ],
     );
   }
 }
