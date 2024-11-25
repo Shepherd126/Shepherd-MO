@@ -41,7 +41,7 @@ class Task {
       title: json['title'] != null ? json['title'] as String : null,
       description: json['description'] as String?,
       status: json['status'] as String?,
-      cost: json['cost'] != null ? json['cost'].toInt() : null,
+      cost: json['cost']?.toInt(),
       userId: json['userId'] as String?,
       groupUserId: json['groupUserId'] as String?,
       groupId: json['groupId'] as String?,

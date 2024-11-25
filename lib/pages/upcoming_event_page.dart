@@ -11,7 +11,7 @@ import 'package:shepherd_mo/widgets/event_card.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 
 class UpcomingEventPage extends StatefulWidget {
-  const UpcomingEventPage({Key? key}) : super(key: key);
+  const UpcomingEventPage({super.key});
 
   @override
   State<UpcomingEventPage> createState() => _UpcomingEventPageState();

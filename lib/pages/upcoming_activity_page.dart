@@ -15,7 +15,7 @@ import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 
 class UpcomingActivityPage extends StatefulWidget {
-  const UpcomingActivityPage({Key? key}) : super(key: key);
+  const UpcomingActivityPage({super.key});
 
   @override
   State<UpcomingActivityPage> createState() => _UpcomingActivityPageState();

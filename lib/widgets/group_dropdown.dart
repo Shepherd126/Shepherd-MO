@@ -1,10 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/providers/ui_provider.dart';
 
 class GroupDropdown extends StatelessWidget {
   final List<GroupRole> userGroups;
@@ -12,11 +8,11 @@ class GroupDropdown extends StatelessWidget {
   final Function(String?) onChanged;
 
   const GroupDropdown({
-    Key? key,
+    super.key,
     required this.userGroups,
     required this.selectedOrganization,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +71,7 @@ class GroupDropdown extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
           onChanged: onChanged,
         ),

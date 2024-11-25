@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shepherd_mo/formatter/custom_currency_format.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/widgets/activity_expandable.dart';
 
 class EventDetailsContent extends StatelessWidget {
   const EventDetailsContent({super.key});

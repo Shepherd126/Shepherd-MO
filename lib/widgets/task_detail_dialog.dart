@@ -13,9 +13,9 @@ class TaskDetailsDialog extends StatelessWidget {
   final Task task; // Replace 'Task' with your task model class
 
   const TaskDetailsDialog({
-    Key? key,
+    super.key,
     required this.task,
-  }) : super(key: key);
+  });
 
   Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(

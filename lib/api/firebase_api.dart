@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/main.dart';
-import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/route/route.dart';
 
 Future<void> handleBackgroundMessage(RemoteMessage message) async {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +11,6 @@ import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
-import 'package:shepherd_mo/widgets/custom_checkbox.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/widgets/search_member_dialog.dart';

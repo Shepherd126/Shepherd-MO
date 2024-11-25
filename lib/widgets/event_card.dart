@@ -88,8 +88,9 @@ class EventCard extends StatelessWidget {
                       final BottomNavController controller =
                           Get.find<BottomNavController>();
 
-                      if (controller.selectedIndex != 2)
+                      if (controller.selectedIndex != 2) {
                         controller.changeTabIndex(2);
+                      }
                       Get.to(() => EventDetailsPage(eventId: event.id!),
                           id: 2, transition: Transition.rightToLeftWithFade);
                     },
