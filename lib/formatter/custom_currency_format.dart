@@ -52,3 +52,17 @@ class CurrencyFormatter extends TextInputFormatter {
     );
   }
 }
+
+String formatCurrency(int number) {
+  final numberString = number.toString();
+  final buffer = StringBuffer();
+
+  for (int i = 0; i < numberString.length; i++) {
+    if (i > 0 && (numberString.length - i) % 3 == 0) {
+      buffer.write('.'); // Add a dot every three digits from the right
+    }
+    buffer.write(numberString[i]);
+  }
+
+  return buffer.toString();
+}

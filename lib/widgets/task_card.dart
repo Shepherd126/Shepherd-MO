@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+import 'package:shepherd_mo/constant/constant.dart';
+import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
+import 'package:shepherd_mo/models/group_role.dart';
+import 'package:shepherd_mo/models/task.dart';
+import 'package:shepherd_mo/pages/leader/create_task.dart';
+import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 
 class TaskCard extends StatefulWidget {
-  final String title;
-  final String description;
-  final String? status; // Optional status with default as null
+  final Task task;
+  final bool showStatus;
+  final bool isLeader;
+  final String activityId;
+  final String activityName;
+  final GroupRole group;
 
   const TaskCard({
     super.key,
-    required this.title,
-    required this.description,
-    this.status,
+    required this.task,
+    this.showStatus = true, // Defaults to true to show status by default
+    this.isLeader = false,
+    required this.activityId,
+    required this.activityName,
+    required this.group,
   });
 
   @override
@@ -17,48 +34,16 @@ class TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<TaskCard> {
-  String? currentStatus;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize currentStatus to widget's status or null if not provided
-    currentStatus = widget.status;
-  }
-
-  void updateStatus() {
-    setState(() {
-      if (currentStatus == 'To Do') {
-        currentStatus = 'In Progress';
-      } else if (currentStatus == 'In Progress') {
-        currentStatus = 'In Review';
-      } else if (currentStatus == 'In Review') {
-        currentStatus = 'Done';
-      } else if (currentStatus == 'Done') {
-        currentStatus = 'To Do';
-      }
-    });
-  }
-
-  String getButtonText() {
-    switch (currentStatus) {
-      case 'To Do':
-        return 'Mark as In Progress';
-      case 'In Progress':
-        return 'Mark as In Review';
-      case 'In Review':
-        return 'Mark as Done';
-      case 'Done':
-        return 'Reset to To Do';
-      default:
-        return '';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
+    String? taskStatus = getTaskStatus(widget.task.status, localizations);
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: screenHeight * 0.008),
@@ -66,68 +51,141 @@ class _TaskCardState extends State<TaskCard> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
-        tilePadding: EdgeInsets.all(screenHeight * 0.018),
+        tilePadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
         title: Text(
-          widget.title,
-          style: const TextStyle(
-            fontSize: 16,
+          widget.task.title ?? localizations.noData,
+          style: TextStyle(
+            fontSize: screenHeight * 0.0165,
             fontWeight: FontWeight.bold,
           ),
         ),
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+            padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04, vertical: screenHeight * 0.01),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: screenHeight * 0.02),
                 // Description Section
                 Text(
-                  widget.description,
+                  widget.task.description ?? localizations.noData,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
+                    fontSize: screenHeight * 0.0145,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                // Display status and button only if currentStatus is not null
-                if (currentStatus != null)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Status: $currentStatus',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: currentStatus == 'Done'
-                              ? Colors.green
-                              : currentStatus == 'In Progress'
-                                  ? Colors.blue
-                                  : currentStatus == 'In Review'
-                                      ? Colors.orange
-                                      : Colors.redAccent,
-                        ),
-                      ),
+                SizedBox(height: screenHeight * 0.005),
+                // Assigned User Section
+                Text(
+                  widget.task.userName != null
+                      ? '${localizations.assignedTo}: ${widget.task.userName}'
+                      : localizations.notAssignedYet,
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.0125,
+                    fontStyle: widget.task.userName == null
+                        ? FontStyle.italic
+                        : FontStyle.normal,
+                    color: widget.task.userName == null
+                        ? Colors.grey
+                        : Colors.black,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.005),
+                // Display status only if currentStatus is not null and showStatus is true
+                if (widget.task.status != null && widget.showStatus)
+                  Text(
+                    '${localizations.status}: $taskStatus',
+                    style: TextStyle(
+                        fontSize: screenHeight * 0.0125,
+                        fontWeight: FontWeight.bold,
+                        color: _getStatusColor(widget.task.status)),
+                  ),
+                SizedBox(height: screenHeight * 0.005),
+                // Buttons Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (widget.isLeader &&
+                        (widget.task.status == "Bản nháp" ||
+                            widget.task.status == "Đang chờ"))
                       ElevatedButton(
-                        onPressed: updateStatus,
+                        onPressed: () {
+                          // Navigate to edit page or allow editing
+                          Get.to(
+                            () => CreateEditTaskPage(
+                              activityId: widget.activityId,
+                              activityName: widget.activityName,
+                              group: widget.group,
+                              task: widget.task,
+                            ),
+                            id: 3,
+                            transition: Transition.rightToLeftWithFade,
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.blue, // Customize button color
+                          backgroundColor: Colors.blue,
                         ),
                         child: Text(
-                          getButtonText(),
-                          style: const TextStyle(color: Colors.white),
+                          localizations.edit,
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                    ],
-                  ),
+                    SizedBox(width: screenWidth * 0.02),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate to details page or show detailed view
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return TaskDetailsDialog(
+                              task: widget.task, // Pass the task object
+                              // Pass the localizations object
+                            );
+                          },
+                        ).then((_) {
+                          // Cleanup logic when dialog is dismissed
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            final RefreshController refreshController =
+                                Get.find();
+                            refreshController.setShouldRefresh(true);
+                          });
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Const.primaryGoldenColor,
+                      ),
+                      child: Text(
+                        localizations.details,
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'Bản nháp':
+        return Colors.blueGrey.shade200;
+      case 'Đang chờ':
+        return Colors.yellow.shade800;
+      case 'Việc cần làm':
+        return Colors.red.shade400;
+      case 'Đang thực hiện':
+        return Colors.orange.shade400;
+      case 'Quá hạn':
+        return Colors.deepOrange.shade600;
+      case 'Đã hoàn thành':
+        return Colors.green.shade600;
+      default:
+        return Colors.grey.shade300;
+    }
   }
 }

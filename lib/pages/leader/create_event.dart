@@ -347,8 +347,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                       print(formatter.getUnformattedValue()); // 2000.00
                     },
                     onSaved: (input) {
-                      event.totalCost =
-                          formatter.getUnformattedValue().toDouble();
+                      event.totalCost = formatter.getUnformattedValue().toInt();
                     },
                     decoration: InputDecoration(
                       icon: const Icon(

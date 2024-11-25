@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/formatter/custom_currency_format.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/activity_expandable.dart';
 
 class EventDetailsContent extends StatelessWidget {
   const EventDetailsContent({super.key});
@@ -13,19 +15,21 @@ class EventDetailsContent extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final locale = Localizations.localeOf(context).languageCode;
+    final localizations = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const SizedBox(height: 100),
+          SizedBox(height: screenHeight * 0.1),
 
           // Event Name with custom text style and shadows for readability
           Padding(
             padding: EdgeInsets.only(
                 left: screenWidth * 0.24, right: screenWidth * 0.1),
             child: Text(
-              event.eventName ?? "No Name",
+              event.eventName ?? localizations.noData,
               style: TextStyle(
                 fontSize: screenHeight * 0.03,
                 fontWeight: FontWeight.w900,
@@ -59,7 +63,7 @@ class EventDetailsContent extends StatelessWidget {
                   ),
                   Icon(Icons.star,
                       color: Colors.white, size: screenHeight * 0.02),
-                  const SizedBox(width: 5),
+                  SizedBox(width: screenHeight * 0.005),
                   Text(
                     event.status!,
                     style: TextStyle(
@@ -105,7 +109,9 @@ class EventDetailsContent extends StatelessWidget {
                       ),
                     ]),
                 Text(
-                  "\$${event.totalCost}",
+                  event.totalCost != null
+                      ? "${formatCurrency(event.totalCost!)} VND"
+                      : localizations.noData,
                   style: TextStyle(
                     fontSize: screenHeight * 0.017,
                     color: Colors.green[700],
@@ -151,6 +157,52 @@ class EventDetailsContent extends StatelessWidget {
               ],
             ),
           ),
+          // Padding(
+          //   padding: EdgeInsets.all(screenWidth * 0.04),
+          //   child: Column(
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       Text(
+          //         AppLocalizations.of(context)!.activity,
+          //         style: TextStyle(
+          //           fontSize: screenHeight * 0.02,
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          // event.activities!.isEmpty
+          //     ? Center(
+          //         child: Text(
+          //           localizations.noActivity,
+          //           style: TextStyle(
+          //             fontSize: screenHeight * 0.02,
+          //             color: isDark ? Colors.grey[300] : Colors.grey[700],
+          //           ),
+          //         ),
+          //       )
+          //     : SizedBox(
+          //         height:
+          //             screenHeight * 0.4, // Adjust the height as needed
+          //         child: ListView.builder(
+          //           padding: EdgeInsets.all(screenWidth * 0.03),
+          //           itemCount: event.activities!.length,
+          //           itemBuilder: (context, index) {
+          //             final activity = event.activities![index];
+          //             return Padding(
+          //               padding:
+          //                   const EdgeInsets.symmetric(vertical: 8.0),
+          //               child: ActivityExpandableCard(
+          //                 activity: activity,
+          //                 screenHeight: screenHeight,
+          //                 isDark: isDark,
+          //                 screenWidth: screenWidth,
+          //               ),
+          //             );
+          //           },
+          //         ),
+          //       ),
+          //   ],
+          //   // ),
+          // ),
         ],
       ),
     );

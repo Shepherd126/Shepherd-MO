@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:shepherd_mo/models/activity.dart';
 
 class ActivityCard extends StatelessWidget {
-  final String title;
-  final String startDate;
-  final String endDate;
-  final String status;
   final VoidCallback onTap;
+  final Activity activity;
 
   const ActivityCard({
     super.key,
-    required this.title,
-    required this.startDate,
-    required this.endDate,
-    required this.status,
+    required this.activity,
     required this.onTap,
   });
 
@@ -29,6 +25,7 @@ class ActivityCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
+        elevation: 3,
         margin: EdgeInsets.symmetric(vertical: screenHeight * 0.008),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -39,7 +36,7 @@ class ActivityCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTitleRow(screenHeight, screenWidth),
-              SizedBox(height: screenHeight * 0.05),
+              SizedBox(height: screenHeight * 0.01),
               _buildDateRow(localizations, screenWidth, screenHeight),
             ],
           ),
@@ -55,7 +52,7 @@ class ActivityCard extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            title,
+            activity.activityName!,
             style: TextStyle(
               fontSize: screenHeight * 0.016,
               fontWeight: FontWeight.bold,
@@ -65,11 +62,11 @@ class ActivityCard extends StatelessWidget {
         ),
         SizedBox(width: screenWidth * 0.02), // Spacing between title and status
         Text(
-          status,
+          activity.status!,
           style: TextStyle(
             fontSize: screenHeight * 0.014,
             fontWeight: FontWeight.bold,
-            color: _getStatusColor(status),
+            color: _getStatusColor(activity.status!),
           ),
         ),
       ],
@@ -79,42 +76,50 @@ class ActivityCard extends StatelessWidget {
   // Row widget to display start and end dates
   Widget _buildDateRow(
       AppLocalizations localizations, double screenWidth, double screenHeight) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
+        _buildDateInfo(localizations.start, activity.startDate!, screenWidth,
+            screenHeight),
         _buildDateInfo(
-            localizations.start, startDate, screenWidth, screenHeight),
-        _buildDateInfo(localizations.end, endDate, screenWidth, screenHeight),
+            localizations.end, activity.endDate!, screenWidth, screenHeight),
       ],
     );
   }
 
   // Helper widget to display each date info with an icon
   Widget _buildDateInfo(
-      String label, String date, double screenWidth, double screenHeight) {
+      String label, DateTime date, double screenWidth, double screenHeight) {
+    final String formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(date);
+
     return Row(
       children: [
         const Icon(Icons.date_range),
         SizedBox(width: screenWidth * 0.01),
         Text(
-          '$label: $date',
-          style: TextStyle(fontSize: screenHeight * 0.012),
+          '$label: $formattedDate',
+          style: TextStyle(fontSize: screenHeight * 0.014),
         ),
       ],
     );
   }
 
   // Determines the color based on the status
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'Đang duyệt':
+        return Colors.blueGrey.shade200;
+      case 'Được thông qua':
         return Colors.green;
-      case 'in progress':
-        return Colors.orange;
-      case 'pending':
-        return Colors.blue;
+      case 'Không được thông qua':
+        return Colors.red.shade400;
+      case 'Đang diễn ra':
+        return Colors.orangeAccent;
+      case 'Quá hạn':
+        return Colors.red.shade400;
+      case 'Chưa bắt đầu':
+        return Colors.lightBlueAccent;
       default:
-        return Colors.blueGrey;
+        return Colors.grey.shade300;
     }
   }
 }

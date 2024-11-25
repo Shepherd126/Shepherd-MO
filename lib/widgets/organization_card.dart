@@ -40,20 +40,22 @@ class _OrganizationCardState extends State<OrganizationCard> {
       return textPainter.width;
     }
 
-    final double textWidth =
-        calculateTextWidth(widget.title, const TextStyle(fontSize: 30.0));
+    final double textWidth = calculateTextWidth(
+        widget.title, TextStyle(fontSize: screenHeight * 0.025));
     final double textMaxWidth = screenWidth * 0.5;
     final titleWidget = textWidth <= textMaxWidth
         ? Text(
             widget.title,
+            maxLines: 1,
             style: TextStyle(
-              fontSize: screenHeight * 0.025,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+                fontSize: screenHeight * 0.025,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+                overflow: TextOverflow.ellipsis),
           )
         : CustomMarquee(
             text: widget.title,
+            fontSize: screenHeight * 0.025,
           );
 
     return Padding(
@@ -68,7 +70,10 @@ class _OrganizationCardState extends State<OrganizationCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: screenHeight * 0.035, child: titleWidget),
+            SizedBox(
+              height: screenHeight * 0.035,
+              child: titleWidget,
+            ),
             SizedBox(height: screenHeight * 0.01),
             Text(
               '${widget.membersCount} $membersText',

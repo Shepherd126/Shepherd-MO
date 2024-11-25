@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/pages/event_detail.dart';
+import 'package:shepherd_mo/pages/event_detail_page.dart';
 
 class EventCard extends StatelessWidget {
   const EventCard({
@@ -21,8 +22,9 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Card(
-      elevation: 2.0,
+      elevation: 3.0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
@@ -38,17 +40,17 @@ class EventCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.event, size: 16),
-                const SizedBox(width: 4),
+                Icon(Icons.event, size: screenHeight * 0.016),
+                SizedBox(width: screenHeight * 0.004),
                 Text(
                     "${AppLocalizations.of(context)!.start}: ${DateFormat('dd/MM/yyyy').format(event.fromDate!)} | ${DateFormat('HH:mm').format(event.fromDate!)}"),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: screenHeight * 0.004),
             Row(
               children: [
-                const Icon(Icons.event_available, size: 16),
-                const SizedBox(width: 4),
+                Icon(Icons.event_available, size: screenHeight * 0.016),
+                SizedBox(width: screenHeight * 0.004),
                 Text(
                     "${AppLocalizations.of(context)!.end}: ${DateFormat('dd/MM/yyyy').format(event.toDate!)} | ${DateFormat('HH:mm').format(event.toDate!)}"),
               ],
@@ -69,10 +71,13 @@ class EventCard extends StatelessWidget {
                     color: isDark ? Colors.grey[300] : Colors.grey[700],
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: screenHeight * 0.004),
                 Text(
-                  "Status: ${event.status}",
-                  style: const TextStyle(color: Colors.blue),
+                  "${localizations.status}: ${event.status}",
+                  style: TextStyle(
+                    color: _getStatusColor(event.status),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 if (event.isPublic != null) Text("Public: ${event.isPublic}"),
                 // Action buttons
@@ -80,6 +85,11 @@ class EventCard extends StatelessWidget {
                   alignment: Alignment.bottomRight,
                   child: TextButton(
                     onPressed: () {
+                      final BottomNavController controller =
+                          Get.find<BottomNavController>();
+
+                      if (controller.selectedIndex != 2)
+                        controller.changeTabIndex(2);
                       Get.to(() => EventDetailsPage(eventId: event.id!),
                           id: 2, transition: Transition.rightToLeftWithFade);
                     },
@@ -92,5 +102,24 @@ class EventCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'Đang duyệt':
+        return Colors.blueGrey.shade200;
+      case 'Được thông qua':
+        return Colors.green;
+      case 'Không được thông qua':
+        return Colors.red.shade400;
+      case 'Đang diễn ra':
+        return Colors.orangeAccent;
+      case 'Quá hạn':
+        return Colors.red.shade400;
+      case 'Chưa bắt đầu':
+        return Colors.lightBlueAccent;
+      default:
+        return Colors.grey.shade300;
+    }
   }
 }

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EmptyData extends StatelessWidget {
-  const EmptyData({
-    super.key,
-    required this.message,
-  });
+  const EmptyData(
+      {super.key, required this.message, required this.noDataMessage});
 
   final String message;
+  final String noDataMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class EmptyData extends StatelessWidget {
           ),
           SizedBox(height: screenHeight * 0.016), // Space between icon and text
           Text(
-            message,
+            noDataMessage,
             style: TextStyle(
               fontSize: screenHeight * 0.016,
               fontWeight: FontWeight.w600,
@@ -37,7 +36,7 @@ class EmptyData extends StatelessWidget {
 
           SizedBox(height: screenHeight * 0.008),
           Text(
-            localizations.takeABreak,
+            message,
             style: TextStyle(
               fontSize: screenHeight * 0.013,
               fontStyle: FontStyle.italic,

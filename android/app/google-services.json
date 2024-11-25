@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1047331650888",
+    "project_id": "shepherd-1f1c9",
+    "storage_bucket": "shepherd-1f1c9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047331650888:android:797923b3a2246a26ed477d",
+        "android_client_info": {
+          "package_name": "com.example.shepherd_mo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1047331650888-gu7sa30tj9d2n69ga9vrjflv5j0od8vr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4-9XsLmw5oOnR9A3uwevMN7KrzbOS1Bk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1047331650888-gu7sa30tj9d2n69ga9vrjflv5j0od8vr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

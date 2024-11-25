@@ -5,6 +5,7 @@ import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/widgets/event_detail_background.dart';
 import 'package:shepherd_mo/widgets/event_detail_content.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final String eventId;
@@ -44,7 +45,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     try {
       final apiService = ApiService();
       List<Event> events = await apiService.fetchEvents(eventId: id) ?? [];
-      print(events);
       return events.first;
     } finally {
       setState(() {
@@ -64,10 +64,11 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Event Details",
+          localizations.event,
           style: Theme.of(context)
               .textTheme
               .headlineMedium
@@ -93,7 +94,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             } else if (!snapshot.hasData || snapshot.data == null) {
               return Center(
                 child: Text(
-                  "No data available",
+                  localizations.noData,
                   style: TextStyle(fontSize: screenHeight * 0.02),
                 ),
               );

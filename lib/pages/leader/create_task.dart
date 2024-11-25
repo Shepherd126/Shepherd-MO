@@ -1,11 +1,17 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/group_member.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/custom_checkbox.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -66,10 +72,40 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
   void initializeData() {
     groupController.text = widget.group.groupName;
     activityController.text = widget.activityName;
-    task = Task(
-        isConfirmed: false,
+    titleController.addListener(() {
+      setState(() {}); // Rebuild when title changes
+    });
+
+    descriptionController.addListener(() {
+      setState(() {}); // Rebuild when description changes
+    });
+
+    costController.addListener(() {
+      setState(() {}); // Rebuild when cost changes
+    });
+
+    userController.addListener(() {
+      setState(() {}); // Rebuild when user changes
+    });
+    if (widget.task != null) {
+      // Populate controllers with task data
+      task = widget.task!;
+      titleController.text = widget.task!.title ?? '';
+      descriptionController.text = widget.task!.description ?? '';
+      costController.text = widget.task!.cost != null
+          ? formatter.formatString(widget.task!.cost!.toString())
+          : '';
+      userController.text =
+          widget.task!.userName ?? ''; // Assuming `userName` exists in Task
+    } else {
+      // If no task is passed, initialize a new task
+      task = Task(
         groupId: widget.group.groupId,
-        activityId: widget.activityId);
+        activityId: widget.activityId,
+      );
+    }
+
+    task = Task(groupId: widget.group.groupId, activityId: widget.activityId);
   }
 
   @override
@@ -79,13 +115,11 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     costController.dispose();
     groupController.dispose();
     activityController.dispose();
-    super.dispose();
-  }
-
-  void handleCheckboxChanged(bool value) {
-    setState(() {
-      task.isConfirmed = value;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RefreshController refreshController = Get.find();
+      refreshController.setShouldRefresh(true);
     });
+    super.dispose();
   }
 
   @override
@@ -209,7 +243,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
               SizedBox(height: screenHeight * 0.015),
               Text(
                 localizations.title,
-                style: const TextStyle(fontSize: 16.0),
+                style: TextStyle(fontSize: screenHeight * 0.0165),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: screenHeight * 0.005),
@@ -379,7 +413,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                       print(formatter.getUnformattedValue());
                     },
                     onSaved: (input) {
-                      task.cost = formatter.getUnformattedValue().toDouble();
+                      task.cost = formatter.getUnformattedValue().toInt();
                     },
                     decoration: InputDecoration(
                       icon: const Icon(
@@ -437,8 +471,8 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                     decoration: InputDecoration(
                       icon: const Icon(Icons.person),
                       border: InputBorder.none,
-                      labelText: localizations.assignTask,
-                      hintText: localizations.assignMember,
+                      labelText: localizations.assignMember,
+                      hintText: localizations.assignTask,
                       // Conditionally add a clear icon at the end
                       suffixIcon: userController.text.isNotEmpty
                           ? IconButton(
@@ -452,18 +486,45 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                   ),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.015),
-              CustomCheckboxField(
-                enabledIcon: const Icon(Icons.check_circle),
-                disabledIcon: const Icon(Icons.hourglass_empty),
-                enabledLabel: localizations.acceptedTask,
-                disabledLabel: localizations.notAcceptedTask,
-                onChanged: handleCheckboxChanged,
-              ),
               SizedBox(height: screenHeight * 0.02),
               ElevatedButton(
-                onPressed: () {
-                  print(task.toString());
+                onPressed: () async {
+                  if (validateAndSave()) {
+                    setState(() {
+                      isApiCallProcess = true;
+                    });
+
+                    final apiService = ApiService();
+                    bool isSuccess;
+
+                    if (widget.task == null) {
+                      // Create a new task
+                      isSuccess = await apiService.createTask(task);
+                      if (isSuccess) {
+                        showToast(
+                            '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
+                      } else {
+                        showToast(
+                            '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                      }
+                    } else {
+                      // Edit an existing task
+                      task.id =
+                          widget.task!.id; // Pass the task ID for updating
+                      isSuccess = await apiService.updateTask(task);
+                      if (isSuccess) {
+                        showToast(
+                            '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
+                      } else {
+                        showToast(
+                            '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                      }
+                    }
+
+                    setState(() {
+                      isApiCallProcess = false;
+                    });
+                  }
                 },
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(Colors.orange),
@@ -481,6 +542,15 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     );
   }
 
+  bool validateAndSave() {
+    final form = _formKey.currentState;
+    if (form!.validate()) {
+      form.save();
+      return true;
+    }
+    return false;
+  }
+
   void showUserDialog(BuildContext context) async {
     final groupMember = await showDialog<GroupMember>(
       context: context,
@@ -491,7 +561,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
       },
     );
     if (groupMember != null) {
-      task.userId = groupMember.id;
+      task.userId = groupMember.userID;
       userController.text = groupMember.name;
     }
   }

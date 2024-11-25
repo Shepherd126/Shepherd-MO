@@ -1,3 +1,5 @@
+import 'package:shepherd_mo/models/group_user.dart';
+
 class Activity {
   final String id;
   final String? activityName;
@@ -9,19 +11,22 @@ class Activity {
   final DateTime? createTime;
   final DateTime? updateTime;
   final String? status;
+  final int? totalCost;
+  final List<GroupAndUser>? groupAndUsers;
 
-  Activity({
-    required this.id,
-    this.activityName,
-    this.description,
-    this.startTime,
-    this.endTime,
-    this.startDate,
-    this.endDate,
-    this.createTime,
-    this.updateTime,
-    this.status,
-  });
+  Activity(
+      {required this.id,
+      this.activityName,
+      this.description,
+      this.startTime,
+      this.endTime,
+      this.startDate,
+      this.endDate,
+      this.createTime,
+      this.updateTime,
+      this.status,
+      this.totalCost,
+      this.groupAndUsers});
 
   // Factory method to create an Activity from a JSON map
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -45,6 +50,14 @@ class Activity {
           ? DateTime.parse(json['updateTime'] as String)
           : null,
       status: json['status'] as String,
+      totalCost: json['totalCost'] != null
+          ? int.tryParse(json['totalCost'].toString())
+          : null,
+      groupAndUsers: json['groupAndUsers'] != null
+          ? (json['groupAndUsers'] as List<dynamic>)
+              .map((e) => GroupAndUser.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 
@@ -61,6 +74,7 @@ class Activity {
       'createTime': createTime?.toIso8601String(),
       'updateTime': updateTime?.toIso8601String(),
       'status': status,
+      'totalCost': totalCost,
     };
   }
 }

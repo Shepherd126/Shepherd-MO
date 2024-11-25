@@ -5,6 +5,8 @@ import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
+import 'package:shepherd_mo/providers/signalr_provider.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 
@@ -25,9 +27,9 @@ class _UpdateProgressState extends State<UpdateProgress> {
     'Đã hoàn thành'
   ];
   final Map<String, Color> statusColors = {
-    'Việc cần làm': Colors.redAccent,
-    'Đang thực hiện': Colors.blueAccent,
-    'Xem xét': Colors.orange,
+    'Việc cần làm': Colors.blueAccent,
+    'Đang thực hiện': Colors.orangeAccent,
+    'Xem xét': Colors.redAccent,
     'Đã hoàn thành': Colors.green,
   };
   final apiService = ApiService();
@@ -35,7 +37,7 @@ class _UpdateProgressState extends State<UpdateProgress> {
   @override
   void dispose() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final TaskController taskController = Get.find();
+      final RefreshController taskController = Get.find();
       taskController.setShouldRefresh(true);
     });
     super.dispose();
@@ -50,43 +52,48 @@ class _UpdateProgressState extends State<UpdateProgress> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          localizations.updateProgress,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        centerTitle: true,
-        elevation: 4,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                    child: buildStatusColumn(localizations.toDo, screenWidth,
-                        screenHeight, localizations, isDark)),
-                Expanded(
-                    child: buildStatusColumn(localizations.inProgress,
-                        screenWidth, screenHeight, localizations, isDark)),
-              ],
+
+    return Consumer<SignalRService>(
+      builder: (context, signalRService, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              localizations.updateProgress,
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
+            centerTitle: true,
+            elevation: 4,
           ),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                    child: buildStatusColumn(localizations.review, screenWidth,
-                        screenHeight, localizations, isDark)),
-                Expanded(
-                    child: buildStatusColumn(localizations.done, screenWidth,
-                        screenHeight, localizations, isDark)),
-              ],
-            ),
+          body: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: buildStatusColumn(localizations.toDo,
+                            screenWidth, screenHeight, localizations, isDark)),
+                    Expanded(
+                        child: buildStatusColumn(localizations.inProgress,
+                            screenWidth, screenHeight, localizations, isDark)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: buildStatusColumn(localizations.review,
+                            screenWidth, screenHeight, localizations, isDark)),
+                    Expanded(
+                        child: buildStatusColumn(localizations.done,
+                            screenWidth, screenHeight, localizations, isDark)),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -247,47 +254,17 @@ class KanbanTaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     final localizations = AppLocalizations.of(context)!;
-
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     return GestureDetector(
       onTap: () {
         showDialog(
           context: context,
           builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                task.title ?? localizations.noData,
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(task.description ?? localizations.noData),
-                  SizedBox(
-                      height: 16), // Spacing between description and details
-
-                  // Status Row
-                  _buildDetailRow(
-                      "Status:", task.status ?? localizations.noData),
-
-                  // Assigned to Row
-                  _buildDetailRow(
-                    "Assigned to:",
-                    task.userName ?? localizations.noData,
-                  ),
-
-                  // Cost Row
-                  _buildDetailRow("Cost:", "${task.cost} VND"),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(localizations.close),
-                ),
-              ],
+            return TaskDetailsDialog(
+              task: task, // Pass the task object
             );
           },
         );
@@ -296,7 +273,9 @@ class KanbanTaskCard extends StatelessWidget {
         width: isDragging ? null : double.infinity,
         padding: EdgeInsets.symmetric(vertical: screenWidth * 0.01),
         child: Card(
-          color: isDragging ? Colors.grey[300] : Colors.white,
+          color: isDark
+              ? (isDragging ? Colors.grey[900] : Colors.grey.shade700)
+              : (isDragging ? Colors.grey[300] : Colors.white),
           elevation: isDragging ? 8 : 3,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(screenWidth * 0.03),
@@ -312,32 +291,6 @@ class KanbanTaskCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-// Helper Widget to create label-value rows for details
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100, // Set fixed width to align labels neatly
-            child: Text(
-              label,
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: Colors.grey[700]),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }

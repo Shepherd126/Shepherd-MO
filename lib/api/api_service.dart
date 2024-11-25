@@ -10,6 +10,7 @@ import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_member.dart';
 import 'package:shepherd_mo/models/request.dart';
 import 'package:shepherd_mo/models/task.dart';
+import 'package:shepherd_mo/models/user.dart';
 
 class ApiService {
   final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -97,12 +98,14 @@ class ApiService {
       required int pageNumber,
       required int pageSize,
       String? groupId,
+      String? orderBy,
       String? role}) async {
     final url = Uri.parse('$baseUrl/group-user').replace(queryParameters: {
       'SearchKey': searchKey,
       'PageNumber': pageNumber.toString(),
       'PageSize': pageSize.toString(),
       'GroupId': groupId,
+      if (orderBy != null) 'OrderBy': orderBy,
       if (role != null) 'Role': role
     });
 
@@ -290,6 +293,93 @@ class ApiService {
         eventsByDate[date]!.add(event);
       }
       return eventsByDate;
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized: Please log in again.');
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found: The requested resource could not be found.');
+    } else if (response.statusCode == 500) {
+      throw Exception('Server Error: Please try again later.');
+    } else {
+      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+    }
+  }
+
+  Future<List<Event>> fetchUpcomingEvents(String chosenDate, String groupId,
+      int calendarTypeEnum, String userOnly, String getUpcoming) async {
+    final url = Uri.parse('$baseUrl/event/calendar');
+
+    // Set query parameters
+    final queryParams = {
+      'ChosenDate': chosenDate,
+      'GroupId': groupId,
+      'CalendarTypeEnum': calendarTypeEnum.toString(),
+      'UserOnly': userOnly,
+      'GetUpcoming': getUpcoming
+    };
+
+    final uriWithParams = url.replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    final response = await http.get(
+      uriWithParams,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> results = data['data'];
+      final events = results.map((json) => Event.fromJson(json)).toList();
+      return events;
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized: Please log in again.');
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found: The requested resource could not be found.');
+    } else if (response.statusCode == 500) {
+      throw Exception('Server Error: Please try again later.');
+    } else {
+      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+    }
+  }
+
+  Future<List<Activity>> fetchUpcomingActivities(
+      String chosenDate,
+      String groupId,
+      int calendarTypeEnum,
+      String userOnly,
+      String getUpcoming) async {
+    final url = Uri.parse('$baseUrl/activity/calendar');
+
+    // Set query parameters
+    final queryParams = {
+      'ChosenDate': chosenDate,
+      'GroupId': groupId,
+      'CalendarTypeEnum': calendarTypeEnum.toString(),
+      'UserOnly': userOnly,
+      'GetUpcoming': getUpcoming
+    };
+
+    final uriWithParams = url.replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    final response = await http.get(
+      uriWithParams,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> results = data['data'];
+      final activities =
+          results.map((json) => Activity.fromJson(json)).toList();
+      return activities;
     } else if (response.statusCode == 401) {
       throw Exception('Unauthorized: Please log in again.');
     } else if (response.statusCode == 404) {
@@ -551,15 +641,15 @@ class ApiService {
     final url = Uri.parse('$baseUrl/task');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
-
     try {
+      print(jsonEncode(task.toJson()));
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: task.toJson(),
+        body: jsonEncode(task.toJson()),
       );
 
       if (response.statusCode == 200) {
@@ -573,6 +663,139 @@ class ApiService {
     } catch (error) {
       print('Error updating task status: $error');
       return false;
+    }
+  }
+
+  Future<bool> updateTask(Task task) async {
+    final url = Uri.parse('$baseUrl/task/${task.id}');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    print(jsonEncode(task.toJson()));
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(task.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        print('Update Successfully');
+        return true;
+      } else {
+        print(
+            'Failed to update task status: ${response.statusCode} ${response.body}');
+        return false;
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+      return false;
+    }
+  }
+
+  Future<bool> confirmTask(String taskId, bool isConfirmed) async {
+    final url = Uri.parse('$baseUrl/task/confirm');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'taskId': taskId,
+          'isConfirmed': isConfirmed,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Update Successfully');
+        return true;
+      } else {
+        print(
+            'Failed to update task status: ${response.statusCode} ${response.body}');
+        return false;
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+      return false;
+    }
+  }
+
+  Future<bool> updateUser(User user) async {
+    final url = Uri.parse('$baseUrl/user');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    print(jsonEncode(user.toJson()));
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(user.toJson()),
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      final bool success = responseBody['success'] as bool;
+      if (success) {
+        final user = responseBody['data'];
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('loginInfo', jsonEncode(user));
+        print('Update Successfully');
+        return true;
+      } else {
+        print(
+            'Failed to update task status: ${response.statusCode} ${response.body}');
+        return false;
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+      return false;
+    }
+  }
+
+  Future<User?> getUserDetails(String id) async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      final Map<String, String> queryParams = {
+        'id': id,
+      };
+      final uri = Uri.parse('$baseUrl/user/Detail')
+          .replace(queryParameters: queryParams);
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final result = data['data'];
+        final user = User.fromJson(result);
+        return user;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error fetching requests: $error');
     }
   }
 }

@@ -28,15 +28,15 @@ class ProfileMenuWidget extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: Container(
-        width: screenHeight * 0.03,
-        height: screenHeight * 0.03,
+        width: screenHeight * 0.035,
+        height: screenHeight * 0.035,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
-          color: Colors.grey.shade500.withOpacity(0.1),
+          color: Colors.grey.shade300.withOpacity(0.2),
         ),
         child: Icon(
           icon,
-          color: iconColor,
+          color: isDark ? iconColor : Colors.orange,
         ),
       ),
       title: Text(title,

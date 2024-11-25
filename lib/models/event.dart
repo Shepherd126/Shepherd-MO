@@ -1,3 +1,5 @@
+import 'package:shepherd_mo/models/activity.dart';
+
 class Event {
   String? id;
   String? eventName;
@@ -7,9 +9,10 @@ class Event {
   DateTime? toDate;
   bool? isPublic;
   String? status;
-  double? totalCost;
+  int? totalCost;
   DateTime? approvalDate;
   String? approvedBy;
+  List<Activity>? activities;
 
   Event({
     this.id,
@@ -23,6 +26,7 @@ class Event {
     this.totalCost,
     this.approvalDate,
     this.approvedBy,
+    this.activities,
   });
 
   // Factory constructor to parse from JSON (for fetching from API)
@@ -37,11 +41,16 @@ class Event {
       toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
       isPublic: json['isPublic'],
       status: json['status'],
-      totalCost: json['totalCost']?.toDouble(),
+      totalCost: json['totalCost']?.toInt(),
       approvalDate: json['approvalDate'] != null
           ? DateTime.parse(json['approvalDate'])
           : null,
       approvedBy: json['approvedBy'],
+      activities: json['activities'] != null
+          ? (json['activities'] as List<dynamic>)
+              .map((e) => Activity.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 

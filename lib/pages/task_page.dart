@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:expandable_text/expandable_text.dart';
 import 'package:get/get.dart';
@@ -7,13 +8,16 @@ import 'package:intl/intl.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/formatter/custom_currency_format.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
-import 'package:shepherd_mo/pages/update_progress.dart';
+import 'package:shepherd_mo/pages/update_progress_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/services/get_login.dart';
+import 'package:shepherd_mo/widgets/custom_marquee.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 import 'package:shepherd_mo/widgets/task_card.dart';
@@ -41,15 +45,9 @@ class _TaskPageState extends State<TaskPage> {
   final int _pageSize = 10;
   String? eventId;
   Future<Map<String, dynamic>>? _initialData;
-  final taskController = Get.find<TaskController>();
+  final refreshController = Get.find<RefreshController>();
 
-  final List<Map<String, dynamic>> statusList = [
-    {'label': 'All', 'backgroundColor': Colors.blue},
-    {'label': 'To Do', 'backgroundColor': Colors.yellow},
-    {'label': 'In Progress', 'backgroundColor': Colors.blue},
-    {'label': 'Review', 'backgroundColor': Colors.orange},
-    {'label': 'Done', 'backgroundColor': Colors.green},
-  ];
+  List<Map<String, dynamic>> statusList = [];
   List<Task> _allTasks = [];
 
   @override
@@ -61,6 +59,38 @@ class _TaskPageState extends State<TaskPage> {
         _fetchTasks(pageKey);
       }
     });
+  }
+
+  void _initializeStatusList() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final localizations = AppLocalizations.of(context)!;
+      setState(() {
+        statusList = [
+          {
+            'label': localizations.all,
+            'backgroundColor': Const.primaryGoldenColor
+          },
+          {
+            'label': localizations.pendingTask,
+            'backgroundColor': Colors.yellow.shade700
+          },
+          {'label': localizations.toDo, 'backgroundColor': Colors.blueAccent},
+          {
+            'label': localizations.inProgress,
+            'backgroundColor': Colors.orangeAccent
+          },
+          {'label': localizations.review, 'backgroundColor': Colors.redAccent},
+          {'label': localizations.done, 'backgroundColor': Colors.green},
+        ];
+      });
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeStatusList();
+    _refreshList();
   }
 
   Future<Map<String, dynamic>> fetchData() async {
@@ -92,7 +122,6 @@ class _TaskPageState extends State<TaskPage> {
         pageSize: _pageSize,
         groupId: widget.group.groupId,
         activityId: widget.activityId,
-        eventId: eventId,
         userId: loginInfo!.id,
         status: selectedStatus,
       );
@@ -116,16 +145,22 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   void _updateTaskCounts() {
-    final taskCounts = {
-      'All': _allTasks.length,
-      'To Do': _allTasks.where((task) => task.status == 'To Do').length,
-      'In Progress':
-          _allTasks.where((task) => task.status == 'In Progress').length,
-      'Review': _allTasks.where((task) => task.status == 'Review').length,
-      'Done': _allTasks.where((task) => task.status == 'Done').length,
-    };
-
+    final localizations = AppLocalizations.of(context)!;
     setState(() {
+      final taskCounts = {
+        localizations.all: _allTasks.length,
+        localizations.pendingTask:
+            _allTasks.where((task) => task.status == 'Đang chờ').length,
+        localizations.toDo:
+            _allTasks.where((task) => task.status == 'Việc cần làm').length,
+        localizations.inProgress:
+            _allTasks.where((task) => task.status == 'Đang thực hiện').length,
+        localizations.review:
+            _allTasks.where((task) => task.status == 'Xem xét').length,
+        localizations.done:
+            _allTasks.where((task) => task.status == 'Đã hoàn thành').length,
+      };
+
       for (var status in statusList) {
         status['count'] = taskCounts[status['label']] ?? 0;
       }
@@ -244,10 +279,12 @@ class _TaskPageState extends State<TaskPage> {
                           pagingController: _pagingController,
                           builderDelegate: PagedChildBuilderDelegate<Task>(
                             itemBuilder: (context, task, index) => TaskCard(
-                              title: task.activityName ?? localizations.noData,
-                              description:
-                                  task.description ?? localizations.noData,
-                              status: task.status,
+                              task: task,
+                              showStatus: selectedIndex == 0 ? true : false,
+                              isLeader: false,
+                              activityId: widget.activityId,
+                              activityName: widget.activityName,
+                              group: widget.group,
                             ),
                             firstPageProgressIndicatorBuilder: (_) =>
                                 const Center(
@@ -258,7 +295,10 @@ class _TaskPageState extends State<TaskPage> {
                               child: CircularProgressIndicator(),
                             ),
                             noItemsFoundIndicatorBuilder: (context) =>
-                                EmptyData(message: localizations.noTask),
+                                EmptyData(
+                              noDataMessage: localizations.noTask,
+                              message: localizations.takeABreak,
+                            ),
                             noMoreItemsIndicatorBuilder: (_) => Padding(
                               padding: EdgeInsets.symmetric(
                                   vertical: screenHeight * 0.02),
@@ -273,7 +313,10 @@ class _TaskPageState extends State<TaskPage> {
               ),
             );
           } else {
-            return EmptyData(message: localizations.noTask);
+            return EmptyData(
+              noDataMessage: localizations.noTask,
+              message: localizations.takeABreak,
+            );
           }
         },
       ),
@@ -282,6 +325,22 @@ class _TaskPageState extends State<TaskPage> {
 
   Widget _buildEventHeaderCard(double screenWidth, double screenHeight,
       bool isDark, Event event, AppLocalizations localizations) {
+    String? eventStatus = getStatus(event.status, localizations);
+
+    double calculateTextWidth(String text, TextStyle style) {
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        maxLines: 1,
+        textDirection: ui.TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      return textPainter.width;
+    }
+
+    final double textWidth = calculateTextWidth(
+        widget.group.groupName, TextStyle(fontSize: screenHeight * 0.018));
+
     return Card(
       color: isDark ? Colors.grey.shade900 : Colors.white,
       shape: RoundedRectangleBorder(
@@ -295,6 +354,7 @@ class _TaskPageState extends State<TaskPage> {
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
@@ -305,17 +365,20 @@ class _TaskPageState extends State<TaskPage> {
                     ),
                   ),
                 ),
-                Chip(
-                  label: Text(
-                    event.status ?? 'Scheduled',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: screenHeight * 0.016),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.005),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(event.status),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  backgroundColor: _getStatusColor(event.status),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                  child: Text(
+                    eventStatus ?? localizations.noData,
+                    style: TextStyle(
+                        fontSize: screenHeight * 0.018,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ),
               ],
@@ -326,16 +389,48 @@ class _TaskPageState extends State<TaskPage> {
                 thickness: 1),
             SizedBox(height: screenHeight * 0.005),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.access_time, size: 20, color: Colors.blueGrey),
-                SizedBox(width: 8),
-                Text(
-                  formatEventDateRange(event.fromDate, event.toDate),
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.017,
-                    color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.access_time,
+                        size: screenHeight * 0.025, color: Colors.blueGrey),
+                    SizedBox(width: 8),
+                    Text(
+                      formatEventDateRange(event.fromDate, event.toDate),
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.015,
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
+                Container(
+                    width: screenWidth * 0.28,
+                    height: screenHeight * 0.035,
+                    padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.03,
+                        vertical: screenHeight * 0.005),
+                    decoration: BoxDecoration(
+                      color: Const.primaryGoldenColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: textWidth <= screenWidth * 0.28
+                        ? Text(
+                            widget.group.groupName ?? localizations.noData,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: screenHeight * 0.018,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                overflow: TextOverflow.ellipsis),
+                          )
+                        : CustomMarquee(
+                            text: widget.group.groupName,
+                            fontSize: screenHeight * 0.018)),
               ],
             ),
           ],
@@ -346,19 +441,27 @@ class _TaskPageState extends State<TaskPage> {
 
   Color _getStatusColor(String? status) {
     switch (status) {
-      case 'Scheduled':
-        return Colors.blueAccent;
-      case 'In Progress':
-        return Colors.orangeAccent;
-      case 'Completed':
+      case 'Đang duyệt':
+        return Colors.blueGrey.shade200;
+      case 'Được thông qua':
         return Colors.green;
+      case 'Không được thông qua':
+        return Colors.red.shade400;
+      case 'Đang diễn ra':
+        return Colors.orangeAccent;
+      case 'Quá hạn':
+        return Colors.red.shade400;
+      case 'Chưa bắt đầu':
+        return Colors.lightBlueAccent;
       default:
-        return Colors.grey;
+        return Colors.grey.shade300;
     }
   }
 
   Widget _buildActivityDetails(double screenHeight, double screenWidth,
       Activity activity, AppLocalizations localizations, bool isDark) {
+    String? activityStatus = getStatus(activity.status, localizations);
+
     return Card(
       color: isDark ? Colors.grey.shade900 : Colors.white,
       shape: RoundedRectangleBorder(
@@ -386,27 +489,26 @@ class _TaskPageState extends State<TaskPage> {
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.03,
-                    vertical: screenHeight * 0.005,
-                  ),
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.005),
                   decoration: BoxDecoration(
-                    color: Const.primaryGoldenColor,
-                    borderRadius: BorderRadius.circular(16),
+                    color: _getStatusColor(activity.status),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    widget.group.groupName,
+                    activityStatus ?? localizations.noData,
                     style: TextStyle(
-                      fontSize: screenHeight * 0.016,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+                        fontSize: screenHeight * 0.018,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
-                )
+                ),
               ],
             ),
             SizedBox(height: screenHeight * 0.005),
             ExpandableText(
-              activity.description ?? localizations.noData,
+              '${activity.description}\n${localizations.totalCost}: ${formatCurrency(activity.totalCost!)} VND' ??
+                  localizations.noData,
               expandText: localizations.showMore,
               collapseText: localizations.showLess,
               maxLines: 2,
@@ -444,7 +546,7 @@ class _TaskPageState extends State<TaskPage> {
                   ),
                   showCheckmark: false,
                   label: Text(
-                    "${status['label']} ($taskCount)", // Display label with count
+                    "${status['label']} ($taskCount)",
                     style: TextStyle(
                       color:
                           selectedIndex == index ? Colors.white : Colors.black,

@@ -1,22 +1,22 @@
 class User {
-  String id;
-  String name;
-  String phone;
-  String email;
-  String role;
-  DateTime createDate;
+  String? id;
+  String? name;
+  String? phone;
+  String? email;
+  String? role;
+  DateTime? createDate;
   DateTime? updateDate;
-  bool isDeleted;
+  bool? isDeleted;
 
   User({
-    required this.id,
-    required this.name,
-    required this.phone,
-    required this.email,
-    required this.role,
-    required this.createDate,
+    this.id,
+    this.name,
+    this.phone,
+    this.email,
+    this.role,
+    this.createDate,
     this.updateDate,
-    required this.isDeleted,
+    this.isDeleted,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,7 +26,9 @@ class User {
       phone: json['phone'],
       email: json['email'],
       role: json['role'],
-      createDate: DateTime.parse(json['createDate']),
+      createDate: json['createDate'] != null
+          ? DateTime.parse(json['createDate'])
+          : null,
       updateDate: json['updateDate'] != null
           ? DateTime.parse(json['updateDate'])
           : null,
@@ -41,9 +43,6 @@ class User {
       'phone': phone,
       'email': email,
       'role': role,
-      'createDate': createDate.toIso8601String(),
-      'updateDate': updateDate?.toIso8601String(),
-      'isDeleted': isDeleted,
     };
   }
 }

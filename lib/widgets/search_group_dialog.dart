@@ -160,7 +160,13 @@ class _GroupListDialogState extends State<GroupListDialog> {
                         newPageProgressIndicatorBuilder: (_) =>
                             const Center(child: CircularProgressIndicator()),
                         noItemsFoundIndicatorBuilder: (context) =>
-                            EmptyData(message: localizations.noMember),
+                            _searchText.isNotEmpty
+                                ? EmptyData(
+                                    noDataMessage: localizations.noResult,
+                                    message: localizations.godAlwaysByYourSide)
+                                : EmptyData(
+                                    noDataMessage: localizations.noGroup,
+                                    message: localizations.godAlwaysByYourSide),
                         noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                       ),
                     ),

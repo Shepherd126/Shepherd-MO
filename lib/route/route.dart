@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:shepherd_mo/pages/home_page.dart';
+import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/pages/settings_page.dart';
 
 class AppRoutes {
@@ -18,5 +19,6 @@ class AppRoutes {
     GetPage(name: activities, page: () => const ActivitiesTab()),
     GetPage(name: menu, page: () => const MenuTab()),
     GetPage(name: settings, page: () => const SettingsPage()),
+    GetPage(name: notifications, page: () => const NotificationPage()),
   ];
 }

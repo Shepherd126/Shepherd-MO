@@ -3,8 +3,9 @@ import 'package:marquee/marquee.dart';
 
 class CustomMarquee extends StatefulWidget {
   final String text;
+  final double fontSize;
 
-  const CustomMarquee({super.key, required this.text});
+  const CustomMarquee({super.key, required this.text, required this.fontSize});
 
   @override
   _CustomMarqueeState createState() => _CustomMarqueeState();
@@ -23,7 +24,7 @@ class _CustomMarqueeState extends State<CustomMarquee> {
         key: marqueeKey, // If using a GlobalKey, ensure it’s initialized
         text: widget.text,
         style: TextStyle(
-          fontSize: screenHeight * 0.025,
+          fontSize: widget.fontSize,
           fontWeight: FontWeight.bold,
           color: Colors.black,
         ),

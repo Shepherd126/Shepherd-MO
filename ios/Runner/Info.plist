@@ -47,5 +47,18 @@
 	<true/>
 	<key>NSKeychainUsageDescription</key>
 	<string>We use secure storage for sensitive data.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+    	<key>NSExceptionDomains</key>
+    	<dict>
+    		<key>https://shepherd-api-bnh0fkamhzbkagg2.southeastasia-01.azurewebsites.net/api/signalrServer</key>
+    		<dict>
+        		<key>NSIncludesSubdomains</key>
+        		<true/>
+        		<key>NSAllowsArbitraryLoads</key>
+        		<true/>
+    		</dict>
+    	</dict>
+	</dict>
 </dict>
 </plist>

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:expandable_text/expandable_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,8 +14,9 @@ import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:shepherd_mo/pages/leader/create_task.dart';
-import 'package:shepherd_mo/pages/update_progress.dart';
+import 'package:shepherd_mo/pages/update_progress_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:shepherd_mo/widgets/custom_marquee.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
@@ -41,7 +43,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   final PagingController<int, Task> _pagingController =
       PagingController(firstPageKey: 1);
   final int _pageSize = 10;
-  final taskController = Get.find<TaskController>();
+  final refreshController = Get.find<RefreshController>();
   final GlobalKey<RefreshIndicatorState> taskRefreshKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -53,8 +55,6 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   Activity? activity;
   Event? event;
   bool isLoading = false;
-  List<String> users = ['Nguyễn Văn A', 'Nguyễn Thị B', 'Trần Văn C'];
-  void onSubmit(String name, String description, String user) {}
 
   @override
   void initState() {
@@ -77,21 +77,21 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
             'label': localizations.all,
             'backgroundColor': Const.primaryGoldenColor
           },
-          {'label': localizations.draft, 'backgroundColor': Colors.amber[200]},
           {
-            'label': localizations.pending,
-            'backgroundColor': Colors.yellow[700]
+            'label': localizations.draft,
+            'backgroundColor': Colors.blueGrey.shade300
+          },
+          {
+            'label': localizations.pendingTask,
+            'backgroundColor': Colors.yellow.shade700
           },
           {'label': localizations.toDo, 'backgroundColor': Colors.blueAccent},
           {
             'label': localizations.inProgress,
-            'backgroundColor': Colors.orange[400]
+            'backgroundColor': Colors.orangeAccent
           },
-          {
-            'label': localizations.review,
-            'backgroundColor': Colors.deepOrange[600]
-          },
-          {'label': localizations.done, 'backgroundColor': Colors.green[600]},
+          {'label': localizations.review, 'backgroundColor': Colors.redAccent},
+          {'label': localizations.done, 'backgroundColor': Colors.green},
         ];
       });
     });
@@ -102,6 +102,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _initializeStatusList();
+    _refreshList();
   }
 
   Future<Map<String, dynamic>> fetchData() async {
@@ -124,8 +125,8 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
 
   Future<void> _fetchTasks(int pageKey) async {
     final apiService = ApiService();
-    String selectedStatus =
-        selectedIndex == 0 ? '' : statusList[selectedIndex]['label'];
+    String? selectedStatus =
+        selectedIndex == 0 ? null : statusList[selectedIndex]['label'];
 
     try {
       final newTasks = await apiService.fetchTasks(
@@ -158,24 +159,23 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
 
   void _updateTaskCounts() {
     final localizations = AppLocalizations.of(context)!;
-
-    final taskCounts = {
-      localizations.all: _allTasks.length,
-      localizations.draft:
-          _allTasks.where((task) => task.status == 'Bản nháp').length,
-      localizations.pending:
-          _allTasks.where((task) => task.status == 'Đang duyệt').length,
-      localizations.toDo:
-          _allTasks.where((task) => task.status == 'Việc cần làm').length,
-      localizations.inProgress:
-          _allTasks.where((task) => task.status == 'Đang thực hiện').length,
-      localizations.review:
-          _allTasks.where((task) => task.status == 'Xem xét').length,
-      localizations.done:
-          _allTasks.where((task) => task.status == 'Đã hoàn thành').length,
-    };
-
     setState(() {
+      final taskCounts = {
+        localizations.all: _allTasks.length,
+        localizations.draft:
+            _allTasks.where((task) => task.status == 'Bản nháp').length,
+        localizations.pendingTask:
+            _allTasks.where((task) => task.status == 'Đang chờ').length,
+        localizations.toDo:
+            _allTasks.where((task) => task.status == 'Việc cần làm').length,
+        localizations.inProgress:
+            _allTasks.where((task) => task.status == 'Đang thực hiện').length,
+        localizations.review:
+            _allTasks.where((task) => task.status == 'Xem xét').length,
+        localizations.done:
+            _allTasks.where((task) => task.status == 'Đã hoàn thành').length,
+      };
+
       chartData = [
         ChartData(localizations.toDo, taskCounts[localizations.toDo] ?? 0,
             Colors.blueAccent),
@@ -330,9 +330,10 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                         color: isDark ? Colors.grey.shade900 : Colors.white,
                       ),
                       child: Obx(() {
-                        if (taskController.shouldRefresh.value) {
+                        if (refreshController.shouldRefresh.value) {
+                          selectedIndex = 0;
                           _refreshList();
-                          taskController.setShouldRefresh(false);
+                          refreshController.setShouldRefresh(false);
                         }
                         return RefreshIndicator(
                           displacement: 10,
@@ -342,10 +343,12 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                             pagingController: _pagingController,
                             builderDelegate: PagedChildBuilderDelegate<Task>(
                               itemBuilder: (context, task, index) => TaskCard(
-                                title: task.title ?? localizations.noData,
-                                description:
-                                    task.description ?? localizations.noData,
-                                status: task.status,
+                                task: task,
+                                showStatus: selectedIndex == 0 ? true : false,
+                                isLeader: true,
+                                activityId: widget.activityId,
+                                activityName: widget.activityName,
+                                group: widget.group,
                               ),
                               firstPageProgressIndicatorBuilder: (_) =>
                                   const Center(
@@ -356,7 +359,9 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                                 child: CircularProgressIndicator(),
                               ),
                               noItemsFoundIndicatorBuilder: (context) =>
-                                  EmptyData(message: localizations.noTask),
+                                  EmptyData(
+                                      noDataMessage: localizations.noTask,
+                                      message: localizations.takeABreak),
                               noMoreItemsIndicatorBuilder: (_) => Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: screenHeight * 0.02),
@@ -372,7 +377,10 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
               ),
             );
           } else {
-            return EmptyData(message: localizations.noTask);
+            return EmptyData(
+              noDataMessage: localizations.noTask,
+              message: localizations.takeABreak,
+            );
           }
         },
       ),
@@ -381,7 +389,24 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
 
   Widget _buildEventHeaderCard(double screenWidth, double screenHeight,
       bool isDark, Event event, AppLocalizations localizations) {
-    String? eventStatus = getEventStatus(event.status, localizations);
+    String? eventStatus = getStatus(event.status, localizations);
+
+    double calculateTextWidth(String text, TextStyle style) {
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        maxLines: 1,
+        textDirection: ui.TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      return textPainter.width;
+    }
+
+    final double textWidth = calculateTextWidth(
+        widget.group.groupName, TextStyle(fontSize: screenHeight * 0.018));
+
+    bool chartDataIsEmpty = chartData.every((data) => data.value == 0);
+
     return Card(
       color: isDark ? Colors.grey.shade900 : Colors.white,
       shape: RoundedRectangleBorder(
@@ -395,6 +420,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
@@ -405,17 +431,20 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                     ),
                   ),
                 ),
-                Chip(
-                  label: Text(
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.005),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(event.status),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
                     eventStatus ?? localizations.noData,
                     style: TextStyle(
-                        color: Colors.black,
+                        fontSize: screenHeight * 0.018,
                         fontWeight: FontWeight.bold,
-                        fontSize: screenHeight * 0.015),
-                  ),
-                  backgroundColor: _getStatusColor(eventStatus),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                        color: Colors.white),
                   ),
                 ),
               ],
@@ -426,48 +455,93 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                 thickness: 1),
             SizedBox(height: screenHeight * 0.005),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.access_time, size: 20, color: Colors.blueGrey),
-                SizedBox(width: 8),
-                Text(
-                  formatEventDateRange(event.fromDate, event.toDate),
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.017,
-                    color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-            _allTasks.isNotEmpty
-                ? SizedBox(
-                    height: screenHeight * 0.18,
-                    child: ClipRect(
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: SfCircularChart(
-                          legend: const Legend(
-                              isVisible: true, position: LegendPosition.right),
-                          series: <CircularSeries>[
-                            PieSeries<ChartData, String>(
-                              dataSource: chartData,
-                              pointColorMapper: (ChartData data, _) =>
-                                  data.color,
-                              xValueMapper: (ChartData data, _) => data.status,
-                              yValueMapper: (ChartData data, _) => data.value,
-                              dataLabelSettings: DataLabelSettings(
-                                isVisible: true,
-                                showZeroValue: false,
-                                textStyle: TextStyle(
-                                    fontSize: screenHeight * 0.016,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
+                Row(
+                  children: [
+                    Icon(Icons.access_time,
+                        size: screenHeight * 0.025, color: Colors.blueGrey),
+                    SizedBox(width: 8),
+                    Text(
+                      formatEventDateRange(event.fromDate, event.toDate),
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.015,
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade600,
                       ),
                     ),
+                  ],
+                ),
+                Container(
+                    width: screenWidth * 0.28,
+                    height: screenHeight * 0.035,
+                    padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.03,
+                        vertical: screenHeight * 0.005),
+                    decoration: BoxDecoration(
+                      color: Const.primaryGoldenColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: textWidth <= screenWidth * 0.28
+                        ? Text(
+                            widget.group.groupName ?? localizations.noData,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: screenHeight * 0.018,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                overflow: TextOverflow.ellipsis),
+                          )
+                        : CustomMarquee(
+                            text: widget.group.groupName,
+                            fontSize: screenHeight * 0.018)),
+              ],
+            ),
+            SizedBox(height: screenHeight * 0.02),
+            !chartDataIsEmpty
+                ? Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey, // Customize the color of the border
+                        width: 1.0, // Customize the thickness of the border
+                      ),
+                      borderRadius: BorderRadius.circular(
+                          8.0), // Optional: to round the corners
+                    ),
+                    child: ExpansionTile(
+                      title: Text(localizations.viewChart),
+                      children: [
+                        SizedBox(
+                          height: screenHeight * 0.18,
+                          child: SfCircularChart(
+                            legend: const Legend(
+                                isVisible: true,
+                                position: LegendPosition.right),
+                            series: <CircularSeries>[
+                              PieSeries<ChartData, String>(
+                                dataSource: chartData,
+                                pointColorMapper: (ChartData data, _) =>
+                                    data.color,
+                                xValueMapper: (ChartData data, _) =>
+                                    data.status,
+                                yValueMapper: (ChartData data, _) => data.value,
+                                dataLabelSettings: DataLabelSettings(
+                                  isVisible: true,
+                                  showZeroValue: false,
+                                  textStyle: TextStyle(
+                                      fontSize: screenHeight * 0.016,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
                   )
-                : SizedBox.shrink()
+                : SizedBox.shrink(),
           ],
         ),
       ),
@@ -477,24 +551,26 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   Color _getStatusColor(String? status) {
     switch (status) {
       case 'Đang duyệt':
-        return Colors.blueGrey;
+        return Colors.blueGrey.shade200;
       case 'Được thông qua':
         return Colors.green;
       case 'Không được thông qua':
-        return Colors.red;
+        return Colors.red.shade400;
       case 'Đang diễn ra':
         return Colors.orangeAccent;
       case 'Quá hạn':
-        return Colors.deepOrange;
+        return Colors.red.shade400;
       case 'Chưa bắt đầu':
         return Colors.lightBlueAccent;
       default:
-        return Colors.grey;
+        return Colors.grey.shade300;
     }
   }
 
   Widget _buildActivityDetails(double screenHeight, double screenWidth,
       Activity activity, AppLocalizations localizations, bool isDark) {
+    String? activityStatus = getStatus(activity.status, localizations);
+
     return Card(
       color: isDark ? Colors.grey.shade900 : Colors.white,
       shape: RoundedRectangleBorder(
@@ -522,27 +598,26 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.03,
-                    vertical: screenHeight * 0.005,
-                  ),
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.005),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(16),
+                    color: _getStatusColor(activity.status),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    widget.group.groupName,
+                    activityStatus ?? localizations.noData,
                     style: TextStyle(
-                      fontSize: screenHeight * 0.016,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+                        fontSize: screenHeight * 0.018,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
-                )
+                ),
               ],
             ),
             SizedBox(height: screenHeight * 0.005),
             ExpandableText(
-              activity.description ?? localizations.noData,
+              '${activity.description}\n${localizations.totalCost}: ${activity.totalCost} VND' ??
+                  localizations.noData,
               expandText: localizations.showMore,
               collapseText: localizations.showLess,
               maxLines: 2,

@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/formatter/avatar.dart';
 import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_member.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 
 class GroupDetail extends StatefulWidget {
@@ -30,15 +31,7 @@ class _GroupDetailState extends State<GroupDetail> {
   String _sortBy = 'name';
   Timer? _debounce;
   bool _showButton = false;
-  final List<Color> _avatarColors = [
-    Colors.brown,
-    Colors.deepOrange,
-    Colors.indigo,
-    Colors.teal,
-    Colors.blueGrey,
-    Colors.deepPurple,
-  ];
-  final Random _random = Random();
+  int orderBy = 0;
 
   @override
   void initState() {
@@ -52,12 +45,18 @@ class _GroupDetailState extends State<GroupDetail> {
   Future<void> _fetchPage(int pageKey) async {
     try {
       ApiService apiService = ApiService();
+      if (_sortBy == 'name') {
+        _isAscending ? orderBy = 0 : orderBy = 1;
+      } else if (_sortBy == 'role') {
+        _isAscending ? orderBy = 10 : orderBy = 11;
+      }
 
       final newItems = await apiService.fetchGroupMembers(
         searchKey: _searchText,
         pageNumber: pageKey,
         pageSize: _pageSize,
         groupId: widget.group.id,
+        orderBy: orderBy.toString(),
       );
 
       final isLastPage = newItems.length < _pageSize;
@@ -96,20 +95,18 @@ class _GroupDetailState extends State<GroupDetail> {
     });
   }
 
-  Color _getRandomAvatarColor() {
-    return _avatarColors[_random.nextInt(_avatarColors.length)];
-  }
-
   void _onSortChanged(String sortBy) {
     setState(() {
       _sortBy = sortBy;
     });
+    _refreshList();
   }
 
   void _toggleSortDirection() {
     setState(() {
       _isAscending = !_isAscending;
     });
+    _refreshList();
   }
 
   void _showDialog() {
@@ -309,10 +306,12 @@ class _GroupDetailState extends State<GroupDetail> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: _getRandomAvatarColor(),
+                            backgroundColor:
+                                AvatarFormat().getRandomAvatarColor(),
                             radius: screenWidth * 0.055,
                             child: Text(
-                              item.name.substring(0, 1) ?? '?',
+                              AvatarFormat()
+                                  .getInitials(item.name, twoLetters: true),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -387,14 +386,14 @@ class _GroupDetailState extends State<GroupDetail> {
                         const Center(child: CircularProgressIndicator()),
                     newPageProgressIndicatorBuilder: (_) =>
                         const Center(child: CircularProgressIndicator()),
-                    noItemsFoundIndicatorBuilder: (context) => Center(
-                      child: Text(
+                    noItemsFoundIndicatorBuilder: (context) =>
                         _searchText.isNotEmpty
-                            ? "No results found."
-                            : "No members found.",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
+                            ? EmptyData(
+                                noDataMessage: localizations.noResult,
+                                message: localizations.godAlwaysByYourSide)
+                            : EmptyData(
+                                noDataMessage: localizations.noMember,
+                                message: localizations.godAlwaysByYourSide),
                     noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                   ),
                 ),

@@ -1,12 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:provider/provider.dart';
+import 'package:shepherd_mo/api/firebase_api.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/firebase_options.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
 import 'package:shepherd_mo/pages/token_check.dart';
+import 'package:shepherd_mo/providers/signalr_provider.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/route/route.dart';
 import 'package:shepherd_mo/theme/dark_theme.dart';
@@ -22,11 +26,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final localeController = Get.put(LocaleController());
   Get.put(AuthorizationController());
-  Get.put(TaskController());
+  Get.put(RefreshController());
   await localeController.loadPreferredLocale();
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'token');
   await dotenv.load();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await FirebaseApi().initNotifications();
   runApp(Shepherd(token: token));
 }
 
@@ -40,10 +48,17 @@ class Shepherd extends StatelessWidget {
 
     // Check token expiration
     if (token != null) {
-      isTokenExpired = !JwtDecoder.isExpired(token!);
+      isTokenExpired = JwtDecoder.isExpired(token!);
     }
-    return ChangeNotifierProvider(
-      create: (BuildContext context) => UIProvider()..init(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => UIProvider()..init(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => SignalRService()..startConnection(),
+        ),
+      ],
       child: Consumer<UIProvider>(
         builder: (context, UIProvider notifier, child) {
           return GetMaterialApp(

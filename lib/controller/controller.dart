@@ -101,7 +101,7 @@ class AuthorizationController extends GetxController {
   }
 }
 
-class TaskController extends GetxController {
+class RefreshController extends GetxController {
   var shouldRefresh = false.obs;
 
   void setShouldRefresh(bool value) {

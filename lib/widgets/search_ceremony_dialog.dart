@@ -140,7 +140,13 @@ class _CeremonyListDialogState extends State<CeremonyListDialog> {
                         newPageProgressIndicatorBuilder: (_) =>
                             const Center(child: CircularProgressIndicator()),
                         noItemsFoundIndicatorBuilder: (context) =>
-                            EmptyData(message: localizations.noMember),
+                            _searchText.isNotEmpty
+                                ? EmptyData(
+                                    noDataMessage: localizations.noResult,
+                                    message: localizations.godAlwaysByYourSide)
+                                : EmptyData(
+                                    noDataMessage: localizations.noCeremony,
+                                    message: localizations.godAlwaysByYourSide),
                         noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                       ),
                     ),
