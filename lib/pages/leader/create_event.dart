@@ -70,6 +70,10 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
     });
   }
 
+  void _unfocus() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ProgressHUD(
@@ -137,6 +141,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                   child: TextFormField(
                     focusNode: _eventNameFocus,
                     controller: eventNameController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
                         return localizations.required;
@@ -267,6 +272,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                     maxLines: null,
                     focusNode: _descriptionFocus,
                     controller: descriptionController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
                         return localizations.required;
@@ -334,6 +340,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                     keyboardType: TextInputType.number,
                     focusNode: _totalCostFocus,
                     controller: totalCostController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Please enter an amount";
@@ -452,6 +459,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
                     readOnly: true,
                     focusNode: _groupFocus,
                     controller: groupController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     onTap: () {
                       showGroupDialog(context);
                     },
@@ -478,6 +486,7 @@ class _CreateEditEventPageState extends State<CreateEditEventPage> {
               SizedBox(height: screenHeight * 0.02),
               ElevatedButton(
                 onPressed: () {
+                  _unfocus();
                   print(event.toString());
                 },
                 style: ButtonStyle(

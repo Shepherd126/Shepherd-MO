@@ -22,6 +22,8 @@ class _GroupMemberListDialogState extends State<GroupMemberListDialog> {
 
   String _searchText = ''; // Empty to show all items initially
   Timer? _debounce; // Timer for debouncing
+  final searchController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -29,6 +31,9 @@ class _GroupMemberListDialogState extends State<GroupMemberListDialog> {
 
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
+    });
+    searchController.addListener(() {
+      setState(() {});
     });
   }
 
@@ -56,9 +61,12 @@ class _GroupMemberListDialogState extends State<GroupMemberListDialog> {
     }
   }
 
+  void _unfocus() {
+    FocusScope.of(context).unfocus();
+  }
+
   // Method to refresh the entire list
   Future<void> _refreshList() async {
-    _searchText = ''; // Reset search text if needed
     _pagingController.refresh(); // Refresh the PagingController
   }
 
@@ -80,90 +88,104 @@ class _GroupMemberListDialogState extends State<GroupMemberListDialog> {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     final localizations = AppLocalizations.of(context)!;
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16.0),
-                topRight: Radius.circular(16.0),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Center(
-                child: Text(
-                  localizations.assignTask,
-                  style: Theme.of(context).textTheme.headlineMedium,
+    return GestureDetector(
+      onTap: _unfocus,
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.0),
+                  topRight: Radius.circular(16.0),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: localizations.search,
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(
+                  child: Text(
+                    localizations.assignTask,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  onChanged: _onSearchChanged, // Debounced search input
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                SizedBox(
-                  height: screenHeight * 0.3,
-                  child: RefreshIndicator(
-                    displacement: 20,
-                    onRefresh: _refreshList, // Triggers the refresh method
-                    child: PagedListView<int, GroupMember>(
-                      shrinkWrap: true,
-                      pagingController: _pagingController,
-                      builderDelegate: PagedChildBuilderDelegate<GroupMember>(
-                        itemBuilder: (context, item, index) => ListTile(
-                          title: Text(item.name ?? localizations.noData),
-                          subtitle: Text(item.email ?? localizations.noData),
-                          onTap: () => Navigator.of(context).pop(item),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchController,
+                    focusNode: searchFocus,
+                    decoration: InputDecoration(
+                      labelText: localizations.search,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                searchController.clear();
+                                _searchText = '';
+                                _refreshList();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: _onSearchChanged, // Debounced search input
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(
+                    height: screenHeight * 0.3,
+                    child: RefreshIndicator(
+                      displacement: 20,
+                      onRefresh: _refreshList, // Triggers the refresh method
+                      child: PagedListView<int, GroupMember>(
+                        pagingController: _pagingController,
+                        builderDelegate: PagedChildBuilderDelegate<GroupMember>(
+                          itemBuilder: (context, item, index) => ListTile(
+                            title: Text(item.name ?? localizations.noData),
+                            subtitle: Text(item.email ?? localizations.noData),
+                            onTap: () => Navigator.of(context).pop(item),
+                          ),
+                          firstPageProgressIndicatorBuilder: (_) =>
+                              const Center(child: CircularProgressIndicator()),
+                          newPageProgressIndicatorBuilder: (_) =>
+                              const Center(child: CircularProgressIndicator()),
+                          noItemsFoundIndicatorBuilder: (context) => _searchText
+                                  .isNotEmpty
+                              ? EmptyData(
+                                  noDataMessage: localizations.noResult,
+                                  message: localizations.godAlwaysByYourSide)
+                              : EmptyData(
+                                  noDataMessage: localizations.noMember,
+                                  message: localizations.godAlwaysByYourSide),
+                          noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                         ),
-                        firstPageProgressIndicatorBuilder: (_) =>
-                            const Center(child: CircularProgressIndicator()),
-                        newPageProgressIndicatorBuilder: (_) =>
-                            const Center(child: CircularProgressIndicator()),
-                        noItemsFoundIndicatorBuilder: (context) =>
-                            _searchText.isNotEmpty
-                                ? EmptyData(
-                                    noDataMessage: localizations.noResult,
-                                    message: localizations.godAlwaysByYourSide)
-                                : EmptyData(
-                                    noDataMessage: localizations.noMember,
-                                    message: localizations.godAlwaysByYourSide),
-                        noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                       ),
                     ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(localizations.close),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(localizations.close),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -171,6 +193,7 @@ class _GroupMemberListDialogState extends State<GroupMemberListDialog> {
   @override
   void dispose() {
     _pagingController.dispose();
+    searchController.dispose();
     _debounce?.cancel(); // Cancel debounce timer if active
     super.dispose();
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -19,6 +20,7 @@ import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/group_user.dart';
 import 'package:shepherd_mo/models/user.dart';
+import 'package:shepherd_mo/pages/change_password_page.dart';
 import 'package:shepherd_mo/pages/group_members_page.dart';
 import 'package:shepherd_mo/pages/leader/create_event.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
@@ -1385,6 +1387,11 @@ class _MenuTabState extends State<MenuTab> {
   Widget _uiSetup(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
+
     final localizations = AppLocalizations.of(context)!;
 
     // Show loading state until user data is fetched
@@ -1415,7 +1422,6 @@ class _MenuTabState extends State<MenuTab> {
           centerTitle: true,
           title: Text(localizations.menu,
               style: Theme.of(context).textTheme.headlineMedium),
-          actions: const [],
         ),
         body: SingleChildScrollView(
           child: Container(
@@ -1451,7 +1457,7 @@ class _MenuTabState extends State<MenuTab> {
                   height: screenHeight * 0.06,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(() => const UpdateProfileScreen(),
+                      Get.to(() => const UpdateProfilePage(),
                           id: 4, transition: Transition.rightToLeftWithFade);
                     },
                     style: ElevatedButton.styleFrom(
@@ -1462,7 +1468,7 @@ class _MenuTabState extends State<MenuTab> {
                     child: Text(
                       localizations.editProfile,
                       style: TextStyle(
-                          color: Colors.black, fontSize: screenHeight * 0.018),
+                          color: Colors.black, fontSize: screenHeight * 0.02),
                     ),
                   ),
                 ),
@@ -1474,13 +1480,20 @@ class _MenuTabState extends State<MenuTab> {
                 ProfileMenuWidget(
                   title: localizations.changePassword,
                   icon: LineAwesomeIcons.lock_open_solid,
-                  iconColor: Const.primaryGoldenColor,
-                  onTap: () {},
+                  iconColor: isDark
+                      ? Const.primaryGoldenColor
+                      : Colors.orange.shade800,
+                  onTap: () {
+                    Get.to(() => const ChangePasswordPage(),
+                        id: 4, transition: Transition.rightToLeftWithFade);
+                  },
                 ),
                 ProfileMenuWidget(
                   title: localizations.settings,
                   icon: LineAwesomeIcons.cog_solid,
-                  iconColor: Const.primaryGoldenColor,
+                  iconColor: isDark
+                      ? Const.primaryGoldenColor
+                      : Colors.orange.shade800,
                   onTap: () {
                     Get.to(() => const SettingsPage(),
                         id: 4, transition: Transition.rightToLeftWithFade);
@@ -1493,6 +1506,12 @@ class _MenuTabState extends State<MenuTab> {
                   textColor: Colors.red,
                   endIcon: false,
                   onTap: () async {
+                    final firebaseMessaging = FirebaseMessaging.instance;
+                    final deviceId = await firebaseMessaging.getToken();
+                    final apiService = ApiService();
+                    if (deviceId != null) {
+                      await apiService.deleteDeviceId(deviceId);
+                    }
                     const storage = FlutterSecureStorage();
                     final SharedPreferences prefs =
                         await SharedPreferences.getInstance();
@@ -1500,7 +1519,7 @@ class _MenuTabState extends State<MenuTab> {
                     prefs.remove('loginInfo');
                     prefs.remove('loginUserGroups');
 
-                    showToast("Logged Out Successfully");
+                    showToast(localizations.logOutSuccess);
                     Get.off(const LoginPage());
                   },
                 ),

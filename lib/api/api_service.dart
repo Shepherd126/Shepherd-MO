@@ -8,6 +8,7 @@ import 'package:shepherd_mo/models/ceremony.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_member.dart';
+import 'package:shepherd_mo/models/notification.dart';
 import 'package:shepherd_mo/models/request.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:shepherd_mo/models/user.dart';
@@ -637,7 +638,7 @@ class ApiService {
     }
   }
 
-  Future<bool> createTask(Task task) async {
+  Future<(bool, String?)> createTask(Task task) async {
     final url = Uri.parse('$baseUrl/task');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
@@ -653,20 +654,29 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        print('Create Successfully');
-        return true;
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        if (success == true) {
+          print('Create Successfully');
+          return (true, "");
+        } else {
+          if (message != null) {
+            return (false, message);
+          } else {
+            return (false, null);
+          }
+        }
       } else {
-        print(
-            'Failed to update task status: ${response.statusCode} ${response.body}');
-        return false;
+        return (false, null);
       }
     } catch (error) {
-      print('Error updating task status: $error');
-      return false;
+      print('Error creating task: $error');
+      return (false, error.toString());
     }
   }
 
-  Future<bool> updateTask(Task task) async {
+  Future<(bool, String?)> updateTask(Task task) async {
     final url = Uri.parse('$baseUrl/task/${task.id}');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
@@ -682,16 +692,25 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        print('Update Successfully');
-        return true;
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        if (success == true) {
+          print('Update Successfully');
+          return (true, "");
+        } else {
+          if (message != null) {
+            return (false, message);
+          } else {
+            return (false, null);
+          }
+        }
       } else {
-        print(
-            'Failed to update task status: ${response.statusCode} ${response.body}');
-        return false;
+        return (false, null);
       }
     } catch (error) {
-      print('Error updating task status: $error');
-      return false;
+      print('Error updating task: $error');
+      return (false, error.toString());
     }
   }
 
@@ -727,7 +746,7 @@ class ApiService {
     }
   }
 
-  Future<bool> updateUser(User user) async {
+  Future<(bool, String?)> updateUser(User user) async {
     final url = Uri.parse('$baseUrl/user');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
@@ -743,21 +762,66 @@ class ApiService {
       );
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      final bool success = responseBody['success'] as bool;
-      if (success) {
-        final user = responseBody['data'];
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString('loginInfo', jsonEncode(user));
-        print('Update Successfully');
-        return true;
+      if (response.statusCode == 200) {
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        if (success) {
+          final user = responseBody['data'];
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString('loginInfo', jsonEncode(user));
+          return (true, null);
+        } else {
+          return (false, message);
+        }
       } else {
-        print(
-            'Failed to update task status: ${response.statusCode} ${response.body}');
-        return false;
+        return (false, null);
       }
     } catch (error) {
       print('Error updating task status: $error');
-      return false;
+      return (false, null);
+    }
+  }
+
+  Future<(bool, String)> changePassword(
+      String id, String oldPassword, String newPassword) async {
+    final url = Uri.parse('$baseUrl/user/UpdatePassword');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    print(
+      jsonEncode(
+          {'id': id, 'oldPassword': oldPassword, 'newPassword': newPassword}),
+    );
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(
+          {'id': id, 'oldPassword': oldPassword, 'newPassword': newPassword},
+        ),
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final bool success = responseBody['success'] as bool;
+        final String message = responseBody['message'] as String;
+        if (success) {
+          print('Update Successfully');
+          return (true, "");
+        } else {
+          final error = responseBody['message'] as String;
+          print(
+              'Failed to update task status: ${response.statusCode} ${response.body}');
+          return (false, message);
+        }
+      } else {
+        return (false, "");
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+      return (false, "");
     }
   }
 
@@ -783,6 +847,138 @@ class ApiService {
         final result = data['data'];
         final user = User.fromJson(result);
         return user;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error fetching requests: $error');
+    }
+  }
+
+  Future<void> sendDeviceId(String userId, String deviceId) async {
+    final url = Uri.parse('$baseUrl/user-device');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    print(
+      jsonEncode(
+        {
+          'userId': userId,
+          'deviceId': deviceId,
+        },
+      ),
+    );
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(
+          {
+            'userId': userId,
+            'deviceId': deviceId,
+          },
+        ),
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final bool success = responseBody['success'] as bool;
+        final String message = responseBody['message'] as String;
+        if (success) {
+          print('Create DeviceId Successfully');
+          return;
+        } else {
+          print('Failed to update task status: $message');
+          return;
+        }
+      } else {
+        return;
+      }
+    } catch (error) {
+      print('Error creating deviceId: $error');
+      return;
+    }
+  }
+
+  Future<void> deleteDeviceId(String deviceId) async {
+    final url = Uri.parse('$baseUrl/user-device?deviceId=$deviceId');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final bool success = responseBody['success'] as bool;
+        if (success) {
+          print('Delete DeviceId Successfully');
+          return;
+        } else {
+          print('Failed to update task status');
+          return;
+        }
+      } else {
+        return;
+      }
+    } catch (error) {
+      print('Error deleting deviceId: $error');
+      return;
+    }
+  }
+
+  Future<List<NotificationModel>> fetchNotifications({
+    String? searchKey,
+    required int pageNumber,
+    required int pageSize,
+  }) async {
+    // Construct query parameters
+    final Map<String, String> queryParams = {};
+
+    // Conditionally add 'SearchKey' if searchKey is not null
+    if (searchKey != null) {
+      queryParams['SearchKey'] = searchKey;
+    }
+
+    // Add PageNumber and PageSize parameters
+    queryParams['PageNumber'] = pageNumber.toString();
+    queryParams['PageSize'] = pageSize.toString();
+
+    // Build URI with query parameters
+    final uri = Uri.parse('$baseUrl/notification')
+        .replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      // Send GET request
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['result'];
+        return results.map((json) => NotificationModel.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized: Please log in again.');
       } else if (response.statusCode == 404) {

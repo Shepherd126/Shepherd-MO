@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shepherd_mo/formatter/custom_currency_format.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/activity_expandable.dart';
 
 class EventDetailsContent extends StatelessWidget {
   const EventDetailsContent({super.key});
@@ -43,9 +44,7 @@ class EventDetailsContent extends StatelessWidget {
               ),
             ),
           ),
-
-          const SizedBox(height: 10),
-
+          SizedBox(height: screenHeight * 0.01),
           // Status row with custom padding
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
@@ -156,52 +155,50 @@ class EventDetailsContent extends StatelessWidget {
               ],
             ),
           ),
-          // Padding(
-          //   padding: EdgeInsets.all(screenWidth * 0.04),
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     children: [
-          //       Text(
-          //         AppLocalizations.of(context)!.activity,
-          //         style: TextStyle(
-          //           fontSize: screenHeight * 0.02,
-          //           fontWeight: FontWeight.bold,
-          //         ),
-          //       ),
-          // event.activities!.isEmpty
-          //     ? Center(
-          //         child: Text(
-          //           localizations.noActivity,
-          //           style: TextStyle(
-          //             fontSize: screenHeight * 0.02,
-          //             color: isDark ? Colors.grey[300] : Colors.grey[700],
-          //           ),
-          //         ),
-          //       )
-          //     : SizedBox(
-          //         height:
-          //             screenHeight * 0.4, // Adjust the height as needed
-          //         child: ListView.builder(
-          //           padding: EdgeInsets.all(screenWidth * 0.03),
-          //           itemCount: event.activities!.length,
-          //           itemBuilder: (context, index) {
-          //             final activity = event.activities![index];
-          //             return Padding(
-          //               padding:
-          //                   const EdgeInsets.symmetric(vertical: 8.0),
-          //               child: ActivityExpandableCard(
-          //                 activity: activity,
-          //                 screenHeight: screenHeight,
-          //                 isDark: isDark,
-          //                 screenWidth: screenWidth,
-          //               ),
-          //             );
-          //           },
-          //         ),
-          //       ),
-          //   ],
-          //   // ),
-          // ),
+          Padding(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.activity,
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.02,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                event.activities!.isEmpty
+                    ? Center(
+                        child: Text(
+                          localizations.noActivity,
+                          style: TextStyle(
+                            fontSize: screenHeight * 0.02,
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: screenHeight * 0.4,
+                        child: ListView.builder(
+                          itemCount: event.activities!.length,
+                          itemBuilder: (context, index) {
+                            final activity = event.activities![index];
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 1.0),
+                              child: ActivityExpandableCard(
+                                activity: activity,
+                                screenHeight: screenHeight,
+                                isDark: isDark,
+                                screenWidth: screenWidth,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ],
+            ),
+          ),
         ],
       ),
     );

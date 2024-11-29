@@ -32,6 +32,8 @@ class _GroupDetailState extends State<GroupDetail> {
   Timer? _debounce;
   bool _showButton = false;
   int orderBy = 0;
+  final searchController = TextEditingController();
+  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -78,6 +80,10 @@ class _GroupDetailState extends State<GroupDetail> {
     setState(() {
       _showButton = role == 'admin' || role == 'group_manager';
     });
+  }
+
+  void _unfocus() {
+    FocusScope.of(context).unfocus();
   }
 
   Future<void> _refreshList() async {
@@ -142,264 +148,277 @@ class _GroupDetailState extends State<GroupDetail> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(localizations.details,
+        title: Text(
+            '${localizations.details} ${localizations.group.toLowerCase()}',
             style: Theme.of(context).textTheme.headlineMedium),
         backgroundColor: Colors.orange[800],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.035), // Responsive padding
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-                side: BorderSide(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: screenWidth * 0.003,
+      body: GestureDetector(
+        onTap: _unfocus,
+        child: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.035), // Responsive padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
+                    width: screenWidth * 0.003,
+                  ),
                 ),
-              ),
-              elevation: 1,
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.group.groupName,
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.045,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.005),
-                    Text(
-                      widget.group.description,
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.035,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey[800],
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Text(
-                      '${localizations.member}: ${widget.group.memberCount}',
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.035,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey[600],
-                      ),
-                    ),
-                    if (_showButton)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton(
-                          onPressed: _showDialog,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber[700],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            "Admin Action",
-                            style: TextStyle(fontSize: screenWidth * 0.035),
-                          ),
+                elevation: 1,
+                child: Padding(
+                  padding: EdgeInsets.all(screenWidth * 0.04),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.group.groupName,
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.045,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      SizedBox(height: screenHeight * 0.005),
+                      Text(
+                        widget.group.description,
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.035,
+                          color:
+                              isDark ? Colors.grey.shade400 : Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.01),
+                      Text(
+                        '${localizations.member}: ${widget.group.memberCount}',
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.035,
+                          color:
+                              isDark ? Colors.grey.shade400 : Colors.grey[600],
+                        ),
+                      ),
+                      if (_showButton)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: _showDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber[700],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              "Admin Action",
+                              style: TextStyle(fontSize: screenWidth * 0.035),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.02),
+              Container(
+                padding: EdgeInsets.all(screenWidth * 0.03),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
+                    width: screenWidth * 0.003,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        focusNode: searchFocus,
+                        decoration: InputDecoration(
+                          labelText: localizations.search,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    _searchText = '';
+                                    _refreshList();
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onChanged: _onSearchChanged, // Debounced search input
+                      ),
+                    ),
+                    SizedBox(width: screenWidth * 0.03),
+                    DropdownButton<String>(
+                      alignment: Alignment.bottomCenter,
+                      value: _sortBy,
+                      items: [
+                        DropdownMenuItem(
+                          value: 'name',
+                          child: Text(localizations.name),
+                        ),
+                        DropdownMenuItem(
+                          value: 'role',
+                          child: Text(localizations.role),
+                        ),
+                      ],
+                      onChanged: (value) => _onSortChanged(value ?? 'name'),
+                      style: TextStyle(
+                        color: isDark ? Colors.amber[300] : Colors.amber[800],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                        color: Colors.amber[700],
+                        size: screenWidth * 0.06,
+                      ),
+                      onPressed: _toggleSortDirection,
+                    ),
                   ],
                 ),
               ),
-            ),
-            SizedBox(height: screenHeight * 0.02),
-            Container(
-              padding: EdgeInsets.all(screenWidth * 0.03),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: screenWidth * 0.003,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: localizations.search,
-                        prefixIcon:
-                            const Icon(Icons.search, color: Colors.amber),
-                        filled: true,
-                        fillColor: isDark ? Colors.grey.shade900 : Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: screenHeight * 0.01,
-                          horizontal: screenWidth * 0.04,
-                        ),
-                      ),
-                      onChanged: _onSearchChanged,
-                    ),
-                  ),
-                  SizedBox(width: screenWidth * 0.03),
-                  DropdownButton<String>(
-                    alignment: Alignment.bottomCenter,
-                    value: _sortBy,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'name',
-                        child: Text(localizations.name),
-                      ),
-                      DropdownMenuItem(
-                        value: 'role',
-                        child: Text(localizations.role),
-                      ),
-                    ],
-                    onChanged: (value) => _onSortChanged(value ?? 'name'),
-                    style: TextStyle(
-                      color: isDark ? Colors.amber[300] : Colors.amber[800],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: Colors.amber[700],
-                      size: screenWidth * 0.06,
-                    ),
-                    onPressed: _toggleSortDirection,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.02),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refreshList,
-                child: PagedListView<int, GroupMember>(
-                  pagingController: _pagingController,
-                  builderDelegate: PagedChildBuilderDelegate<GroupMember>(
-                    itemBuilder: (context, item, index) => Container(
-                      padding: EdgeInsets.all(screenWidth * 0.03),
-                      margin:
-                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey.shade800 : Colors.white,
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.grey.shade700
-                              : Colors.grey.shade400,
-                          width: screenWidth * 0.002,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
+              SizedBox(height: screenHeight * 0.02),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _refreshList,
+                  child: PagedListView<int, GroupMember>(
+                    pagingController: _pagingController,
+                    builderDelegate: PagedChildBuilderDelegate<GroupMember>(
+                      itemBuilder: (context, item, index) => Container(
+                        padding: EdgeInsets.all(screenWidth * 0.03),
+                        margin:
+                            EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey.shade800 : Colors.white,
+                          border: Border.all(
                             color: isDark
-                                ? Colors.black.withOpacity(0.3)
-                                : Colors.grey.withOpacity(0.2),
-                            blurRadius: screenWidth * 0.02,
-                            spreadRadius: screenWidth * 0.005,
-                            offset: const Offset(0, 3),
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade400,
+                            width: screenWidth * 0.002,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor:
-                                AvatarFormat().getRandomAvatarColor(),
-                            radius: screenWidth * 0.055,
-                            child: Text(
-                              AvatarFormat()
-                                  .getInitials(item.name, twoLetters: true),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: screenWidth * 0.04,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDark
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.grey.withOpacity(0.2),
+                              blurRadius: screenWidth * 0.02,
+                              spreadRadius: screenWidth * 0.005,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  AvatarFormat().getRandomAvatarColor(),
+                              radius: screenWidth * 0.055,
+                              child: Text(
+                                AvatarFormat()
+                                    .getInitials(item.name, twoLetters: true),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenWidth * 0.04,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: screenWidth * 0.03),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name ?? localizations.noData,
-                                  style: TextStyle(
-                                    fontSize: screenWidth * 0.04,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        isDark ? Colors.white : Colors.black87,
+                            SizedBox(width: screenWidth * 0.03),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name ?? localizations.noData,
+                                    style: TextStyle(
+                                      fontSize: screenWidth * 0.04,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: screenHeight * 0.003),
-                                Text(
-                                  item.email ?? localizations.noData,
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.grey.shade500
-                                        : Colors.grey[700],
-                                    fontSize: screenWidth * 0.03,
+                                  SizedBox(height: screenHeight * 0.003),
+                                  Text(
+                                    item.email ?? localizations.noData,
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey.shade500
+                                          : Colors.grey[700],
+                                      fontSize: screenWidth * 0.03,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          SizedBox(width: screenWidth * 0.03),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: screenWidth * 0.03,
-                                vertical: screenHeight * 0.005),
-                            decoration: BoxDecoration(
-                              color: item.groupRole == 'Thành viên'
-                                  ? (isDark
-                                      ? Colors.grey.shade500
-                                      : Colors.grey
-                                          .shade500) // Use white or dark grey for "Member"
-                                  : (isDark
-                                      ? Colors.amber.shade900
-                                      : Colors.amber[
-                                          100]), // Use amber color for non-members
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              item.groupRole ?? localizations.noData,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.03,
-                                fontWeight: FontWeight.bold,
+                            SizedBox(width: screenWidth * 0.03),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.03,
+                                  vertical: screenHeight * 0.005),
+                              decoration: BoxDecoration(
                                 color: item.groupRole == 'Thành viên'
                                     ? (isDark
-                                        ? Colors.white
-                                        : Colors
-                                            .black) // Adjust text color based on background
+                                        ? Colors.grey.shade500
+                                        : Colors.grey
+                                            .shade500) // Use white or dark grey for "Member"
                                     : (isDark
-                                        ? Colors.white
-                                        : Colors.amber[800]),
+                                        ? Colors.amber.shade900
+                                        : Colors.amber[
+                                            100]), // Use amber color for non-members
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
-                          )
-                        ],
+                              child: Text(
+                                item.groupRole ?? localizations.noData,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.03,
+                                  fontWeight: FontWeight.bold,
+                                  color: item.groupRole == 'Thành viên'
+                                      ? (isDark
+                                          ? Colors.white
+                                          : Colors
+                                              .black) // Adjust text color based on background
+                                      : (isDark
+                                          ? Colors.white
+                                          : Colors.amber[800]),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
+                      firstPageProgressIndicatorBuilder: (_) =>
+                          const Center(child: CircularProgressIndicator()),
+                      newPageProgressIndicatorBuilder: (_) =>
+                          const Center(child: CircularProgressIndicator()),
+                      noItemsFoundIndicatorBuilder: (context) =>
+                          _searchText.isNotEmpty
+                              ? EmptyData(
+                                  noDataMessage: localizations.noResult,
+                                  message: localizations.godAlwaysByYourSide)
+                              : EmptyData(
+                                  noDataMessage: localizations.noMember,
+                                  message: localizations.godAlwaysByYourSide),
+                      noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                     ),
-                    firstPageProgressIndicatorBuilder: (_) =>
-                        const Center(child: CircularProgressIndicator()),
-                    newPageProgressIndicatorBuilder: (_) =>
-                        const Center(child: CircularProgressIndicator()),
-                    noItemsFoundIndicatorBuilder: (context) =>
-                        _searchText.isNotEmpty
-                            ? EmptyData(
-                                noDataMessage: localizations.noResult,
-                                message: localizations.godAlwaysByYourSide)
-                            : EmptyData(
-                                noDataMessage: localizations.noMember,
-                                message: localizations.godAlwaysByYourSide),
-                    noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

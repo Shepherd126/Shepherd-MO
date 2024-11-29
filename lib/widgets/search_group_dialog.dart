@@ -21,6 +21,8 @@ class _GroupListDialogState extends State<GroupListDialog> {
 
   String _searchText = ''; // Empty to show all items initially
   Timer? _debounce; // Timer for debouncing
+  final searchController = TextEditingController();
+  final searchFocus = FocusNode();
   final List<Group> _selectedItems = []; // Store selected items
 
   @override
@@ -54,6 +56,10 @@ class _GroupListDialogState extends State<GroupListDialog> {
     } catch (e) {
       _pagingController.error = e;
     }
+  }
+
+  void _unfocus() {
+    FocusScope.of(context).unfocus();
   }
 
   // Method to refresh the entire list
@@ -94,118 +100,132 @@ class _GroupListDialogState extends State<GroupListDialog> {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     final localizations = AppLocalizations.of(context)!;
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16.0),
-                topRight: Radius.circular(16.0),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Center(
-                child: Text(
-                  localizations.ceremony,
-                  style: Theme.of(context).textTheme.headlineMedium,
+    return GestureDetector(
+      onTap: _unfocus,
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.0),
+                  topRight: Radius.circular(16.0),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: localizations.search,
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(
+                  child: Text(
+                    localizations.ceremony,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  onChanged: _onSearchChanged, // Debounced search input
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                SizedBox(
-                  height: screenHeight * 0.3,
-                  child: RefreshIndicator(
-                    displacement: 20,
-                    onRefresh: _refreshList, // Triggers the refresh method
-                    child: PagedListView<int, Group>(
-                      shrinkWrap: true,
-                      pagingController: _pagingController,
-                      builderDelegate: PagedChildBuilderDelegate<Group>(
-                        itemBuilder: (context, item, index) => ListTile(
-                          title: Text(item.groupName ?? localizations.noData),
-                          trailing: Icon(
-                            _isSelected(item)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color: _isSelected(item) ? Colors.blue : null,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: searchController,
+                    focusNode: searchFocus,
+                    decoration: InputDecoration(
+                      labelText: localizations.search,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                searchController.clear();
+                                _searchText = '';
+                                _refreshList();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: _onSearchChanged, // Debounced search input
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(
+                    height: screenHeight * 0.3,
+                    child: RefreshIndicator(
+                      displacement: 20,
+                      onRefresh: _refreshList, // Triggers the refresh method
+                      child: PagedListView<int, Group>(
+                        pagingController: _pagingController,
+                        builderDelegate: PagedChildBuilderDelegate<Group>(
+                          itemBuilder: (context, item, index) => ListTile(
+                            title: Text(item.groupName ?? localizations.noData),
+                            trailing: Icon(
+                              _isSelected(item)
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: _isSelected(item) ? Colors.blue : null,
+                            ),
+                            onTap: () =>
+                                _toggleSelection(item), // Toggle selection
                           ),
-                          onTap: () =>
-                              _toggleSelection(item), // Toggle selection
+                          firstPageProgressIndicatorBuilder: (_) =>
+                              const Center(child: CircularProgressIndicator()),
+                          newPageProgressIndicatorBuilder: (_) =>
+                              const Center(child: CircularProgressIndicator()),
+                          noItemsFoundIndicatorBuilder: (context) => _searchText
+                                  .isNotEmpty
+                              ? EmptyData(
+                                  noDataMessage: localizations.noResult,
+                                  message: localizations.godAlwaysByYourSide)
+                              : EmptyData(
+                                  noDataMessage: localizations.noGroup,
+                                  message: localizations.godAlwaysByYourSide),
+                          noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                         ),
-                        firstPageProgressIndicatorBuilder: (_) =>
-                            const Center(child: CircularProgressIndicator()),
-                        newPageProgressIndicatorBuilder: (_) =>
-                            const Center(child: CircularProgressIndicator()),
-                        noItemsFoundIndicatorBuilder: (context) =>
-                            _searchText.isNotEmpty
-                                ? EmptyData(
-                                    noDataMessage: localizations.noResult,
-                                    message: localizations.godAlwaysByYourSide)
-                                : EmptyData(
-                                    noDataMessage: localizations.noGroup,
-                                    message: localizations.godAlwaysByYourSide),
-                        noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                       ),
                     ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        style: ButtonStyle(
-                          backgroundColor:
-                              WidgetStatePropertyAll(Colors.redAccent),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStatePropertyAll(Colors.redAccent),
+                          ),
+                          child: Text(localizations.close),
                         ),
-                        child: Text(localizations.close),
-                      ),
-                      SizedBox(width: screenWidth * 0.02),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context)
-                              .pop(_selectedItems); // Return selected items
-                        },
-                        style: ButtonStyle(
-                          backgroundColor:
-                              WidgetStateProperty.all(Colors.blueAccent),
+                        SizedBox(width: screenWidth * 0.02),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(_selectedItems); // Return selected items
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.all(Colors.blueAccent),
+                          ),
+                          child: const Text('OK'),
                         ),
-                        child: const Text('OK'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

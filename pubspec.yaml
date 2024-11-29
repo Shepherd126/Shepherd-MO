@@ -74,11 +74,27 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
 
-  flutter_launcher_icons: ^0.14.1
+  flutter_launcher_icons: "^0.14.1"
+
 flutter_launcher_icons:
-  android: true
+  android: "ic_launcher"
   ios: true
+  remove_alpha_ios: true
   image_path: "assets/images/shepherd.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "assets/images/shepherd.png"
+  web:
+    generate: true
+    image_path: "assets/images/shepherd.png"
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
+  windows:
+    generate: true
+    image_path: "assets/images/shepherd.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/shepherd.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -331,9 +331,11 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                       ),
                       child: Obx(() {
                         if (refreshController.shouldRefresh.value) {
-                          selectedIndex = 0;
-                          _refreshList();
-                          refreshController.setShouldRefresh(false);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            selectedIndex = 0;
+                            _refreshList();
+                            refreshController.setShouldRefresh(false);
+                          });
                         }
                         return RefreshIndicator(
                           displacement: 10,
@@ -499,9 +501,9 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                             fontSize: screenHeight * 0.018)),
               ],
             ),
-            SizedBox(height: screenHeight * 0.02),
             !chartDataIsEmpty
                 ? Container(
+                    margin: EdgeInsets.only(top: screenHeight * 0.012),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Colors.grey, // Customize the color of the border

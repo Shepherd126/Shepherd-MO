@@ -7,6 +7,7 @@ import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/widgets/auth_input_field.dart';
 import 'package:shepherd_mo/widgets/gradient_text.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -61,6 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -108,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           Align(
                             alignment: Alignment.center,
                             child: Text(
-                              "Let's create an account for you!",
+                              localizations.accountForYou,
                               style: TextStyle(
                                 fontSize: screenHeight * 0.02,
                               ),
@@ -122,6 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 AuthInputField(
                                   controller: emailController,
                                   labelText: 'Email',
+                                  hintText: '${localizations.enter} email',
                                   prefixIcon: Icons.person,
                                   isDark: isDark,
                                   width: screenWidth,
@@ -132,7 +135,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                 SizedBox(height: screenHeight * 0.02),
                                 AuthInputField(
                                   controller: phoneController,
-                                  labelText: 'Phone',
+                                  labelText: localizations.phone,
+                                  hintText:
+                                      '${localizations.enter} ${localizations.phone.toLowerCase()}',
                                   prefixIcon: Icons.phone,
                                   isDark: isDark,
                                   width: screenWidth,
@@ -143,7 +148,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                 SizedBox(height: screenHeight * 0.02),
                                 AuthInputField(
                                   controller: passwordController,
-                                  labelText: 'Password',
+                                  labelText: localizations.password,
+                                  hintText:
+                                      '${localizations.enter} ${localizations.password.toLowerCase()}',
                                   prefixIcon: Icons.key,
                                   isPasswordField: true,
                                   hidePassword: hidePassword,
@@ -161,7 +168,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 SizedBox(height: screenHeight * 0.02),
                                 AuthInputField(
                                   controller: confirmPassController,
-                                  labelText: 'Confirm Password',
+                                  labelText: localizations.confirmPassword,
+                                  hintText: localizations.enterConfirmPassword,
                                   prefixIcon: Icons.key,
                                   isPasswordField: true,
                                   hidePassword: hideConfirmPassword,
@@ -195,7 +203,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     _passwordFocus.unfocus();
                                   },
                                   child: Center(
-                                    child: Text("Sign Up",
+                                    child: Text(localizations.signup,
                                         style: TextStyle(
                                             fontSize: screenHeight * 0.025,
                                             fontWeight: FontWeight.w900)),
@@ -213,7 +221,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              Text("OR",
+                              Text(localizations.or,
                                   style: TextStyle(color: Colors.grey[600])),
                               Expanded(
                                 child: Divider(
@@ -238,7 +246,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             icon: Image.asset('assets/images/google_icon.png',
                                 width: screenWidth * 0.06,
                                 height: screenWidth * 0.06),
-                            label: const Text('Continue with Google',
+                            label: Text(localizations.google,
                                 style: TextStyle(fontSize: 20)),
                             onPressed: () {
                               //function
@@ -250,7 +258,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Already have an account?",
+                        Text(localizations.alreadyHaveAccount,
                             style: TextStyle(fontSize: screenHeight * 0.018)),
                         TextButton(
                           onPressed: () {
@@ -258,7 +266,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 transition: Transition.leftToRightWithFade);
                           },
                           child: Text(
-                            "Login now",
+                            localizations.loginNow,
                             style: TextStyle(
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,

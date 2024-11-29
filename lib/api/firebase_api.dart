@@ -17,9 +17,13 @@ class FirebaseApi {
   final _firebaseMessaging = FirebaseMessaging.instance;
 
   final _androidChannel = const AndroidNotificationChannel(
-      'high_importance_channel', 'High Importance Notifications',
-      description: 'This chanel is used for important notification',
-      importance: Importance.defaultImportance);
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This chanel is used for important notification',
+    importance: Importance.max,
+    playSound: true,
+    showBadge: true,
+  );
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
   void handleMessage(RemoteMessage? message) {
@@ -38,7 +42,7 @@ class FirebaseApi {
 
   Future initLocalNotifications() async {
     const iOS = DarwinInitializationSettings();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings('@drawable/ic_launcher');
     const settings = InitializationSettings(android: android, iOS: iOS);
 
     await _localNotifications.initialize(settings,
@@ -65,6 +69,7 @@ class FirebaseApi {
     FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
+
       if (notification == null) return;
 
       _localNotifications.show(
@@ -76,7 +81,12 @@ class FirebaseApi {
             _androidChannel.id,
             _androidChannel.name,
             channelDescription: _androidChannel.description,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_launcher',
+            playSound: true,
+            importance: Importance.max,
+            showWhen: true,
+            priority: Priority.high,
+            channelShowBadge: true,
           )),
           payload: jsonEncode(message.toMap()));
     });

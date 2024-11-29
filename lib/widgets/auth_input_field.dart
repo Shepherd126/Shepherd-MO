@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AuthInputField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
+  final String hintText;
   final IconData prefixIcon;
   final bool isPasswordField;
   final bool hidePassword;
@@ -16,6 +18,7 @@ class AuthInputField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.labelText,
+    required this.hintText,
     required this.prefixIcon,
     this.isPasswordField = false,
     this.hidePassword = false,
@@ -29,7 +32,7 @@ class AuthInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-
+    final localizations = AppLocalizations.of(context)!;
     return SizedBox(
       width: width,
       child: TextFormField(
@@ -38,7 +41,7 @@ class AuthInputField extends StatelessWidget {
         obscureText: isPasswordField ? hidePassword : false,
         validator: (value) {
           if (value!.isEmpty) {
-            return 'This field is required.';
+            return localizations.required;
           }
           if (isPasswordField && value.length < 5) {
             return 'Password must be at least 5 characters long.';
@@ -49,6 +52,7 @@ class AuthInputField extends StatelessWidget {
         decoration: InputDecoration(
           border: const OutlineInputBorder(),
           labelText: labelText,
+          hintText: hintText,
           prefixIcon:
               Icon(prefixIcon, color: isDark ? Colors.white : Colors.black),
           suffixIcon: isPasswordField

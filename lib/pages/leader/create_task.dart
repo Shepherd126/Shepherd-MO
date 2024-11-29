@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
@@ -71,7 +70,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     groupController.text = widget.group.groupName;
     activityController.text = widget.activityName;
     titleController.addListener(() {
-      setState(() {}); // Rebuild when title changes
+      setState(() {});
     });
 
     descriptionController.addListener(() {
@@ -104,6 +103,10 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     }
 
     task = Task(groupId: widget.group.groupId, activityId: widget.activityId);
+  }
+
+  void _unfocus() {
+    FocusScope.of(context).unfocus();
   }
 
   @override
@@ -273,6 +276,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                   child: TextFormField(
                     focusNode: _titleFocus,
                     controller: titleController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
                         return localizations.required;
@@ -339,6 +343,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                     maxLines: null,
                     focusNode: _descriptionFocus,
                     controller: descriptionController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value!.trim().isEmpty) {
                         return localizations.required;
@@ -398,9 +403,10 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                     keyboardType: TextInputType.number,
                     focusNode: _costFocus,
                     controller: costController,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "Please enter an amount";
+                        return localizations.required;
                       } else if (value.startsWith('0')) {
                         return "Amount cannot start with zero";
                       }
@@ -487,6 +493,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
               SizedBox(height: screenHeight * 0.02),
               ElevatedButton(
                 onPressed: () async {
+                  _unfocus();
                   if (validateAndSave()) {
                     setState(() {
                       isApiCallProcess = true;
@@ -497,28 +504,39 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
 
                     if (widget.task == null) {
                       // Create a new task
-                      isSuccess = await apiService.createTask(task);
-                      if (isSuccess) {
+                      final result = await apiService.createTask(task);
+                      final success = result.$1;
+                      final message = result.$2;
+                      if (success) {
                         showToast(
                             '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
                       } else {
-                        showToast(
-                            '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                        if (message != null) {
+                          showToast(message);
+                        } else {
+                          showToast(
+                              '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                        }
                       }
                     } else {
                       // Edit an existing task
                       task.id =
                           widget.task!.id; // Pass the task ID for updating
-                      isSuccess = await apiService.updateTask(task);
-                      if (isSuccess) {
+                      final result = await apiService.updateTask(task);
+                      final success = result.$1;
+                      final message = result.$2;
+                      if (success) {
                         showToast(
                             '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
                       } else {
-                        showToast(
-                            '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                        if (message != null) {
+                          showToast(message);
+                        } else {
+                          showToast(
+                              '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.unsuccess.toLowerCase()}');
+                        }
                       }
                     }
-
                     setState(() {
                       isApiCallProcess = false;
                     });

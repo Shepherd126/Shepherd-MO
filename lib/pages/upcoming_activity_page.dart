@@ -441,6 +441,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
       // Navigate based on the user's role
       final BottomNavController controller = Get.find<BottomNavController>();
       if (controller.selectedIndex != 3) controller.changeTabIndex(3);
+      Get.back(id: 3);
       Get.to(
         () => isLeader
             ? TaskManagementPage(

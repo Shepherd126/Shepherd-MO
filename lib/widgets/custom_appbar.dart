@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/controller/controller.dart';
-import 'package:shepherd_mo/pages/request_page.dart';
+import 'package:shepherd_mo/pages/leader/request_page.dart';
+import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -81,6 +82,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 child: IconButton(
                   onPressed: () {
                     // Handle notification button press
+                    Get.to(() => NotificationPage(),
+                        transition: Transition.rightToLeftWithFade);
                   },
                   icon: Icon(
                     Icons.notifications_none,

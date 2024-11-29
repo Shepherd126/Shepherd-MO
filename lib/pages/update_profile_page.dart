@@ -10,14 +10,14 @@ import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class UpdateProfileScreen extends StatefulWidget {
-  const UpdateProfileScreen({super.key});
+class UpdateProfilePage extends StatefulWidget {
+  const UpdateProfilePage({super.key});
 
   @override
-  _UpdateProfileScreenState createState() => _UpdateProfileScreenState();
+  _UpdateProfilePageState createState() => _UpdateProfilePageState();
 }
 
-class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
+class _UpdateProfilePageState extends State<UpdateProfilePage> {
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
   var roleController = TextEditingController();
   var emailController = TextEditingController();
@@ -275,27 +275,35 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: screenHeight * 0.02),
                         SizedBox(
                           width: screenWidth * 0.8,
                           child: ElevatedButton(
                             onPressed: () async {
                               if (validateAndSave()) {
+                                if (loginInfo.name == fullNameController.text &&
+                                    loginInfo.phone ==
+                                        phoneController.text.trim()) {
+                                  showToast(localizations.notChange);
+                                  return;
+                                }
                                 setState(() {
                                   isApiCallProcess = true;
                                 });
 
                                 final id = loginInfo.id;
                                 final updatedUser = User(
-                                  name: fullNameController.text,
+                                  name: fullNameController.text.trim(),
                                   phone: phoneController.text,
                                   role: roleController.text,
                                   email: emailController.text,
                                   id: id,
                                 );
 
-                                final success =
+                                final result =
                                     await apiService.updateUser(updatedUser);
+                                final success = result.$1;
+                                final message = result.$2;
 
                                 setState(() {
                                   isApiCallProcess = false;
@@ -306,8 +314,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                                       '${localizations.editProfile} ${localizations.success.toLowerCase()}');
                                   Get.back(id: 4);
                                 } else {
-                                  showToast(
-                                      '${localizations.editProfile} ${localizations.unsuccess.toLowerCase()}');
+                                  if (message != null) {
+                                    showToast(
+                                        '${localizations.editProfile} ${localizations.unsuccess.toLowerCase()}');
+                                  } else {
+                                    showToast(message!);
+                                  }
                                 }
                               }
                             },

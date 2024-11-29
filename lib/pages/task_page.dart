@@ -273,40 +273,49 @@ class _TaskPageState extends State<TaskPage> {
                       decoration: BoxDecoration(
                         color: isDark ? Colors.grey.shade900 : Colors.white,
                       ),
-                      child: RefreshIndicator(
-                        onRefresh: _refreshList,
-                        child: PagedListView<int, Task>(
-                          pagingController: _pagingController,
-                          builderDelegate: PagedChildBuilderDelegate<Task>(
-                            itemBuilder: (context, task, index) => TaskCard(
-                              task: task,
-                              showStatus: selectedIndex == 0 ? true : false,
-                              isLeader: false,
-                              activityId: widget.activityId,
-                              activityName: widget.activityName,
-                              group: widget.group,
-                            ),
-                            firstPageProgressIndicatorBuilder: (_) =>
-                                const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            newPageProgressIndicatorBuilder: (_) =>
-                                const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            noItemsFoundIndicatorBuilder: (context) =>
-                                EmptyData(
-                              noDataMessage: localizations.noTask,
-                              message: localizations.takeABreak,
-                            ),
-                            noMoreItemsIndicatorBuilder: (_) => Padding(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: screenHeight * 0.02),
-                              child: EndOfListWidget(),
+                      child: Obx(() {
+                        if (refreshController.shouldRefresh.value) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            selectedIndex = 0;
+                            _refreshList();
+                            refreshController.setShouldRefresh(false);
+                          });
+                        }
+                        return RefreshIndicator(
+                          onRefresh: _refreshList,
+                          child: PagedListView<int, Task>(
+                            pagingController: _pagingController,
+                            builderDelegate: PagedChildBuilderDelegate<Task>(
+                              itemBuilder: (context, task, index) => TaskCard(
+                                task: task,
+                                showStatus: selectedIndex == 0 ? true : false,
+                                isLeader: false,
+                                activityId: widget.activityId,
+                                activityName: widget.activityName,
+                                group: widget.group,
+                              ),
+                              firstPageProgressIndicatorBuilder: (_) =>
+                                  const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              newPageProgressIndicatorBuilder: (_) =>
+                                  const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              noItemsFoundIndicatorBuilder: (context) =>
+                                  EmptyData(
+                                noDataMessage: localizations.noTask,
+                                message: localizations.takeABreak,
+                              ),
+                              noMoreItemsIndicatorBuilder: (_) => Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: screenHeight * 0.02),
+                                child: EndOfListWidget(),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
                   ),
                 ],
