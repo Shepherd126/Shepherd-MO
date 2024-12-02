@@ -83,7 +83,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   onPressed: () {
                     // Handle notification button press
                     Get.to(() => NotificationPage(),
-                        transition: Transition.rightToLeftWithFade);
+                        transition: Transition.topLevel);
                   },
                   icon: Icon(
                     Icons.notifications_none,

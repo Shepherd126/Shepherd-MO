@@ -22,7 +22,7 @@ import 'package:shepherd_mo/models/group_user.dart';
 import 'package:shepherd_mo/models/user.dart';
 import 'package:shepherd_mo/pages/change_password_page.dart';
 import 'package:shepherd_mo/pages/group_members_page.dart';
-import 'package:shepherd_mo/pages/leader/create_event.dart';
+import 'package:shepherd_mo/pages/leader/create_edit_event.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
 import 'package:shepherd_mo/pages/settings_page.dart';
@@ -799,6 +799,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
   Future<List<GroupRole>>? userGroups;
   User? loginInfo;
+
   void _onDaySelected(DateTime day, DateTime focusedDay) {
     if (mounted) {
       setState(() {

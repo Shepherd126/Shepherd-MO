@@ -78,10 +78,10 @@ class ActivityCard extends StatelessWidget {
       AppLocalizations localizations, double screenWidth, double screenHeight) {
     return Column(
       children: [
-        _buildDateInfo(localizations.start, activity.startDate!, screenWidth,
+        _buildDateInfo(localizations.start, activity.startTime!, screenWidth,
             screenHeight),
         _buildDateInfo(
-            localizations.end, activity.endDate!, screenWidth, screenHeight),
+            localizations.end, activity.endTime!, screenWidth, screenHeight),
       ],
     );
   }

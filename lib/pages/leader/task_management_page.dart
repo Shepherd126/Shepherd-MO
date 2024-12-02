@@ -8,12 +8,13 @@ import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/formatter/custom_currency_format.dart';
 import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
-import 'package:shepherd_mo/pages/leader/create_task.dart';
+import 'package:shepherd_mo/pages/leader/create_edit_task.dart';
 import 'package:shepherd_mo/pages/update_progress_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/widgets/custom_marquee.dart';
@@ -107,8 +108,9 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
 
   Future<Map<String, dynamic>> fetchData() async {
     ApiService apiService = ApiService();
-    final results =
-        await apiService.fetchActivities(searchKey: widget.activityId) ?? [];
+    final results = await apiService.fetchActivities(
+            searchKey: widget.activityId, groupId: widget.group.groupId) ??
+        [];
     final data = results.first;
 
     setState(() {
@@ -199,14 +201,24 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
     return totalTasks > 0 ? ((doneTasks / totalTasks) * 100).round() : 0;
   }
 
-  String formatEventDateRange(DateTime? fromDate, DateTime? toDate) {
-    if (fromDate == null || toDate == null) return 'Invalid date range';
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    final timeFormat = DateFormat('HH:mm');
-    final date = dateFormat.format(fromDate);
-    final fromTime = timeFormat.format(fromDate);
-    final toTime = timeFormat.format(toDate);
-    return '$date | $fromTime - $toTime';
+  String formatDateRange(
+      DateTime? fromDate, DateTime? toDate, AppLocalizations localizations) {
+    if (fromDate == null || toDate == null) return localizations.noData;
+    final from = DateTime(fromDate.year, fromDate.month, fromDate.day);
+    final to = DateTime(toDate.year, toDate.month, toDate.day);
+    if (from.isBefore(to)) {
+      final format = DateFormat('dd/MM/yyyy | HH:mm');
+      final startDate = format.format(fromDate);
+      final endDate = format.format(toDate);
+      return "$startDate\n$endDate";
+    } else {
+      final dateFormat = DateFormat('dd/MM/yyyy');
+      final timeFormat = DateFormat('HH:mm');
+      final date = dateFormat.format(fromDate);
+      final fromTime = timeFormat.format(fromDate);
+      final toTime = timeFormat.format(toDate);
+      return '$date | $fromTime - $toTime';
+    }
   }
 
   Future<void> _refreshList() async {
@@ -460,50 +472,91 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.access_time,
-                        size: screenHeight * 0.025, color: Colors.blueGrey),
-                    SizedBox(width: 8),
-                    Text(
-                      formatEventDateRange(event.fromDate, event.toDate),
-                      style: TextStyle(
-                        fontSize: screenHeight * 0.015,
-                        color: isDark
-                            ? Colors.grey.shade300
-                            : Colors.grey.shade600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time,
+                            size: screenHeight * 0.02, color: Colors.black),
+                        SizedBox(width: screenWidth * 0.008),
+                        Text(
+                          formatDateRange(
+                              event.fromDate, event.toDate, localizations),
+                          style: TextStyle(
+                            fontSize: screenHeight * 0.016,
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.attach_money,
+                            size: screenHeight * 0.02, color: Colors.black),
+                        SizedBox(width: screenWidth * 0.008),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${localizations.budget}: ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: screenHeight * 0.016,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade800),
+                              ),
+                              TextSpan(
+                                text:
+                                    '${formatCurrency(event.totalCost)} VND' ??
+                                        localizations.noData,
+                                style: TextStyle(
+                                    fontSize: screenHeight * 0.016,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade800),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
                 Container(
-                    width: screenWidth * 0.28,
-                    height: screenHeight * 0.035,
-                    padding: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.03,
-                        vertical: screenHeight * 0.005),
-                    decoration: BoxDecoration(
-                      color: Const.primaryGoldenColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: textWidth <= screenWidth * 0.28
-                        ? Text(
-                            widget.group.groupName ?? localizations.noData,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: screenHeight * 0.018,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                                overflow: TextOverflow.ellipsis),
-                          )
-                        : CustomMarquee(
-                            text: widget.group.groupName,
-                            fontSize: screenHeight * 0.018)),
+                  width: screenWidth * 0.28,
+                  height: screenHeight * 0.035,
+                  padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.005),
+                  decoration: BoxDecoration(
+                    color: Const.primaryGoldenColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: textWidth <= screenWidth * 0.28
+                      ? Text(
+                          widget.group.groupName ?? localizations.noData,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: screenHeight * 0.018,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              overflow: TextOverflow.ellipsis),
+                        )
+                      : CustomMarquee(
+                          text: widget.group.groupName,
+                          fontSize: screenHeight * 0.018,
+                        ),
+                ),
               ],
             ),
             !chartDataIsEmpty
                 ? Container(
-                    margin: EdgeInsets.only(top: screenHeight * 0.012),
+                    margin: EdgeInsets.only(top: screenHeight * 0.01),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Colors.grey, // Customize the color of the border
@@ -598,6 +651,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                     ),
                   ),
                 ),
+                SizedBox(width: screenWidth * 0.01),
                 Container(
                   padding: EdgeInsets.symmetric(
                       horizontal: screenWidth * 0.03,
@@ -617,17 +671,71 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
               ],
             ),
             SizedBox(height: screenHeight * 0.005),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.access_time,
+                        size: screenHeight * 0.02, color: Colors.black),
+                    SizedBox(width: screenWidth * 0.008),
+                    Text(
+                      formatDateRange(
+                          activity.startTime, activity.endTime, localizations),
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.016,
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.attach_money,
+                        size: screenHeight * 0.02, color: Colors.black),
+                    SizedBox(width: screenWidth * 0.008),
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${localizations.budget}: ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenHeight * 0.016,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade800),
+                          ),
+                          TextSpan(
+                            text: activity.groupActivities?.isNotEmpty == true
+                                ? '${formatCurrency(activity.groupActivities?.first.cost!)} VND'
+                                : localizations.noData,
+                            style: TextStyle(
+                                fontSize: screenHeight * 0.016,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade800),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
             ExpandableText(
-              '${activity.description}\n${localizations.totalCost}: ${activity.totalCost} VND' ??
-                  localizations.noData,
+              '${activity.description}' ?? localizations.noData,
               expandText: localizations.showMore,
               collapseText: localizations.showLess,
               maxLines: 2,
+              animation: true,
               linkColor: Colors.blueAccent,
               style: TextStyle(
                 fontSize: screenHeight * 0.016,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-                height: 1.4,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade800,
               ),
             ),
           ],
@@ -709,6 +817,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
             localizations.updateProgress,
             style: TextStyle(
               fontWeight: FontWeight.w600,
+              fontSize: screenHeight * 0.017,
             ),
           ),
         )

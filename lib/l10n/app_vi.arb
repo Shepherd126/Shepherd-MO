@@ -21,7 +21,10 @@
   "dateAndTime": "Thời gian",
   "public": "Công khai",
   "private": "Riêng tư",
-  "totalCost": "Chi phí",
+  "totalCost": "Tổng chi phí",
+  "cost": "Chi phí",
+  "budget": "Kinh phí",
+  "balance": "Số dư",
   "ceremony": "Lễ",
   "create": "Tạo",
   "edit": "Chỉnh sửa",
@@ -42,8 +45,10 @@
   "task": "Công việc",
   "details": "Chi tiết",
   "tokenExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
-  "noEvent": "Không có sự kiện nào được lên lịch cho ngày này",
+  "noEvent": "Không có sự kiện nào được lên lịch cho ngày này.",
   "noActivity": "Không có hoạt động nào được lên lịch cho ngày này.",
+  "noUpcomingEvent": "Không có sự kiện nào sắp diễn ra.",
+  "noUpcomingActivity": "Không có hoạt động nào sắp diễn ra.",
   "noTask": "Không có công việc nào được lên lịch cho hoạt động này.",
   "noMember": "Không có thành viên nào tìm thấy trong đoàn thể này.",
   "start": "Bắt đầu",
@@ -139,5 +144,5 @@
   "notChange": "Bạn chưa thay đổi gì cả!",
   "notification": "Thông báo",
   "noNotification": "Hiện tại không có thông báo nào",
-  "wellDoneServant": "Hỡi đầy tớ tốt lành và trung tín, tốt lắm\nMatthew 25:21"
+  "wellDoneServant": "Hỡi đầy tớ tốt lành và trung tín, tốt lắm!\nMatthew 25:21"
 }

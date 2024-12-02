@@ -1,4 +1,4 @@
-class Task {
+class Task implements Comparable<Task> {
   String? id;
   String? title;
   String? description;
@@ -41,7 +41,7 @@ class Task {
       title: json['title'] != null ? json['title'] as String : null,
       description: json['description'] as String?,
       status: json['status'] as String?,
-      cost: json['cost']?.toInt(),
+      cost: json['cost'] != null ? (json['cost'] as num).toInt() : null,
       userId: json['userId'] as String?,
       groupUserId: json['groupUserId'] as String?,
       groupId: json['groupId'] as String?,
@@ -89,5 +89,12 @@ class Task {
         'activityName: $activityName, '
         'activityDescription: $activityDescription, '
         ')';
+  }
+
+  @override
+  int compareTo(Task other) {
+    // Compare by cost (you can modify this to compare by any other property)
+
+    return this.cost!.compareTo(other.cost!); // Comparing by cost
   }
 }

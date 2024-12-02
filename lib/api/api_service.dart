@@ -174,12 +174,15 @@ class ApiService {
           results.map((json) => Activity.fromJson(json)).toList();
       activitiesByDate = {};
       for (Activity activity in activities) {
-        final date = DateTime(activity.startDate!.year,
-            activity.startDate!.month, activity.startDate!.day);
-        if (activitiesByDate[date] == null) {
-          activitiesByDate[date] = [];
+        if (activity.startTime != null) {
+          final date = DateTime(activity.startTime!.year,
+              activity.startTime!.month, activity.startTime!.day);
+          if (activitiesByDate[date] == null) {
+            activitiesByDate[date] = [];
+          }
+
+          activitiesByDate[date]!.add(activity);
         }
-        activitiesByDate[date]!.add(activity);
       }
       return activitiesByDate;
     } else if (response.statusCode == 401) {
@@ -681,6 +684,7 @@ class ApiService {
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
     print(jsonEncode(task.toJson()));
+
     try {
       final response = await http.put(
         url,

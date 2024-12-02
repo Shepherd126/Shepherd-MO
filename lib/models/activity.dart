@@ -1,32 +1,32 @@
+import 'package:shepherd_mo/models/group_activity.dart';
 import 'package:shepherd_mo/models/group_user.dart';
 
 class Activity {
-  final String id;
-  final String? activityName;
-  final String? description;
-  final String? startTime;
-  final String? endTime;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final DateTime? createTime;
-  final DateTime? updateTime;
-  final String? status;
-  final int? totalCost;
-  final List<GroupAndUser>? groupAndUsers;
+  String id;
+  String? activityName;
+  String? description;
+  DateTime? startTime;
+  DateTime? endTime;
+  DateTime? createTime;
+  DateTime? updateTime;
+  String? status;
+  int? totalCost;
+  List<GroupAndUser>? groupAndUsers;
+  List<GroupActivity>? groupActivities;
 
-  Activity(
-      {required this.id,
-      this.activityName,
-      this.description,
-      this.startTime,
-      this.endTime,
-      this.startDate,
-      this.endDate,
-      this.createTime,
-      this.updateTime,
-      this.status,
-      this.totalCost,
-      this.groupAndUsers});
+  Activity({
+    required this.id,
+    this.activityName,
+    this.description,
+    this.startTime,
+    this.endTime,
+    this.createTime,
+    this.updateTime,
+    this.status,
+    this.totalCost,
+    this.groupAndUsers,
+    this.groupActivities,
+  });
 
   // Factory method to create an Activity from a JSON map
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -35,13 +35,11 @@ class Activity {
       activityName: json['activityName'] as String,
       description:
           json['description'] != null ? json['description'] as String : null,
-      startTime: json['startTime'] as String,
-      endTime: json['endTime'] as String,
-      startDate: json['startDate'] != null
-          ? DateTime.tryParse(json['startDate'] as String)
+      startTime: json['startTime'] != null
+          ? DateTime.tryParse(json['startTime'] as String)
           : null,
-      endDate: json['endDate'] != null
-          ? DateTime.tryParse(json['endDate'] as String)
+      endTime: json['endTime'] != null
+          ? DateTime.tryParse(json['endTime'] as String)
           : null,
       createTime: json['createTime'] != null
           ? DateTime.parse(json['createTime'] as String)
@@ -50,12 +48,16 @@ class Activity {
           ? DateTime.parse(json['updateTime'] as String)
           : null,
       status: json['status'] as String,
-      totalCost: json['totalCost'] != null
-          ? int.tryParse(json['totalCost'].toString())
-          : null,
+      totalCost:
+          json['totalCost'] != null ? (json['totalCost'] as num).toInt() : null,
       groupAndUsers: json['groupAndUsers'] != null
           ? (json['groupAndUsers'] as List<dynamic>)
               .map((e) => GroupAndUser.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
+      groupActivities: json['groupActivities'] != null
+          ? (json['groupActivities'] as List<dynamic>)
+              .map((e) => GroupActivity.fromJson(e as Map<String, dynamic>))
               .toList()
           : null,
     );
@@ -67,10 +69,8 @@ class Activity {
       'id': id,
       'activityName': activityName,
       'description': description,
-      'startTime': startTime,
-      'endTime': endTime,
-      'startDate': startDate?.toIso8601String(),
-      'endDate': endDate?.toIso8601String(),
+      'startTime': startTime?.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
       'createTime': createTime?.toIso8601String(),
       'updateTime': updateTime?.toIso8601String(),
       'status': status,

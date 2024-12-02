@@ -53,7 +53,10 @@ class CurrencyFormatter extends TextInputFormatter {
   }
 }
 
-String formatCurrency(int number) {
+String formatCurrency(int? number) {
+  if (number == null) {
+    return '0'; // or an empty string, or another default value
+  }
   final numberString = number.toString();
   final buffer = StringBuffer();
 

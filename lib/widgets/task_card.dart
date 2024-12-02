@@ -7,7 +7,7 @@ import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
-import 'package:shepherd_mo/pages/leader/create_task.dart';
+import 'package:shepherd_mo/pages/leader/create_edit_task.dart';
 import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 

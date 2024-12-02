@@ -1,4 +1,5 @@
 import 'package:shepherd_mo/models/activity.dart';
+import 'package:shepherd_mo/models/group_activity.dart';
 
 class Event {
   String? id;
@@ -41,7 +42,8 @@ class Event {
       toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
       isPublic: json['isPublic'],
       status: json['status'],
-      totalCost: json['totalCost']?.toInt(),
+      totalCost:
+          json['totalCost'] != null ? (json['totalCost'] as num).toInt() : null,
       approvalDate: json['approvalDate'] != null
           ? DateTime.parse(json['approvalDate'])
           : null,
