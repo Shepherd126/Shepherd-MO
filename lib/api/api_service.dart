@@ -998,4 +998,117 @@ class ApiService {
       throw Exception('Error fetching requests: $error');
     }
   }
+
+  Future<(int, bool)> fetchUnreadNoti() async {
+    // Build URI with query parameters
+    final uri = Uri.parse('$baseUrl/notification/GetUnread');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      // Send GET request
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'];
+        final unread = data['unread'] as int;
+        final haveUnread = data['haveUnread'] as bool;
+        return (unread, haveUnread);
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error fetching requests: $error');
+    }
+  }
+
+  Future<void> readNoti(String id) async {
+    final url = Uri.parse('$baseUrl/notification/ReadOne/$id');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        print(message);
+      }
+    } catch (error) {
+      print('Error updating noti: $error');
+    }
+  }
+
+  Future<void> readAllNoti() async {
+    final url = Uri.parse('$baseUrl/notification/ReadAll');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        print(message);
+      }
+    } catch (error) {
+      print('Error updating noti: $error');
+    }
+  }
+
+  Future<void> deleteNoti(String id) async {
+    final url = Uri.parse('$baseUrl/notification/ReadOne/$id');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        print(message);
+      }
+    } catch (error) {
+      print('Error updating noti: $error');
+    }
+  }
 }

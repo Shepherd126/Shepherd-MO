@@ -332,7 +332,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       // Navigate to HomePage
-      Get.off(const HomePage());
+      Get.off(() => const HomePage());
     } else {
       // Handle error message
       print(responseData['message']);

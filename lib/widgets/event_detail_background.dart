@@ -27,7 +27,7 @@ class EventDetailsBackground extends StatelessWidget {
               'assets/images/stained_glass_window.jpg',
               fit: BoxFit.cover,
               width: screenWidth,
-              height: screenHeight * 0.45,
+              height: screenHeight * 0.4,
               color: isDarkMode
                   ? const Color.fromARGB(133, 42, 41, 41)
                   : const Color.fromARGB(0, 0, 0, 0),

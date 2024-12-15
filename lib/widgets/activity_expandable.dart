@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -19,6 +21,10 @@ class ActivityExpandableCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final startDate = DateFormat('dd/MM/yyyy | HH:mm')
+        .format(DateTime.parse(activity.startTime.toString()));
+    final endDate = DateFormat('dd/MM/yyyy | HH:mm')
+        .format(DateTime.parse(activity.endTime.toString()));
     return Card(
       elevation: 3.0,
       shape: RoundedRectangleBorder(
@@ -32,7 +38,7 @@ class ActivityExpandableCard extends StatelessWidget {
           style: TextStyle(
               fontSize: screenHeight * 0.019, fontWeight: FontWeight.bold),
         ),
-        leading: const Icon(Icons.wysiwyg, color: Colors.orange),
+        leading: Icon(Icons.wysiwyg, color: Const.primaryGoldenColor),
         children: [
           Padding(
             padding:
@@ -47,7 +53,7 @@ class ActivityExpandableCard extends StatelessWidget {
                         Icon(Icons.event, size: screenHeight * 0.016),
                         SizedBox(width: screenHeight * 0.004),
                         Text(
-                            "${AppLocalizations.of(context)!.start}: ${activity.startTime!}"),
+                            "${AppLocalizations.of(context)!.start}: $startDate"),
                       ],
                     ),
                     SizedBox(height: screenHeight * 0.004),
@@ -55,8 +61,7 @@ class ActivityExpandableCard extends StatelessWidget {
                       children: [
                         Icon(Icons.event_available, size: screenHeight * 0.016),
                         SizedBox(width: screenHeight * 0.004),
-                        Text(
-                            "${AppLocalizations.of(context)!.end}: ${activity.endTime!}"),
+                        Text("${AppLocalizations.of(context)!.end}: $endDate"),
                       ],
                     ),
                   ],

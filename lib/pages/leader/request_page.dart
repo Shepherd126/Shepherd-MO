@@ -7,6 +7,8 @@ import 'package:shepherd_mo/models/request.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/services/get_login.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/empty_data.dart';
+import 'package:shepherd_mo/widgets/end_of_line.dart';
 
 class RequestList extends StatefulWidget {
   const RequestList({super.key});
@@ -269,19 +271,19 @@ class _RequestListState extends State<RequestList> {
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           value: 0,
-                          child: Text('All'),
+                          child: Text(localizations.all),
                         ),
                         PopupMenuItem(
                           value: 1,
-                          child: Text('Accepted'),
+                          child: Text(localizations.accepted),
                         ),
                         PopupMenuItem(
                           value: 2,
-                          child: Text('Rejected'),
+                          child: Text(localizations.rejected),
                         ),
                         PopupMenuItem(
                           value: 3,
-                          child: Text('Pending'),
+                          child: Text(localizations.pending),
                         ),
                       ],
                       icon: Icon(
@@ -364,27 +366,18 @@ class _RequestListState extends State<RequestList> {
                       newPageProgressIndicatorBuilder: (_) =>
                           const Center(child: CircularProgressIndicator()),
                       noItemsFoundIndicatorBuilder: (context) => Center(
-                        child: Text(
-                          _searchText.isNotEmpty
-                              ? "No matching requests found."
-                              : "No requests available.",
-                          style: TextStyle(
-                            color: isDark ? Colors.grey[500] : Colors.grey,
-                          ),
-                        ),
+                        child: _searchText.isNotEmpty
+                            ? EmptyData(
+                                noDataMessage: localizations.noResult,
+                                message: localizations.godAlwaysByYourSide)
+                            : EmptyData(
+                                noDataMessage: localizations.noRequest,
+                                message: localizations.godAlwaysByYourSide),
                       ),
                       noMoreItemsIndicatorBuilder: (_) => Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.016),
-                        child: Center(
-                          child: Text(
-                            "End of requests",
-                            style: TextStyle(
-                              color: isDark ? Colors.grey[500] : Colors.grey,
-                              fontSize: screenHeight * 0.017,
-                            ),
-                          ),
-                        ),
+                        padding:
+                            EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                        child: EndOfListWidget(),
                       ),
                     ),
                   ),

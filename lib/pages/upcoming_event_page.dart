@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/models/group_role.dart';
@@ -140,7 +141,7 @@ class _UpcomingEventPageState extends State<UpcomingEventPage> {
         localizations.upcomingEvents,
         style: Theme.of(context).textTheme.headlineMedium,
       ),
-      backgroundColor: Colors.orange[800],
+      backgroundColor: Const.primaryGoldenColor,
     );
   }
 
@@ -153,7 +154,7 @@ class _UpcomingEventPageState extends State<UpcomingEventPage> {
           Expanded(child: _buildGroupDropdown(context)),
           SizedBox(width: screenWidth * 0.01),
           SizedBox(
-              width: screenWidth * 0.3, child: _buildFilterDropdown(context)),
+              width: screenWidth * 0.305, child: _buildFilterDropdown(context)),
         ],
       ),
     );

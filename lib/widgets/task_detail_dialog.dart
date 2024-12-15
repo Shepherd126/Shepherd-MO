@@ -113,9 +113,18 @@ class TaskDetailsDialog extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     // Handle reject task logic
-                    apiService.confirmTask(task.id!, false);
+                    final success =
+                        await apiService.confirmTask(task.id!, false);
+                    if (success) {
+                      showToast(
+                          '${localizations.declineTask} ${localizations.success.toLowerCase()}');
+                      Navigator.of(context).pop();
+                    } else {
+                      showToast(
+                          '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

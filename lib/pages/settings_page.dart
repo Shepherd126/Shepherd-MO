@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -92,7 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: Colors.red,
                     ),
                     onPressed: () {
-                      Get.back(); // Use GetX to close the modal
+                      Navigator.pop(context);
                     },
                   ),
                 ),
@@ -210,7 +210,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -224,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: Colors.red,
                     ),
                     onPressed: () {
-                      Get.back(); // Use GetX to close the modal
+                      Navigator.pop(context);
                     },
                   ),
                 ),

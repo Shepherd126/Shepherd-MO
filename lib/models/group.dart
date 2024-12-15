@@ -5,12 +5,13 @@ class Group {
   final bool priority;
   final int memberCount;
 
-  Group(
-      {required this.id,
-      required this.groupName,
-      required this.description,
-      required this.priority,
-      required this.memberCount});
+  Group({
+    required this.id,
+    required this.groupName,
+    required this.description,
+    required this.priority,
+    required this.memberCount,
+  });
 
   factory Group.fromJson(Map<String, dynamic> json) {
     return Group(

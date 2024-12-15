@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/formatter/avatar.dart';
 import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_member.dart';
@@ -151,7 +152,7 @@ class _GroupDetailState extends State<GroupDetail> {
         title: Text(
             '${localizations.details} ${localizations.group.toLowerCase()}',
             style: Theme.of(context).textTheme.headlineMedium),
-        backgroundColor: Colors.orange[800],
+        backgroundColor: Const.primaryGoldenColor,
       ),
       body: GestureDetector(
         onTap: _unfocus,

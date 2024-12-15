@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -132,7 +133,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
         localizations.upcomingActivities,
         style: Theme.of(context).textTheme.headlineMedium,
       ),
-      backgroundColor: Colors.orange[800],
+      backgroundColor: Const.primaryGoldenColor,
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:expandable_text/expandable_text.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -18,16 +19,18 @@ class EventDetailsContent extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.04, vertical: screenHeight * 0.01),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SizedBox(height: screenHeight * 0.1),
-
           // Event Name with custom text style and shadows for readability
           Padding(
             padding: EdgeInsets.only(
-                left: screenWidth * 0.24, right: screenWidth * 0.1),
+              left: screenWidth * 0.24,
+              top: screenHeight * 0.05,
+            ),
             child: Text(
               event.eventName ?? localizations.noData,
               style: TextStyle(
@@ -44,7 +47,6 @@ class EventDetailsContent extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: screenHeight * 0.01),
           // Status row with custom padding
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
@@ -74,131 +76,151 @@ class EventDetailsContent extends StatelessWidget {
               ),
             ),
           ),
-
-          SizedBox(height: screenHeight * 0.04),
-
+          SizedBox(height: screenHeight * 0.045),
           // Total Cost with Label
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.money,
+                      size: screenHeight * 0.022,
+                    ),
+                    SizedBox(width: screenHeight * 0.005),
+                    Text(
+                      "${localizations.budget}:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: screenHeight * 0.02,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  textAlign: TextAlign.right,
+                  event.isPublic ?? true
+                      ? localizations.public
+                      : localizations.private,
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.02,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ]),
+              Text(
+                event.totalCost != null
+                    ? "${formatCurrency(event.totalCost!)} VND"
+                    : localizations.noData,
+                style: TextStyle(
+                  fontSize: screenHeight * 0.017,
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          // Date Information (Start and End Dates) with Labels
           Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.04, vertical: screenHeight * 0.01),
+            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDateInfo(localizations.start, event.fromDate.toString(),
+                    screenHeight, locale),
+                _buildDateInfo(localizations.end, event.toDate.toString(),
+                    screenHeight, locale),
+              ],
+            ),
+          ),
+          // Description with Label
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.totalCost,
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.02,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.description,
+                      size: screenHeight * 0.022,
+                    ),
+                    SizedBox(width: screenHeight * 0.005),
+                    Text(
+                      "${localizations.description}:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: screenHeight * 0.02,
                       ),
-                      Text(
-                        textAlign: TextAlign.right,
-                        event.isPublic ?? true
-                            ? AppLocalizations.of(context)!.public
-                            : AppLocalizations.of(context)!.private,
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.02,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ]),
-                Text(
-                  event.totalCost != null
-                      ? "${formatCurrency(event.totalCost!)} VND"
-                      : localizations.noData,
+                    ),
+                  ],
+                ),
+                ExpandableText(
+                  '${event.description}' ?? localizations.noData,
+                  expandText: localizations.showMore,
+                  collapseText: localizations.showLess,
+                  maxLines: 2,
+                  animation: true,
+                  linkColor: Colors.blueAccent,
                   style: TextStyle(
-                    fontSize: screenHeight * 0.017,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.bold,
+                    fontSize: screenHeight * 0.016,
+                    color: isDark ? Colors.grey.shade300 : Colors.black,
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(height: screenHeight * 0.015),
-          // Date Information (Start and End Dates) with Labels
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDateInfo(AppLocalizations.of(context)!.start,
-                    event.fromDate.toString(), screenHeight, locale),
-                SizedBox(height: screenHeight * 0.005),
-                _buildDateInfo(AppLocalizations.of(context)!.end,
-                    event.toDate.toString(), screenHeight, locale),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.wysiwyg,
+                size: screenHeight * 0.022,
+              ),
+              SizedBox(width: screenHeight * 0.005),
+              Text(
+                "${localizations.activity}:",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: screenHeight * 0.02,
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: screenHeight * 0.005),
-          // Description with Label
-          Padding(
-            padding: EdgeInsets.all(screenWidth * 0.04),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.description,
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.02,
-                    fontWeight: FontWeight.bold,
+          event.activities!.isEmpty
+              ? Center(
+                  child: Text(
+                    localizations.noActivity,
+                    style: TextStyle(
+                      fontSize: screenHeight * 0.02,
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    ),
+                  ),
+                )
+              : Flexible(
+                  child: ListView.builder(
+                    itemCount: event.activities!.length,
+                    itemBuilder: (context, index) {
+                      final activity = event.activities![index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 1.0),
+                        child: ActivityExpandableCard(
+                          activity: activity,
+                          screenHeight: screenHeight,
+                          isDark: isDark,
+                          screenWidth: screenWidth,
+                        ),
+                      );
+                    },
                   ),
                 ),
-                Text(
-                  event.description ?? "",
-                  style: TextStyle(fontSize: screenHeight * 0.018),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(screenWidth * 0.04),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.activity,
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.02,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                event.activities!.isEmpty
-                    ? Center(
-                        child: Text(
-                          localizations.noActivity,
-                          style: TextStyle(
-                            fontSize: screenHeight * 0.02,
-                            color: isDark ? Colors.grey[300] : Colors.grey[700],
-                          ),
-                        ),
-                      )
-                    : SizedBox(
-                        height: screenHeight * 0.4,
-                        child: ListView.builder(
-                          itemCount: event.activities!.length,
-                          itemBuilder: (context, index) {
-                            final activity = event.activities![index];
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 1.0),
-                              child: ActivityExpandableCard(
-                                activity: activity,
-                                screenHeight: screenHeight,
-                                isDark: isDark,
-                                screenWidth: screenWidth,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -211,7 +233,7 @@ class EventDetailsContent extends StatelessWidget {
     final time = DateFormat('HH:mm', locale).format(DateTime.parse(dateTime));
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
+      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.002),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,9 +241,9 @@ class EventDetailsContent extends StatelessWidget {
             children: [
               Icon(
                 Icons.event,
-                size: screenHeight * 0.025,
+                size: screenHeight * 0.022,
               ),
-              SizedBox(width: screenHeight * 0.01),
+              SizedBox(width: screenHeight * 0.005),
               Text(
                 "$label:",
                 style: TextStyle(
@@ -231,8 +253,10 @@ class EventDetailsContent extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: screenHeight * 0.005),
-          Text('$date $time', style: TextStyle(fontSize: screenHeight * 0.017)),
+          Text(
+            '$date | $time',
+            style: TextStyle(fontSize: screenHeight * 0.016),
+          ),
         ],
       ),
     );

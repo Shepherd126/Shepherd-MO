@@ -5,6 +5,7 @@ import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/pages/leader/request_page.dart';
 import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double screenWidth;
@@ -20,6 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final uiProvider = Provider.of<UIProvider>(context);
     final authorizationController = Get.find<AuthorizationController>();
+    final localizations = AppLocalizations.of(context)!;
 
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
@@ -43,30 +45,29 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   PopupMenuItem(
                     value: 1,
                     child: Row(
-                      children: const [
-                        Icon(Icons.create, color: Colors.grey),
+                      children: [
+                        Icon(Icons.request_page, color: Colors.grey),
                         SizedBox(width: 10),
-                        Text("Create Request"),
+                        Text(
+                            "${localizations.list} ${localizations.request.toLowerCase()}"),
+                      ],
+                    ),
+                    onTap: () {
+                      Get.to(() => RequestList(),
+                          transition: Transition.rightToLeftWithFade);
+                    },
+                  ),
+                  PopupMenuItem(
+                    value: 2,
+                    child: Row(
+                      children: [
+                        Icon(Icons.create, color: Colors.grey),
+                        SizedBox(width: screenWidth * 0.02),
+                        Text("Transaction"),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
-                      value: 2,
-                      child: Row(
-                        children: const [
-                          Icon(Icons.request_page, color: Colors.grey),
-                          SizedBox(width: 10),
-                          Text("List Request"),
-                        ],
-                      ),
-                      onTap: () {
-                        Get.to(RequestList(),
-                            transition: Transition.rightToLeftWithFade);
-                      }),
                 ],
-                onSelected: (value) {
-                  // Handle menu item selection based on value
-                },
               )
             : SizedBox.shrink();
       }),
@@ -93,8 +94,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               Positioned(
-                right: 10,
-                top: 10,
+                right: screenWidth * 0.035,
+                top: screenWidth * 0.015,
                 child: Container(
                   padding: EdgeInsets.all(screenWidth * 0.01),
                   decoration: BoxDecoration(

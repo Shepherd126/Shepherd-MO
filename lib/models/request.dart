@@ -1,3 +1,7 @@
+import 'package:shepherd_mo/models/event.dart';
+import 'package:shepherd_mo/models/group.dart';
+import 'package:shepherd_mo/models/user.dart';
+
 class RequestModel {
   final String id;
   final String title;
@@ -9,11 +13,11 @@ class RequestModel {
   final DateTime updateDate;
   final String? updatedBy;
   final String to;
-  final String? group;
-  final String? event;
+  final Group? group;
+  final Event? event;
   final List<dynamic> reports;
-  final String? createdUser;
-  final String? updatedUser;
+  final User? createdUser;
+  final User? updatedUser;
 
   RequestModel({
     required this.id,
@@ -46,11 +50,15 @@ class RequestModel {
       updateDate: DateTime.parse(json['updateDate']),
       updatedBy: json['updatedBy'],
       to: json['to'],
-      group: json['group'],
-      event: json['event'],
+      group: json['group'] != null ? Group.fromJson(json['group']) : null,
+      event: json['event'] != null ? Event.fromJson(json['event']) : null,
       reports: json['reports'] ?? [],
-      createdUser: json['createdUser'],
-      updatedUser: json['updatedUser'],
+      createdUser: json['createdUser'] != null
+          ? User.fromJson(json['createdUser'])
+          : null,
+      updatedUser: json['updatedUser'] != null
+          ? User.fromJson(json['updatedUser'])
+          : null,
     );
   }
 

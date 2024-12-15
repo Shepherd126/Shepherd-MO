@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/models/notification.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/widgets/notification_card.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -16,11 +18,9 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  static const _pageSize = 5;
+  static const _pageSize = 10;
   final PagingController<int, NotificationModel> _pagingController =
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
-  final searchController = TextEditingController();
-  final searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -54,13 +54,22 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  void _unfocus() {
-    FocusScope.of(context).unfocus();
-  }
-
   // Method to refresh the entire list
   Future<void> _refreshList() async {
     _pagingController.refresh(); // Refresh the PagingController
+  }
+
+  void _markAllAsRead() async {
+    // Add your "mark all as read" logic here
+    final apiService = ApiService();
+    await apiService.readAllNoti();
+    setState(() {
+      // Update the list locally (this depends on how your notification data is structured)
+      for (var notification in _pagingController.itemList!) {
+        notification.isRead = true; // Assuming there's an 'isRead' property
+      }
+    });
+    print('All notifications marked as read');
   }
 
   @override
@@ -74,7 +83,24 @@ class _NotificationPageState extends State<NotificationPage> {
         centerTitle: true,
         title: Text(localizations.notification,
             style: Theme.of(context).textTheme.headlineMedium),
-        backgroundColor: Colors.orange[800],
+        backgroundColor: Const.primaryGoldenColor,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'markAllAsRead') {
+                _markAllAsRead();
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  value: 'markAllAsRead',
+                  child: Text(localizations.markAllAsRead),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -84,10 +110,8 @@ class _NotificationPageState extends State<NotificationPage> {
           child: PagedListView<int, NotificationModel>(
             pagingController: _pagingController,
             builderDelegate: PagedChildBuilderDelegate<NotificationModel>(
-              itemBuilder: (context, item, index) => ListTile(
-                title: Text(item.title ?? localizations.noData),
-                subtitle: Text(item.content ?? localizations.noData),
-              ),
+              itemBuilder: (context, item, index) =>
+                  NotificationCard(notification: item),
               firstPageProgressIndicatorBuilder: (_) =>
                   const Center(child: CircularProgressIndicator()),
               newPageProgressIndicatorBuilder: (_) =>
@@ -97,6 +121,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 message: localizations.wellDoneServant,
               ),
               noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
+              animateTransitions: true,
             ),
           ),
         ),
