@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shepherd_mo/api/api_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class BottomNavController extends GetxController {
@@ -9,6 +10,17 @@ class BottomNavController extends GetxController {
 
   void changeTabIndex(int index) {
     selectedIndex.value = index;
+
+    final NotificationController notificationController =
+        Get.find<NotificationController>();
+    if (notificationController.openTabIndex.value != -1 &&
+        notificationController.openTabIndex.value != index) {
+      // Close the notification page when switching tabs
+      Get.back(
+          id: notificationController
+              .openTabIndex.value); // Close the notification page
+      notificationController.closeNotificationPage();
+    }
   }
 }
 
@@ -106,5 +118,40 @@ class RefreshController extends GetxController {
 
   void setShouldRefresh(bool value) {
     shouldRefresh.value = value;
+  }
+}
+
+class NotificationController extends GetxController {
+  // This will track which tab the notification page is open on.
+  RxInt openTabIndex = (-1).obs;
+
+  // Opens the NotificationPage and set the tab index where it's open
+  void openNotificationPage(int tabIndex) {
+    openTabIndex.value = tabIndex;
+  }
+
+  // Closes the NotificationPage
+  void closeNotificationPage() {
+    openTabIndex.value = -1;
+  }
+
+  // Rx variable to observe changes
+  var unreadCount = 0.obs;
+  var haveUnread = false.obs;
+
+  // Function to fetch the unread notification count from API
+  Future<void> fetchUnreadCount() async {
+    try {
+      final apiService = ApiService();
+      final result = await apiService.fetchUnreadNoti();
+      final unread = result.$1;
+      unreadCount.value = unread; // Update the unread count
+      final haveUnreadNoti = result.$2;
+      haveUnread.value = haveUnreadNoti;
+    } catch (e) {
+      //Default value
+      unreadCount.value = 0;
+      haveUnread.value = false;
+    }
   }
 }

@@ -609,6 +609,44 @@ class ApiService {
     }
   }
 
+  Future<Task> fetchTaskDetail({
+    required String id,
+  }) async {
+    // Build URI with query parameters
+    final uri = Uri.parse('$baseUrl/task/${id}');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      // Send GET request
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final Map<String, dynamic> results = data['data'];
+        return Task.fromJson(results);
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error fetching requests: $error');
+    }
+  }
+
   Future<bool> updateTaskStatus(Task task, String newStatus) async {
     final url = Uri.parse('$baseUrl/task/${task.id}');
     // Prepare the request body with only the `status` field
@@ -871,14 +909,6 @@ class ApiService {
     final url = Uri.parse('$baseUrl/user-device');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
-    print(
-      jsonEncode(
-        {
-          'userId': userId,
-          'deviceId': deviceId,
-        },
-      ),
-    );
     try {
       final response = await http.post(
         url,
@@ -950,6 +980,8 @@ class ApiService {
     String? searchKey,
     required int pageNumber,
     required int pageSize,
+    bool? isRead,
+    String? type,
   }) async {
     // Construct query parameters
     final Map<String, String> queryParams = {};
@@ -957,6 +989,14 @@ class ApiService {
     // Conditionally add 'SearchKey' if searchKey is not null
     if (searchKey != null) {
       queryParams['SearchKey'] = searchKey;
+    }
+
+    if (isRead != null) {
+      queryParams['IsRead'] = isRead.toString();
+    }
+
+    if (type != null) {
+      queryParams['Type'] = type;
     }
 
     // Add PageNumber and PageSize parameters
@@ -1037,7 +1077,7 @@ class ApiService {
     }
   }
 
-  Future<void> readNoti(String id) async {
+  Future<void> readNoti(String id, bool isRead) async {
     final url = Uri.parse('$baseUrl/notification/ReadOne/$id');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
@@ -1049,6 +1089,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: isRead.toString(),
       );
 
       if (response.statusCode == 200) {
@@ -1088,7 +1129,7 @@ class ApiService {
   }
 
   Future<void> deleteNoti(String id) async {
-    final url = Uri.parse('$baseUrl/notification/ReadOne/$id');
+    final url = Uri.parse('$baseUrl/notification/UserDeleteOne/$id');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
 

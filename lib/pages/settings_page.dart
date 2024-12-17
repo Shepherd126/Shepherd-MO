@@ -98,7 +98,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               ListTile(
-                leading: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                  child: Icon(
+                    isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
                 title: Text(AppLocalizations.of(context)!.darkMode),
                 trailing: AdvancedSwitch(
                   controller: _themeController,
@@ -143,7 +150,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.settings),
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                  child: Icon(
+                    Icons.settings,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
                 title: Text(AppLocalizations.of(context)!.systemMode),
                 trailing: AdvancedSwitch(
                   controller: _systemController,
@@ -230,7 +244,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.language),
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                  child: Icon(
+                    Icons.language,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
                 title: Text(AppLocalizations.of(context)!.english),
                 onTap: () {
                   localeController.changeLanguage('en');
@@ -238,7 +259,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.language),
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                  child: Icon(
+                    Icons.language,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
                 title: Text(AppLocalizations.of(context)!.vietnamese),
                 onTap: () {
                   localeController.changeLanguage('vi');

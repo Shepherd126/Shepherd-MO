@@ -523,10 +523,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                       // Edit an existing task
                       task.id =
                           widget.task!.id; // Pass the task ID for updating
-                      final comparison = widget.task?.compareTo(task);
-                      if (comparison == 0) {
-                        print('hehe');
-                      }
+
                       final result = await apiService.updateTask(task);
                       final success = result.$1;
                       final message = result.$2;

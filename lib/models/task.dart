@@ -1,4 +1,6 @@
-class Task implements Comparable<Task> {
+import 'package:shepherd_mo/models/user.dart';
+
+class Task {
   String? id;
   String? title;
   String? description;
@@ -15,6 +17,10 @@ class Task implements Comparable<Task> {
   String? eventDescription;
   String? activityName;
   String? activityDescription;
+  DateTime? createDate;
+  User? createBy;
+  DateTime? updateDate;
+  User? updateBy;
 
   Task({
     this.id,
@@ -33,6 +39,10 @@ class Task implements Comparable<Task> {
     this.eventDescription,
     this.activityName,
     this.activityDescription,
+    this.createDate,
+    this.createBy,
+    this.updateDate,
+    this.updateBy,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -53,6 +63,16 @@ class Task implements Comparable<Task> {
       eventDescription: json['eventDescription'] as String?,
       activityName: json['activityName'] as String?,
       activityDescription: json['activityDescription'] as String?,
+      createDate: json['createDate'] != null
+          ? DateTime.parse(json['createDate'])
+          : null,
+      createBy:
+          json['createBy'] != null ? User.fromJson(json['createBy']) : null,
+      updateDate: json['updateDate'] != null
+          ? DateTime.parse(json['updateDate'])
+          : null,
+      updateBy:
+          json['updateBy'] != null ? User.fromJson(json['updateBy']) : null,
     );
   }
 
@@ -89,12 +109,5 @@ class Task implements Comparable<Task> {
         'activityName: $activityName, '
         'activityDescription: $activityDescription, '
         ')';
-  }
-
-  @override
-  int compareTo(Task other) {
-    // Compare by cost (you can modify this to compare by any other property)
-
-    return this.cost!.compareTo(other.cost!); // Comparing by cost
   }
 }

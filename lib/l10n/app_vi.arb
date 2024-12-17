@@ -160,5 +160,6 @@
   "markAsUnread": "Đánh dấu là chưa đọc",
   "markAllAsRead": "Đánh dấu tất cả là đã đọc",
   "moreOptions": "Thêm lựa chọn",
-  "deleteNoti": "Xóa thông báo này"
+  "deleteNoti": "Xóa thông báo này",
+  "delete": "Xoá"
 }

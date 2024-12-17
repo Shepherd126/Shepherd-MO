@@ -1,14 +1,28 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/notification.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/pages/home_page.dart';
+import 'package:shepherd_mo/pages/leader/task_management_page.dart';
+import 'package:shepherd_mo/pages/task_page.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
+import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
 
 class NotificationCard extends StatefulWidget {
   final NotificationModel notification;
+  final Function(NotificationModel) onDelete;
 
   NotificationCard({
     required this.notification,
+    required this.onDelete,
   });
 
   @override
@@ -16,6 +30,7 @@ class NotificationCard extends StatefulWidget {
 }
 
 class _NotificationCardState extends State<NotificationCard> {
+  Future<List<GroupRole>>? userGroups;
   final Stream<DateTime> _realTimeStream = Stream.periodic(
     const Duration(seconds: 1),
     (_) => DateTime.now(),
@@ -24,11 +39,28 @@ class _NotificationCardState extends State<NotificationCard> {
   @override
   void initState() {
     super.initState();
+    initializeData();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<void> initializeData() async {
+    userGroups = _loadUserGroupInfo();
+  }
+
+  Future<List<GroupRole>> _loadUserGroupInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userGroups = prefs.getString("loginUserGroups");
+    if (userGroups != null) {
+      final decodedJson = jsonDecode(userGroups) as List<dynamic>;
+      return decodedJson
+          .map((item) => GroupRole.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
   }
 
   // Function to get the appropriate icon for the notification type
@@ -52,9 +84,13 @@ class _NotificationCardState extends State<NotificationCard> {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     final apiService = ApiService();
+    final NotificationController notificationController =
+        Get.find<NotificationController>();
 
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     Color cardColor = widget.notification.isRead
         ? isDark
             ? Colors.grey[900]!
@@ -114,7 +150,74 @@ class _NotificationCardState extends State<NotificationCard> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
       child: ElevatedButton(
-        onPressed: () {}, // Executes the callback if provided
+        onPressed: () async {
+          if (!widget.notification.isRead) {
+            await apiService.readNoti(widget.notification.id, true);
+            setState(() {
+              widget.notification.isRead = true;
+            });
+          }
+
+          // Executes the callback if provided
+          if (widget.notification.type == "Task") {
+            final task = await apiService.fetchTaskDetail(
+                id: widget.notification.relevantId!);
+            final BottomNavController bottomNavController =
+                Get.find<BottomNavController>();
+            final NotificationController notificationController =
+                Get.find<NotificationController>();
+
+            if (bottomNavController.selectedIndex.value != 3) {
+              bottomNavController.changeTabIndex(3);
+            }
+
+            if (notificationController.openTabIndex.value != -1) {
+              notificationController.closeNotificationPage();
+            }
+
+            // Navigate to ActivitiesTab
+            Get.to(
+              () => ActivitiesTab(
+                chosenDate: widget.notification.activityStartTime,
+              ),
+              id: 3,
+              transition: Transition.fade,
+            );
+
+            final userGroupList = await userGroups;
+            final userGroup = userGroupList!
+                .firstWhere((group) => group.groupId == task.groupId);
+            final isLeader =
+                userGroup.roleName == "Trưởng nhóm" || userGroup.roleName == "";
+
+            // Navigate to the appropriate Task Page
+            Get.to(
+              () => isLeader
+                  ? TaskManagementPage(
+                      activityId: task.activityId!,
+                      activityName: task.activityName!,
+                      group: userGroup,
+                    )
+                  : TaskPage(
+                      activityId: task.activityId!,
+                      activityName: task.activityName!,
+                      group: userGroup,
+                    ),
+              id: 3,
+              transition: Transition.rightToLeftWithFade,
+            );
+
+            // Show dialog after both navigations
+            showDialog(
+              context: context,
+              builder: (context) {
+                return TaskDetailsDialog(
+                  task: task,
+                );
+              },
+            );
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: cardColor, // Button color
           elevation: 4, // Elevation to create depth
@@ -137,10 +240,13 @@ class _NotificationCardState extends State<NotificationCard> {
                 color: isDark ? Colors.blue[800] : Colors.blue[200],
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                getTypeIcon(widget.notification.type),
-                color: isDark ? Colors.white : Colors.black,
-                size: screenHeight * 0.028,
+              child: Align(
+                alignment: Alignment.center,
+                child: Icon(
+                  getTypeIcon(widget.notification.type),
+                  color: isDark ? Colors.white : Colors.black,
+                  size: screenHeight * 0.028,
+                ),
               ),
             ),
             SizedBox(width: screenWidth * 0.05),
@@ -205,8 +311,10 @@ class _NotificationCardState extends State<NotificationCard> {
                                   final success = await apiService.confirmTask(
                                       widget.notification.relevantId!, true);
                                   if (success) {
-                                    await apiService
-                                        .readNoti(widget.notification.id);
+                                    if (!widget.notification.isRead) {
+                                      await apiService.readNoti(
+                                          widget.notification.id, true);
+                                    }
                                     showToast(
                                         '${localizations.confirmTask} ${localizations.success.toLowerCase()}');
                                     setState(() {
@@ -247,8 +355,10 @@ class _NotificationCardState extends State<NotificationCard> {
                                   final success = await apiService.confirmTask(
                                       widget.notification.relevantId!, false);
                                   if (success) {
-                                    await apiService
-                                        .readNoti(widget.notification.id);
+                                    if (!widget.notification.isRead) {
+                                      await apiService.readNoti(
+                                          widget.notification.id, true);
+                                    }
                                     showToast(
                                         '${localizations.declineTask} ${localizations.success.toLowerCase()}');
                                     setState(() {
@@ -341,58 +451,85 @@ class _NotificationCardState extends State<NotificationCard> {
                       topRight: Radius.circular(20),
                     ),
                   ),
-                  builder: (BuildContext context) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade300,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                          ),
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.red,
+                  builder: (context) => Consumer<UIProvider>(
+                    builder: (context, UIProvider notifier, child) {
+                      bool isDark = notifier.themeMode == ThemeMode.dark ||
+                          (MediaQuery.of(context).platformBrightness ==
+                              Brightness.dark);
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade300,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
+                            ),
+                            child: Align(
+                              alignment: Alignment.topRight,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                        // Mark as Read
-                        ListTile(
-                          leading:
-                              Icon(Icons.mark_chat_read, color: Colors.blue),
-                          title: Text(widget.notification.isRead
-                              ? localizations.markAsUnread
-                              : localizations.markAsRead),
-                          onTap: () {
-                            apiService.readNoti(widget.notification.id);
-                            Navigator.pop(context); // Close the bottom sheet
-                          },
-                        ),
-                        // Delete Notification
-                        ListTile(
-                          leading: Icon(Icons.delete, color: Colors.red),
-                          title: Text(localizations.deleteNoti),
-                          onTap: () {
-                            // Delete notification logic
-                            Navigator.pop(context); // Close the bottom sheet
-                          },
-                        ),
-                        // Other actions can be added here...
-                      ],
-                    );
-                  },
+                          // Mark as Read
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade300,
+                              child: Icon(
+                                  widget.notification.isRead
+                                      ? Icons.mark_chat_unread_rounded
+                                      : Icons.mark_chat_read_rounded,
+                                  color: Colors.blue),
+                            ),
+                            title: Text(widget.notification.isRead
+                                ? localizations.markAsUnread
+                                : localizations.markAsRead),
+                            onTap: () async {
+                              await apiService.readNoti(widget.notification.id,
+                                  !widget.notification.isRead);
+                              notificationController.fetchUnreadCount();
+
+                              setState(() {
+                                widget.notification.isRead =
+                                    !widget.notification.isRead;
+                              });
+
+                              Navigator.pop(context); // Close the bottom sheet
+                            },
+                          ),
+                          // Delete Notification
+                          ListTile(
+                            leading: CircleAvatar(
+                                backgroundColor: isDark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade300,
+                                child: Icon(Icons.delete, color: Colors.red)),
+                            title: Text(localizations.deleteNoti),
+                            onTap: () {
+                              widget.onDelete(widget.notification);
+                              showToast(
+                                  "${localizations.delete} ${localizations.notification.toLowerCase()} ${localizations.success}");
+                              Navigator.pop(context); // Close the bottom sheet
+                            },
+                          ),
+                          // Other actions
+                        ],
+                      );
+                    },
+                  ),
                 );
               },
             ),

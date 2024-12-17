@@ -26,7 +26,6 @@ class _CustomMarqueeState extends State<CustomMarquee> {
         style: TextStyle(
           fontSize: widget.fontSize,
           fontWeight: FontWeight.bold,
-          color: Colors.black,
         ),
         startAfter: const Duration(seconds: 1),
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -139,7 +139,12 @@ class _UpcomingEventPageState extends State<UpcomingEventPage> {
       centerTitle: true,
       title: Text(
         localizations.upcomingEvents,
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Colors.black,
+            ),
+      ),
+      iconTheme: IconThemeData(
+        color: Colors.black, // Set leading icon color explicitly
       ),
       backgroundColor: Const.primaryGoldenColor,
     );

@@ -78,7 +78,8 @@ class _TaskCardState extends State<TaskCard> {
                 SizedBox(height: screenHeight * 0.005),
                 // Assigned User Section
                 Text(
-                  widget.task.userName != null
+                  (widget.task.userName != null &&
+                          widget.task.status != "Bản nháp")
                       ? '${localizations.assignedTo}: ${widget.task.userName}'
                       : localizations.notAssignedYet,
                   style: TextStyle(

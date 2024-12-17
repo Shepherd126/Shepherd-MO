@@ -9,6 +9,7 @@ import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/group_user.dart';
+import 'package:shepherd_mo/pages/home_page.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/widgets/activity_card.dart';
@@ -131,7 +132,12 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
       centerTitle: true,
       title: Text(
         localizations.upcomingActivities,
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Colors.black,
+            ),
+      ),
+      iconTheme: IconThemeData(
+        color: Colors.black, // Set leading icon color explicitly
       ),
       backgroundColor: Const.primaryGoldenColor,
     );
@@ -218,6 +224,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
   Widget _buildFilterDropdown(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,6 +260,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
 
   Widget _buildEventList(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     if (_error != null) {
       return Padding(
@@ -344,7 +352,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
                       title: Text(
                         localizations.selectGroup,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: screenHeight * 0.018,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -369,7 +377,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
                                   group.groupName ?? localizations.noData,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 16,
+                                    fontSize: screenHeight * 0.016,
                                   ),
                                 ),
                                 trailing: Icon(Icons.chevron_right,
@@ -441,8 +449,14 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
 
       // Navigate based on the user's role
       final BottomNavController controller = Get.find<BottomNavController>();
-      if (controller.selectedIndex != 3) controller.changeTabIndex(3);
-      Get.back(id: 3);
+      if (controller.selectedIndex.toInt() != 3) controller.changeTabIndex(3);
+      Get.to(
+        () => ActivitiesTab(
+          chosenDate: activity.startTime,
+        ),
+        id: 3,
+        transition: Transition.fade,
+      );
       Get.to(
         () => isLeader
             ? TaskManagementPage(

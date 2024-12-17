@@ -5,6 +5,7 @@ import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/pages/event_detail_page.dart';
+import 'package:shepherd_mo/pages/home_page.dart';
 
 class EventCard extends StatelessWidget {
   const EventCard({
@@ -91,6 +92,11 @@ class EventCard extends StatelessWidget {
                       if (controller.selectedIndex != 2) {
                         controller.changeTabIndex(2);
                       }
+                      Get.to(
+                          () => ScheduleTab(
+                                chosenDate: event.fromDate,
+                              ),
+                          id: 2);
                       Get.to(() => EventDetailsPage(eventId: event.id!),
                           id: 2, transition: Transition.rightToLeftWithFade);
                     },

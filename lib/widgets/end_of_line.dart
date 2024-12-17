@@ -12,23 +12,26 @@ class EndOfListWidget extends StatelessWidget {
     double screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;
 
-    return Center(
-      child: Column(
-        children: [
-          Icon(
-            Icons.church,
-            size: screenHeight * 0.07,
-            color: Colors.brown.shade200,
-          ),
-          Text(
-            localizations.endOfLine,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: screenWidth * 0.035,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.church,
+              size: screenHeight * 0.07,
+              color: Colors.brown.shade200,
             ),
-          ),
-        ],
+            Text(
+              localizations.endOfLine,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: screenWidth * 0.035,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

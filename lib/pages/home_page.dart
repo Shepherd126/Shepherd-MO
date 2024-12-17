@@ -25,6 +25,7 @@ import 'package:shepherd_mo/pages/group_members_page.dart';
 import 'package:shepherd_mo/pages/leader/create_edit_event.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
+import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/pages/settings_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/pages/upcoming_activity_page.dart';
@@ -69,7 +70,7 @@ class _HomeState extends State<HomePage> {
     const MessageTab(),
     const ScheduleTab(),
     const ActivitiesTab(),
-    const MenuTab()
+    const MenuTab(),
   ];
 
   late List<GlobalKey<NavigatorState>> navigatorKeys;
@@ -524,15 +525,16 @@ class _MessageTabState extends State<MessageTab> {
 }
 
 class ScheduleTab extends StatefulWidget {
-  const ScheduleTab({super.key});
+  final DateTime? chosenDate;
+  const ScheduleTab({this.chosenDate, super.key});
   @override
   State<ScheduleTab> createState() => _ScheduleTabState();
 }
 
 class _ScheduleTabState extends State<ScheduleTab> {
   DateTime today = DateTime.now();
-  DateTime selectedDay = DateTime.now();
-  DateTime focusedDay = DateTime.now();
+  late DateTime selectedDay;
+  late DateTime focusedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
   bool headerTappedCalled = false;
 
@@ -581,8 +583,24 @@ class _ScheduleTabState extends State<ScheduleTab> {
   @override
   void initState() {
     super.initState();
+    initializeData();
     fetchEvents();
-    _updateSelectedDayEvents();
+  }
+
+  Future<void> initializeData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    if (widget.chosenDate != null) {
+      selectedDay = widget.chosenDate!;
+      focusedDay = widget.chosenDate!;
+    } else {
+      selectedDay = today;
+      focusedDay = today;
+    }
+
+    //userGroups = loadUserGroupInfo();
   }
 
   @override
@@ -778,7 +796,8 @@ class _ScheduleTabState extends State<ScheduleTab> {
 }
 
 class ActivitiesTab extends StatefulWidget {
-  const ActivitiesTab({super.key});
+  final DateTime? chosenDate;
+  const ActivitiesTab({this.chosenDate, super.key});
 
   @override
   State<ActivitiesTab> createState() => _ActivitiesTabState();
@@ -788,8 +807,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   String? selectedOrganization;
   int selectedIndex = -1;
   DateTime today = DateTime.now();
-  DateTime selectedDay = DateTime.now();
-  DateTime focusedDay = DateTime.now();
+  late DateTime selectedDay;
+  late DateTime focusedDay;
   CalendarFormat _calendarFormat = CalendarFormat.week;
   bool isLoading = true;
   Map<DateTime, List<Activity>> activitiesByDate = {};
@@ -814,6 +833,15 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     setState(() {
       isLoading = true;
     });
+
+    if (widget.chosenDate != null) {
+      selectedDay = widget.chosenDate!;
+      focusedDay = widget.chosenDate!;
+    } else {
+      selectedDay = today;
+      focusedDay = today;
+    }
+
     userGroups = loadUserGroupInfo();
   }
 

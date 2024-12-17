@@ -24,12 +24,15 @@ class _RequestListState extends State<RequestList> {
 
   String _searchText = '';
   bool _isAscending = false;
-  int _sortBy = 0;
+  String _sortBy = 'name';
+  int orderBy = 0;
+
   bool _isMyRequests = false;
   Timer? _debounce;
   int _filterStatus = 0; // 0 - All, 1 - Accepted, 2 - Rejected, 3 - Pending
   final searchController = TextEditingController();
   final searchFocus = FocusNode();
+  late bool isCouncil;
 
   @override
   void initState() {
@@ -37,17 +40,31 @@ class _RequestListState extends State<RequestList> {
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
     });
+    initializeData();
+  }
+
+  Future<void> initializeData() async {
+    final loginInfo = await getLoginInfoFromPrefs();
+    setState(() {
+      isCouncil = loginInfo!.role == "Hội đồng mục vụ";
+    });
   }
 
   Future<void> _fetchPage(int pageKey) async {
     try {
       ApiService apiService = ApiService();
+      if (_sortBy == 'name') {
+        _isAscending ? orderBy = 0 : orderBy = 1;
+      } else if (_sortBy == 'date') {
+        _isAscending ? orderBy = 6 : orderBy = 7;
+      }
       final requests = await apiService.fetchRequests(
         searchKey: _searchText,
         pageNumber: pageKey,
         pageSize: _pageSize,
         filterBy: _filterStatus,
         createdBy: _isMyRequests ? await _getUserId() : null,
+        orderBy: orderBy,
       );
 
       final isLastPage = requests.length < _pageSize;
@@ -92,6 +109,13 @@ class _RequestListState extends State<RequestList> {
     });
   }
 
+  void _onSortChanged(String sortBy) {
+    setState(() {
+      _sortBy = sortBy;
+    });
+    _refreshList();
+  }
+
   void _onFilterStatusChanged(int? newValue) {
     if (newValue != null) {
       setState(() {
@@ -118,9 +142,8 @@ class _RequestListState extends State<RequestList> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
-
-    String getSortText(int sortBy) {
-      return sortBy == 6 ? localizations.date : localizations.name;
+    String getSortText(String sortBy) {
+      return sortBy == 'date' ? localizations.date : localizations.name;
     }
 
     return Scaffold(
@@ -143,34 +166,40 @@ class _RequestListState extends State<RequestList> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ToggleButtons(
-                    isSelected: [_isMyRequests == false, _isMyRequests == true],
-                    onPressed: (index) {
-                      _toggleRequestView(index == 1);
-                    },
-                    fillColor: isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                    selectedColor: Colors.white,
-                    borderColor: isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                    selectedBorderColor:
-                        isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                    borderRadius: BorderRadius.circular(15),
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: screenWidth * 0.035),
-                        child: Text(localizations.allRequest),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: screenWidth * 0.035),
-                        child: Text(localizations.myRequests),
-                      ),
-                    ],
-                  ),
+                  isCouncil
+                      ? ToggleButtons(
+                          isSelected: [
+                            _isMyRequests == false,
+                            _isMyRequests == true
+                          ],
+                          onPressed: (index) {
+                            _toggleRequestView(index == 1);
+                          },
+                          fillColor:
+                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                          selectedColor: Colors.white,
+                          borderColor:
+                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                          selectedBorderColor:
+                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                          borderRadius: BorderRadius.circular(15),
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.035),
+                              child: Text(localizations.allRequest),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.035),
+                              child: Text(localizations.myRequests),
+                            ),
+                          ],
+                        )
+                      : SizedBox.shrink(),
                 ],
               ),
-              const SizedBox(height: 16),
-
+              SizedBox(height: screenHeight * 0.016),
               // Search, Sort, and Filter Bar
               Container(
                 padding: EdgeInsets.all(screenHeight * 0.012),
@@ -209,21 +238,16 @@ class _RequestListState extends State<RequestList> {
                       ),
                     ),
                     SizedBox(width: screenWidth * 0.025),
-                    PopupMenuButton<int>(
-                      onSelected: (value) {
-                        setState(() {
-                          _sortBy = value;
-                          _refreshList(); // Refresh list when sort option changes
-                        });
-                      },
+                    PopupMenuButton<String>(
+                      onSelected: (value) => _onSortChanged(value ?? 'name'),
                       itemBuilder: (context) => [
                         PopupMenuItem(
-                          value: 6,
+                          value: 'date',
                           child: Text(
                               localizations.date), // Localized text for "Date"
                         ),
                         PopupMenuItem(
-                          value: 0,
+                          value: 'name',
                           child: Text(localizations.name),
                         ),
                       ],

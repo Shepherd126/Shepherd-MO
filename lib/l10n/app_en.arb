@@ -160,5 +160,6 @@
   "markAsUnread": "Mark As Unread",
   "markAllAsRead": "Mark All As Read",
   "moreOptions": "More Options",
-  "deleteNoti": "Delete This Notification"
+  "deleteNoti": "Delete This Notification",
+  "delete": "Delete"
 }

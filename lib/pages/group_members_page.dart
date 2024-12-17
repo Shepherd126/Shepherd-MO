@@ -150,9 +150,16 @@ class _GroupDetailState extends State<GroupDetail> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-            '${localizations.details} ${localizations.group.toLowerCase()}',
-            style: Theme.of(context).textTheme.headlineMedium),
+          '${localizations.details} ${localizations.group.toLowerCase()}',
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(color: Colors.black),
+        ),
         backgroundColor: Const.primaryGoldenColor,
+        iconTheme: IconThemeData(
+          color: Colors.black, // Set leading icon color explicitly
+        ),
       ),
       body: GestureDetector(
         onTap: _unfocus,
@@ -299,8 +306,8 @@ class _GroupDetailState extends State<GroupDetail> {
                     builderDelegate: PagedChildBuilderDelegate<GroupMember>(
                       itemBuilder: (context, item, index) => Container(
                         padding: EdgeInsets.all(screenWidth * 0.03),
-                        margin:
-                            EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                        margin: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.003),
                         decoration: BoxDecoration(
                           color: isDark ? Colors.grey.shade800 : Colors.white,
                           border: Border.all(

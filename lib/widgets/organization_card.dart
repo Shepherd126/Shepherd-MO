@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shepherd_mo/widgets/custom_marquee.dart';
 
 class OrganizationCard extends StatefulWidget {
   final Color color;
@@ -30,38 +29,26 @@ class _OrganizationCardState extends State<OrganizationCard> {
     final membersText = localizations.member ?? localizations.noData;
     final detailsText = localizations.details ?? localizations.noData;
 
-    double calculateTextWidth(String text, TextStyle style) {
-      final TextPainter textPainter = TextPainter(
-        text: TextSpan(text: text, style: style),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      return textPainter.width;
-    }
+    // Define a fixed minimum height for the title (2 lines)
+    final double titleMinHeight =
+        screenHeight * 0.07; // Adjust based on your font size
 
-    final double textWidth = calculateTextWidth(
-        widget.title, TextStyle(fontSize: screenHeight * 0.025));
-    final double textMaxWidth = screenWidth * 0.5;
-    final titleWidget = textWidth <= textMaxWidth
-        ? Text(
-            widget.title,
-            maxLines: 1,
-            style: TextStyle(
-                fontSize: screenHeight * 0.025,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                overflow: TextOverflow.ellipsis),
-          )
-        : CustomMarquee(
-            text: widget.title,
-            fontSize: screenHeight * 0.025,
-          );
+    final titleWidget = Text(
+      widget.title,
+      style: TextStyle(
+        fontSize: screenHeight * 0.024,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+        overflow: TextOverflow.ellipsis,
+      ),
+      maxLines: 2, // Allow wrapping to max 2 lines
+      softWrap: true, // Allow wrapping
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Container(
-        width: screenWidth * 0.5,
+        width: screenWidth * 0.6,
         padding: EdgeInsets.all(screenWidth * 0.03),
         decoration: BoxDecoration(
           color: widget.color,
@@ -70,8 +57,9 @@ class _OrganizationCardState extends State<OrganizationCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: screenHeight * 0.035,
+            // Use a `ConstrainedBox` to ensure the title takes at least the min height
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: titleMinHeight),
               child: titleWidget,
             ),
             SizedBox(height: screenHeight * 0.01),
