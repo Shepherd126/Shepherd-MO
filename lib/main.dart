@@ -28,6 +28,7 @@ void main() async {
   Get.put(AuthorizationController());
   Get.put(RefreshController());
   Get.put(NotificationController());
+  Get.put(ModalStateController());
   await localeController.loadPreferredLocale();
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'token');

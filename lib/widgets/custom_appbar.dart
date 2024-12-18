@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/pages/leader/request_page.dart';
 import 'package:shepherd_mo/pages/notification_page.dart';
@@ -60,6 +59,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    final modalController = Get.find<ModalStateController>();
+    final bottomNavController = Get.find<BottomNavController>();
 
     return AppBar(
       backgroundColor: isDark ? Colors.grey.shade900 : Colors.grey.shade300,
@@ -105,34 +106,50 @@ class _CustomAppBarState extends State<CustomAppBar> {
               SizedBox(
                 width: widget.screenWidth * 0.15,
                 height: widget.screenWidth * 0.15,
-                child: IconButton(
-                  onPressed: () {
-                    final BottomNavController bottomNavController =
-                        Get.find<BottomNavController>();
-                    final NotificationController notificationController =
-                        Get.find<NotificationController>();
+                child: Obx(
+                  () {
+                    return IconButton(
+                      onPressed: (modalController.isModalOpen.value &&
+                              modalController.modalOnTab.contains(
+                                  bottomNavController.selectedIndex.value))
+                          ? null
+                          : () {
+                              final BottomNavController bottomNavController =
+                                  Get.find<BottomNavController>();
+                              final NotificationController
+                                  notificationController =
+                                  Get.find<NotificationController>();
 
-                    if (notificationController.openTabIndex.value ==
-                        bottomNavController.selectedIndex.value) {
-                      Get.back(id: notificationController.openTabIndex.value);
-                      notificationController.closeNotificationPage();
-                    } else {
-                      if (notificationController.openTabIndex.value != -1) {
-                        Get.back(id: notificationController.openTabIndex.value);
-                        notificationController.closeNotificationPage();
-                      }
-                      notificationController.openNotificationPage(
-                          bottomNavController.selectedIndex.value);
-                      Get.to(() => NotificationPage(),
-                          transition: Transition.topLevel,
-                          id: bottomNavController.selectedIndex.value);
-                    }
+                              if (notificationController.openTabIndex.value ==
+                                  bottomNavController.selectedIndex.value) {
+                                Get.back(
+                                    id: notificationController
+                                        .openTabIndex.value);
+                                notificationController.closeNotificationPage();
+                              } else {
+                                if (notificationController.openTabIndex.value !=
+                                    -1) {
+                                  Get.back(
+                                      id: notificationController
+                                          .openTabIndex.value);
+                                  notificationController
+                                      .closeNotificationPage();
+                                }
+                                notificationController.openNotificationPage(
+                                    bottomNavController.selectedIndex.value);
+                                Get.to(() => NotificationPage(),
+                                    transition: Transition.topLevel,
+                                    id: bottomNavController
+                                        .selectedIndex.value);
+                              }
+                            },
+                      icon: Icon(
+                        Icons.notifications_none,
+                        size: widget.screenWidth * 0.075,
+                        color: isDark ? Colors.white70 : Colors.grey[700],
+                      ),
+                    );
                   },
-                  icon: Icon(
-                    Icons.notifications_none,
-                    size: widget.screenWidth * 0.075,
-                    color: isDark ? Colors.white70 : Colors.grey[700],
-                  ),
                 ),
               ),
               // Display the red dot with unread count, only if there are unread notifications
@@ -142,16 +159,18 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       ? Positioned(
                           right: widget.screenWidth * 0.03,
                           top: widget.screenWidth * 0.015,
-                          child: CircleAvatar(
-                            radius: widget.screenHeight * 0.01,
-                            backgroundColor: Colors.red,
-                            child: Text(
-                              notificationController.unreadCount.value
-                                  .toString(),
-                              style: TextStyle(
-                                fontSize: widget.screenHeight * 0.01,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                          child: IgnorePointer(
+                            child: CircleAvatar(
+                              radius: widget.screenHeight * 0.01,
+                              backgroundColor: Colors.red,
+                              child: Text(
+                                notificationController.unreadCount.value
+                                    .toString(),
+                                style: TextStyle(
+                                  fontSize: widget.screenHeight * 0.01,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),

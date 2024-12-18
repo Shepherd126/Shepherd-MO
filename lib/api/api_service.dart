@@ -22,37 +22,43 @@ class ApiService {
     required int pageSize,
     String? userId,
   }) async {
-    final url = Uri.parse('$baseUrl/group').replace(queryParameters: {
-      'SearchKey': searchKey,
-      'PageNumber': pageNumber.toString(),
-      'PageSize': pageSize.toString(),
-      'UserId': userId,
-    });
+    try {
+      final url = Uri.parse('$baseUrl/group').replace(queryParameters: {
+        'SearchKey': searchKey,
+        'PageNumber': pageNumber.toString(),
+        'PageSize': pageSize.toString(),
+        'UserId': userId,
+      });
 
-    // Retrieve token from SharedPreferences
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
+      // Retrieve token from SharedPreferences
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token', // Add Bearer token
-        'Content-Type': 'application/json',
-      },
-    );
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // Add Bearer token
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['result'];
-      return results.map((json) => Group.fromJson(json)).toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['result'];
+        return results.map((json) => Group.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -61,36 +67,42 @@ class ApiService {
     required int pageNumber,
     required int pageSize,
   }) async {
-    final url = Uri.parse('$baseUrl/ceremony').replace(queryParameters: {
-      'SearchKey': searchKey,
-      'PageNumber': pageNumber.toString(),
-      'PageSize': pageSize.toString(),
-    });
+    try {
+      final url = Uri.parse('$baseUrl/ceremony').replace(queryParameters: {
+        'SearchKey': searchKey,
+        'PageNumber': pageNumber.toString(),
+        'PageSize': pageSize.toString(),
+      });
 
-    // Retrieve token from SharedPreferences
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
+      // Retrieve token from SharedPreferences
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token', // Add Bearer token
-        'Content-Type': 'application/json',
-      },
-    );
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // Add Bearer token
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['result'];
-      return results.map((json) => Ceremony.fromJson(json)).toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['result'];
+        return results.map((json) => Ceremony.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -101,39 +113,45 @@ class ApiService {
       String? groupId,
       String? orderBy,
       String? role}) async {
-    final url = Uri.parse('$baseUrl/group-user').replace(queryParameters: {
-      'SearchKey': searchKey,
-      'PageNumber': pageNumber.toString(),
-      'PageSize': pageSize.toString(),
-      'GroupId': groupId,
-      if (orderBy != null) 'OrderBy': orderBy,
-      if (role != null) 'Role': role
-    });
+    try {
+      final url = Uri.parse('$baseUrl/group-user').replace(queryParameters: {
+        'SearchKey': searchKey,
+        'PageNumber': pageNumber.toString(),
+        'PageSize': pageSize.toString(),
+        'GroupId': groupId,
+        if (orderBy != null) 'OrderBy': orderBy,
+        if (role != null) 'Role': role
+      });
 
-    // Retrieve token from SharedPreferences
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
+      // Retrieve token from SharedPreferences
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token', // Add Bearer token
-        'Content-Type': 'application/json',
-      },
-    );
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // Add Bearer token
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['result'];
-      return results.map((json) => GroupMember.fromJson(json)).toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['result'];
+        return results.map((json) => GroupMember.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -158,41 +176,46 @@ class ApiService {
     final uriWithParams = url.replace(queryParameters: queryParams);
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
+    try {
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final response = await http.get(
-      uriWithParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['data'];
+        final activities =
+            results.map((json) => Activity.fromJson(json)).toList();
+        activitiesByDate = {};
+        for (Activity activity in activities) {
+          if (activity.startTime != null) {
+            final date = DateTime(activity.startTime!.year,
+                activity.startTime!.month, activity.startTime!.day);
+            if (activitiesByDate[date] == null) {
+              activitiesByDate[date] = [];
+            }
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['data'];
-      final activities =
-          results.map((json) => Activity.fromJson(json)).toList();
-      activitiesByDate = {};
-      for (Activity activity in activities) {
-        if (activity.startTime != null) {
-          final date = DateTime(activity.startTime!.year,
-              activity.startTime!.month, activity.startTime!.day);
-          if (activitiesByDate[date] == null) {
-            activitiesByDate[date] = [];
+            activitiesByDate[date]!.add(activity);
           }
-
-          activitiesByDate[date]!.add(activity);
         }
+        return activitiesByDate;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
-      return activitiesByDate;
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -227,29 +250,33 @@ class ApiService {
       if (pageSize != null) 'PageSize': pageSize.toString(),
     };
     final uriWithParams = url.replace(queryParameters: queryParams);
+    try {
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final response = await http.get(
-      uriWithParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final body = json.decode(response.body);
-      List<dynamic> results = body['result'];
-      return results.map((json) => Event.fromJson(json)).toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 40) {
-      throw Exception('Bad Request');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception("Failed to load event details");
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        List<dynamic> results = body['result'];
+        return results.map((json) => Event.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 40) {
+        throw Exception('Bad Request');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception("Failed to load event details");
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -274,37 +301,42 @@ class ApiService {
     final uriWithParams = url.replace(queryParameters: queryParams);
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
+    try {
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final response = await http.get(
-      uriWithParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['data'];
-      final events = results.map((json) => Event.fromJson(json)).toList();
-      eventsByDate = {};
-      for (Event event in events) {
-        final date = DateTime(
-            event.fromDate!.year, event.fromDate!.month, event.fromDate!.day);
-        if (eventsByDate[date] == null) {
-          eventsByDate[date] = [];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['data'];
+        final events = results.map((json) => Event.fromJson(json)).toList();
+        eventsByDate = {};
+        for (Event event in events) {
+          final date = DateTime(
+              event.fromDate!.year, event.fromDate!.month, event.fromDate!.day);
+          if (eventsByDate[date] == null) {
+            eventsByDate[date] = [];
+          }
+          eventsByDate[date]!.add(event);
         }
-        eventsByDate[date]!.add(event);
+        return eventsByDate;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
-      return eventsByDate;
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -320,32 +352,37 @@ class ApiService {
       'UserOnly': userOnly,
       'GetUpcoming': getUpcoming
     };
+    try {
+      final uriWithParams = url.replace(queryParameters: queryParams);
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
 
-    final uriWithParams = url.replace(queryParameters: queryParams);
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final response = await http.get(
-      uriWithParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['data'];
-      final events = results.map((json) => Event.fromJson(json)).toList();
-      return events;
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['data'];
+        final events = results.map((json) => Event.fromJson(json)).toList();
+        return events;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -356,42 +393,47 @@ class ApiService {
       String userOnly,
       String getUpcoming) async {
     final url = Uri.parse('$baseUrl/activity/calendar');
+    try {
+      // Set query parameters
+      final queryParams = {
+        'ChosenDate': chosenDate,
+        'GroupId': groupId,
+        'CalendarTypeEnum': calendarTypeEnum.toString(),
+        'UserOnly': userOnly,
+        'GetUpcoming': getUpcoming
+      };
 
-    // Set query parameters
-    final queryParams = {
-      'ChosenDate': chosenDate,
-      'GroupId': groupId,
-      'CalendarTypeEnum': calendarTypeEnum.toString(),
-      'UserOnly': userOnly,
-      'GetUpcoming': getUpcoming
-    };
+      final uriWithParams = url.replace(queryParameters: queryParams);
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
 
-    final uriWithParams = url.replace(queryParameters: queryParams);
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final response = await http.get(
-      uriWithParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<dynamic> results = data['data'];
-      final activities =
-          results.map((json) => Activity.fromJson(json)).toList();
-      return activities;
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.reasonPhrase}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['data'];
+        final activities =
+            results.map((json) => Activity.fromJson(json)).toList();
+        return activities;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -451,7 +493,7 @@ class ApiService {
             'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (error) {
-      throw Exception('Error fetching requests: $error');
+      throw Exception('Error: $error');
     }
   }
 
@@ -522,30 +564,35 @@ class ApiService {
       if (pageNumber != null) 'PageNumber': pageNumber.toString(),
       if (pageSize != null) 'PageSize': pageSize.toString(),
     };
-    final uri = url.replace(queryParameters: queryParams);
-    final response = await http.get(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+    try {
+      final uri = url.replace(queryParameters: queryParams);
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final body = json.decode(response.body);
-      List<dynamic> results = body['result'];
-      //results.map((json) => Activity.fromJson(json)).toList();
-      return results;
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized: Please log in again.');
-    } else if (response.statusCode == 40) {
-      throw Exception('Bad Request');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found: The requested resource could not be found.');
-    } else if (response.statusCode == 500) {
-      throw Exception('Server Error: Please try again later.');
-    } else {
-      throw Exception("Failed to load event details");
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        List<dynamic> results = body['result'];
+        //results.map((json) => Activity.fromJson(json)).toList();
+        return results;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 40) {
+        throw Exception('Bad Request');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception("Failed to load event details");
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 
@@ -605,7 +652,7 @@ class ApiService {
             'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (error) {
-      throw Exception('Error fetching requests: $error');
+      throw Exception('Error: $error');
     }
   }
 
@@ -613,7 +660,7 @@ class ApiService {
     required String id,
   }) async {
     // Build URI with query parameters
-    final uri = Uri.parse('$baseUrl/task/${id}');
+    final uri = Uri.parse('$baseUrl/task/$id');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
     try {
@@ -643,7 +690,7 @@ class ApiService {
             'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (error) {
-      throw Exception('Error fetching requests: $error');
+      throw Exception('Error: $error');
     }
   }
 

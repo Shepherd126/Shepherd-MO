@@ -190,13 +190,8 @@ class _LoginPageState extends State<LoginPage> {
                                   setState(() {
                                     isApiCallProcess = true;
                                   });
-
                                   login(requestModel, localizations)
-                                      .then((value) {
-                                    setState(() {
-                                      isApiCallProcess = false;
-                                    });
-                                  });
+                                      .then((value) {});
                                 }
                               },
                               child: Center(
@@ -296,49 +291,60 @@ class _LoginPageState extends State<LoginPage> {
     final FlutterSecureStorage storage = const FlutterSecureStorage();
     final apiService = ApiService();
     final Uri uri = Uri.parse("${apiService.baseUrl}/Login");
-    final response = await http.post(
-      uri,
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(requestModel),
-    );
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestModel),
+      );
+      final responseData = json.decode(response.body);
 
-    final responseData = json.decode(response.body);
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        // Parse the response to the LoginResponseModel
+        final loginResponse = LoginResponseModel.fromJson(responseData);
 
-    if (response.statusCode == 200 && responseData['success'] == true) {
-      // Parse the response to the LoginResponseModel
-      final loginResponse = LoginResponseModel.fromJson(responseData);
+        // Show success snackbar
+        showToast(localizations.loginSuccess);
 
-      // Show success snackbar
-      showToast(localizations.loginSuccess);
+        await storage.write(key: 'token', value: loginResponse.token);
 
-      await storage.write(key: 'token', value: loginResponse.token);
-
-      // Save user information to SharedPreferences
-      if (loginResponse.user != null) {
-        prefs.setString('loginInfo', jsonEncode(loginResponse.user));
-        final firebaseMessaging = FirebaseMessaging.instance;
-        final deviceId = await firebaseMessaging.getToken();
-        final user = loginResponse.user;
-        final id = user!.id;
-        if (deviceId != null && id != null) {
-          await apiService.sendDeviceId(id, deviceId);
+        // Save user information to SharedPreferences
+        if (loginResponse.user != null) {
+          prefs.setString('loginInfo', jsonEncode(loginResponse.user));
+          final firebaseMessaging = FirebaseMessaging.instance;
+          final deviceId = await firebaseMessaging.getToken();
+          final user = loginResponse.user;
+          final id = user!.id;
+          if (deviceId != null && id != null) {
+            await apiService.sendDeviceId(id, deviceId);
+          }
         }
+        if (loginResponse.listGroupRole != null) {
+          prefs.setString(
+              'loginUserGroups', jsonEncode(loginResponse.listGroupRole));
+        }
+        setState(() {
+          isApiCallProcess = false;
+        });
+        // Navigate to HomePage
+        Get.off(() => const HomePage());
+      } else {
+        // Handle error message
+        final errorMessage =
+            responseData['message'] ?? localizations.loginUnsuccess;
+        setState(() {
+          isApiCallProcess = false;
+        });
+        showToast(errorMessage);
       }
-      if (loginResponse.listGroupRole != null) {
-        prefs.setString(
-            'loginUserGroups', jsonEncode(loginResponse.listGroupRole));
-      }
-
-      // Navigate to HomePage
-      Get.off(() => const HomePage());
-    } else {
-      // Handle error message
-      print(responseData['message']);
-      final errorMessage =
-          responseData['message'] ?? localizations.loginUnsuccess;
-      showToast(errorMessage);
+    } catch (error) {
+      setState(() {
+        isApiCallProcess = false;
+      });
+      showToast(localizations.loginUnsuccess);
+      throw Exception('Error: $error');
     }
   }
 }

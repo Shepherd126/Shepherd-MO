@@ -161,5 +161,8 @@
   "markAllAsRead": "Mark All As Read",
   "moreOptions": "More Options",
   "deleteNoti": "Delete This Notification",
-  "delete": "Delete"
+  "delete": "Delete",
+  "unread": "Unread",
+  "groupUser": "Group User",
+  "transaction": "Transaction"
 }

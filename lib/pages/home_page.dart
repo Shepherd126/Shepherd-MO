@@ -22,10 +22,8 @@ import 'package:shepherd_mo/models/group_user.dart';
 import 'package:shepherd_mo/models/user.dart';
 import 'package:shepherd_mo/pages/change_password_page.dart';
 import 'package:shepherd_mo/pages/group_members_page.dart';
-import 'package:shepherd_mo/pages/leader/create_edit_event.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
-import 'package:shepherd_mo/pages/notification_page.dart';
 import 'package:shepherd_mo/pages/settings_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/pages/upcoming_activity_page.dart';
@@ -619,18 +617,6 @@ class _ScheduleTabState extends State<ScheduleTab> {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      floatingActionButton: authorizationController.isAuthorized.value
-          ? FloatingActionButton(
-              heroTag: 'schedule',
-              onPressed: () {
-                Get.to(() => const CreateEditEventPage(),
-                    id: 2, transition: Transition.rightToLeftWithFade);
-              },
-              backgroundColor: Colors.orange,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add),
-            )
-          : null,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,

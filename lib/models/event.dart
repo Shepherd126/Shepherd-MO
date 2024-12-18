@@ -1,5 +1,4 @@
 import 'package:shepherd_mo/models/activity.dart';
-import 'package:shepherd_mo/models/group_activity.dart';
 
 class Event {
   String? id;

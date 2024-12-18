@@ -20,7 +20,7 @@ class NotificationCard extends StatefulWidget {
   final NotificationModel notification;
   final Function(NotificationModel) onDelete;
 
-  NotificationCard({
+  const NotificationCard({super.key, 
     required this.notification,
     required this.onDelete,
   });
@@ -68,12 +68,16 @@ class _NotificationCardState extends State<NotificationCard> {
     switch (type) {
       case 'Task':
         return Icons.task;
-      case 'warning':
-        return Icons.warning_amber_outlined;
-      case 'alert':
-        return Icons.error_outline;
-      case 'message':
-        return Icons.message_outlined;
+      case 'Group':
+        return Icons.people;
+      case 'GroupUser':
+        return Icons.person;
+      case 'Event':
+        return Icons.event;
+      case 'Activity':
+        return Icons.wysiwyg;
+      case 'Transaction':
+        return Icons.attach_money;
       default:
         return Icons.notifications_none;
     }
@@ -94,10 +98,10 @@ class _NotificationCardState extends State<NotificationCard> {
     Color cardColor = widget.notification.isRead
         ? isDark
             ? Colors.grey[900]!
-            : const Color.fromARGB(255, 230, 236, 239)!
+            : const Color.fromARGB(255, 230, 236, 239)
         : isDark
             ? Colors.blue[900]!.withOpacity(0.4)
-            : const Color.fromARGB(255, 192, 224, 250)!;
+            : const Color.fromARGB(255, 192, 224, 250);
 
     final localizations = AppLocalizations.of(context)!;
 
@@ -153,6 +157,7 @@ class _NotificationCardState extends State<NotificationCard> {
         onPressed: () async {
           if (!widget.notification.isRead) {
             await apiService.readNoti(widget.notification.id, true);
+            notificationController.fetchUnreadCount();
             setState(() {
               widget.notification.isRead = true;
             });
@@ -164,8 +169,6 @@ class _NotificationCardState extends State<NotificationCard> {
                 id: widget.notification.relevantId!);
             final BottomNavController bottomNavController =
                 Get.find<BottomNavController>();
-            final NotificationController notificationController =
-                Get.find<NotificationController>();
 
             if (bottomNavController.selectedIndex.value != 3) {
               bottomNavController.changeTabIndex(3);
@@ -218,6 +221,10 @@ class _NotificationCardState extends State<NotificationCard> {
             );
           }
         },
+        onLongPress: () {
+          showNotiBottomSheet(
+              context, localizations, apiService, notificationController);
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: cardColor, // Button color
           elevation: 4, // Elevation to create depth
@@ -230,312 +237,335 @@ class _NotificationCardState extends State<NotificationCard> {
             left: screenHeight * 0.015,
           ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Type Icon
-            Container(
-              padding: EdgeInsets.all(screenHeight * 0.012),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.blue[800] : Colors.blue[200],
-                shape: BoxShape.circle,
-              ),
-              child: Align(
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Type Icon
+              Container(
                 alignment: Alignment.center,
-                child: Icon(
-                  getTypeIcon(widget.notification.type),
-                  color: isDark ? Colors.white : Colors.black,
-                  size: screenHeight * 0.028,
+                child: Container(
+                  padding: EdgeInsets.all(screenHeight * 0.012),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.blue[800] : Colors.blue[200],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    getTypeIcon(widget.notification.type),
+                    color: isDark ? Colors.white : Colors.black,
+                    size: screenHeight * 0.028,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: screenWidth * 0.05),
-            // Notification Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    widget.notification.title,
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.018,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+              SizedBox(width: screenWidth * 0.02),
+              // Notification Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      widget.notification.title,
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.018,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.005),
-                  // Content
-                  Text(
-                    widget.notification.content,
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.015,
-                      color: isDark ? Colors.white70 : Colors.black87,
+                    SizedBox(height: screenHeight * 0.005),
+                    // Content
+                    Text(
+                      widget.notification.content,
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.015,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.005),
-                  // Time
-                  StreamBuilder<DateTime>(
-                    stream: _realTimeStream,
-                    builder: (context, snapshot) {
-                      String formattedDuration = snapshot.hasData
-                          ? formatTimeAgo(
-                              widget.notification.time, snapshot.data!)
-                          : formatTimeAgo(
-                              widget.notification.time, DateTime.now());
+                    SizedBox(height: screenHeight * 0.005),
+                    // Time
+                    StreamBuilder<DateTime>(
+                      stream: _realTimeStream,
+                      builder: (context, snapshot) {
+                        String formattedDuration = snapshot.hasData
+                            ? formatTimeAgo(
+                                widget.notification.time, snapshot.data!)
+                            : formatTimeAgo(
+                                widget.notification.time, DateTime.now());
 
-                      return Text(
-                        formattedDuration,
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.0125,
-                          color: isDark ? Colors.white60 : Colors.black54,
-                        ),
-                        textAlign: TextAlign.end,
-                      );
-                    },
-                  ),
-                  if (widget.notification.type == 'Task' &&
-                      widget.notification.taskStatus != null) ...[
-                    if (widget.notification.taskStatus == 0) ...[
-                      // Task not confirmed, show buttons (Accept / Decline)
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.005),
-                        child: Row(
-                          children: [
-                            // Confirm Button
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  // Handle accept task logic
-                                  final success = await apiService.confirmTask(
-                                      widget.notification.relevantId!, true);
-                                  if (success) {
-                                    if (!widget.notification.isRead) {
-                                      await apiService.readNoti(
-                                          widget.notification.id, true);
+                        return Text(
+                          formattedDuration,
+                          style: TextStyle(
+                            fontSize: screenHeight * 0.0125,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                          textAlign: TextAlign.end,
+                        );
+                      },
+                    ),
+                    if (widget.notification.type == 'Task' &&
+                        widget.notification.taskStatus != null) ...[
+                      if (widget.notification.taskStatus == 0) ...[
+                        // Task not confirmed, show buttons (Accept / Decline)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.005),
+                          child: Row(
+                            children: [
+                              // Confirm Button
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    await apiService.readNoti(
+                                        widget.notification.id, true);
+                                    notificationController.fetchUnreadCount();
+
+                                    // Handle accept task logic
+                                    final success =
+                                        await apiService.confirmTask(
+                                            widget.notification.relevantId!,
+                                            true);
+                                    if (success) {
+                                      if (!widget.notification.isRead) {}
+                                      showToast(
+                                          '${localizations.confirmTask} ${localizations.success.toLowerCase()}');
+                                      setState(() {
+                                        widget.notification.taskStatus = 1;
+                                        widget.notification.isRead = true;
+                                      });
+                                    } else {
+                                      showToast(
+                                          '${localizations.confirmTask} ${localizations.unsuccess.toLowerCase()}');
                                     }
-                                    showToast(
-                                        '${localizations.confirmTask} ${localizations.success.toLowerCase()}');
-                                    setState(() {
-                                      widget.notification.taskStatus = 1;
-                                      widget.notification.isRead = true;
-                                    });
-                                  } else {
-                                    showToast(
-                                        '${localizations.confirmTask} ${localizations.unsuccess.toLowerCase()}');
-                                  }
-                                },
-                                icon: Icon(Icons.check, color: Colors.white),
-                                label: Text(
-                                  localizations.accept,
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        screenHeight * 0.008),
+                                  },
+                                  icon: Icon(Icons.check, color: Colors.white),
+                                  label: Text(
+                                    localizations.accept,
+                                    style: TextStyle(color: Colors.white),
                                   ),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: screenHeight * 0.005),
-                                  elevation: 5,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.008),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: screenHeight * 0.005),
+                                    elevation: 5,
+                                  ),
                                 ),
                               ),
-                            ),
 
-                            // Optional space between the buttons
-                            SizedBox(width: screenWidth * 0.025),
+                              // Optional space between the buttons
+                              SizedBox(width: screenWidth * 0.025),
 
-                            // Decline Button
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  // Handle reject task logic
-                                  final success = await apiService.confirmTask(
-                                      widget.notification.relevantId!, false);
-                                  if (success) {
-                                    if (!widget.notification.isRead) {
-                                      await apiService.readNoti(
-                                          widget.notification.id, true);
+                              // Decline Button
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    await apiService.readNoti(
+                                        widget.notification.id, true);
+                                    notificationController.fetchUnreadCount();
+
+                                    // Handle reject task logic
+                                    final success =
+                                        await apiService.confirmTask(
+                                            widget.notification.relevantId!,
+                                            false);
+                                    if (success) {
+                                      if (!widget.notification.isRead) {}
+                                      showToast(
+                                          '${localizations.declineTask} ${localizations.success.toLowerCase()}');
+                                      setState(() {
+                                        widget.notification.taskStatus = 2;
+                                        widget.notification.isRead = true;
+                                      });
+                                    } else {
+                                      showToast(
+                                          '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');
                                     }
-                                    showToast(
-                                        '${localizations.declineTask} ${localizations.success.toLowerCase()}');
-                                    setState(() {
-                                      widget.notification.taskStatus = 2;
-                                      widget.notification.isRead = true;
-                                    });
-                                  } else {
-                                    showToast(
-                                        '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');
-                                  }
-                                },
-                                icon: Icon(Icons.close, color: Colors.white),
-                                label: Text(
-                                  localizations.decline,
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        screenHeight * 0.008),
+                                  },
+                                  icon: Icon(Icons.close, color: Colors.white),
+                                  label: Text(
+                                    localizations.decline,
+                                    style: TextStyle(color: Colors.white),
                                   ),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: screenHeight * 0.005),
-                                  elevation: 5,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.008),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: screenHeight * 0.005),
+                                    elevation: 5,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (widget.notification.taskStatus == 1) ...[
-                      // Task is accepted, show text
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.005),
-                        child: Text(
-                          localizations.taskAccepted, // "Task Accepted" message
-                          style: TextStyle(
-                            fontSize: screenHeight * 0.015,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            ],
                           ),
                         ),
-                      ),
-                    ] else if (widget.notification.taskStatus == 2) ...[
-                      // Task is rejected, show text
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.005),
-                        child: Text(
-                          localizations.taskDeclined, // "Task Declined" message
-                          style: TextStyle(
-                            fontSize: screenHeight * 0.015,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                    ] else if (widget.notification.taskStatus == 3) ...[
-                      // Task is assigned to another person, show text
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.005),
-                        child: Text(
-                          localizations
-                              .taskAssignedToAnother, // "Task Assigned to Another" message
-                          style: TextStyle(
+                      ] else if (widget.notification.taskStatus == 1) ...[
+                        // Task is accepted, show text
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.005),
+                          child: Text(
+                            localizations
+                                .taskAccepted, // "Task Accepted" message
+                            style: TextStyle(
                               fontSize: screenHeight * 0.015,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey),
+                              color: Colors.green,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ]
-                ],
+                      ] else if (widget.notification.taskStatus == 2) ...[
+                        // Task is rejected, show text
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.005),
+                          child: Text(
+                            localizations
+                                .taskDeclined, // "Task Declined" message
+                            style: TextStyle(
+                              fontSize: screenHeight * 0.015,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ] else if (widget.notification.taskStatus == 3) ...[
+                        // Task is assigned to another person, show text
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.005),
+                          child: Text(
+                            localizations
+                                .taskAssignedToAnother, // "Task Assigned to Another" message
+                            style: TextStyle(
+                                fontSize: screenHeight * 0.015,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey),
+                          ),
+                        ),
+                      ],
+                    ]
+                  ],
+                ),
               ),
-            ),
-            // Menu Icon Button (for actions)
-            IconButton(
-              icon: Icon(Icons.more_vert,
-                  color: isDark ? Colors.white : Colors.black),
-              onPressed: () {
-                // Handle menu action here (e.g., show a menu, etc.)
-                showModalBottomSheet(
-                  context: context,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
+              // Menu Icon Button (for actions)
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: Icon(Icons.more_horiz,
+                      color: isDark ? Colors.white : Colors.black),
+                  onPressed: () {
+                    // Handle menu action here (e.g., show a menu, etc.)
+                    showNotiBottomSheet(context, localizations, apiService,
+                        notificationController);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<dynamic> showNotiBottomSheet(
+      BuildContext context,
+      AppLocalizations localizations,
+      ApiService apiService,
+      NotificationController notificationController) async {
+    final modalController = Get.find<ModalStateController>();
+    modalController.openModal();
+    try {
+      return await showModalBottomSheet(
+        context: context,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        builder: (context) => Consumer<UIProvider>(
+          builder: (context, UIProvider notifier, child) {
+            bool isDark = notifier.themeMode == ThemeMode.dark ||
+                (MediaQuery.of(context).platformBrightness == Brightness.dark);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
                   ),
-                  builder: (context) => Consumer<UIProvider>(
-                    builder: (context, UIProvider notifier, child) {
-                      bool isDark = notifier.themeMode == ThemeMode.dark ||
-                          (MediaQuery.of(context).platformBrightness ==
-                              Brightness.dark);
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade300,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20),
-                              ),
-                            ),
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ),
-                          ),
-                          // Mark as Read
-                          ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: isDark
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade300,
-                              child: Icon(
-                                  widget.notification.isRead
-                                      ? Icons.mark_chat_unread_rounded
-                                      : Icons.mark_chat_read_rounded,
-                                  color: Colors.blue),
-                            ),
-                            title: Text(widget.notification.isRead
-                                ? localizations.markAsUnread
-                                : localizations.markAsRead),
-                            onTap: () async {
-                              await apiService.readNoti(widget.notification.id,
-                                  !widget.notification.isRead);
-                              notificationController.fetchUnreadCount();
-
-                              setState(() {
-                                widget.notification.isRead =
-                                    !widget.notification.isRead;
-                              });
-
-                              Navigator.pop(context); // Close the bottom sheet
-                            },
-                          ),
-                          // Delete Notification
-                          ListTile(
-                            leading: CircleAvatar(
-                                backgroundColor: isDark
-                                    ? Colors.grey.shade800
-                                    : Colors.grey.shade300,
-                                child: Icon(Icons.delete, color: Colors.red)),
-                            title: Text(localizations.deleteNoti),
-                            onTap: () {
-                              widget.onDelete(widget.notification);
-                              showToast(
-                                  "${localizations.delete} ${localizations.notification.toLowerCase()} ${localizations.success}");
-                              Navigator.pop(context); // Close the bottom sheet
-                            },
-                          ),
-                          // Other actions
-                        ],
-                      );
-                    },
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.red,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+                // Mark as Read
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                    child: Icon(
+                        widget.notification.isRead
+                            ? Icons.mark_chat_unread_rounded
+                            : Icons.mark_chat_read_rounded,
+                        color: Colors.blue),
+                  ),
+                  title: Text(widget.notification.isRead
+                      ? localizations.markAsUnread
+                      : localizations.markAsRead),
+                  onTap: () async {
+                    await apiService.readNoti(
+                        widget.notification.id, !widget.notification.isRead);
+                    notificationController.fetchUnreadCount();
+
+                    setState(() {
+                      widget.notification.isRead = !widget.notification.isRead;
+                    });
+
+                    Navigator.pop(context); // Close the bottom sheet
+                  },
+                ),
+                // Delete Notification
+                ListTile(
+                  leading: CircleAvatar(
+                      backgroundColor:
+                          isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                      child: Icon(Icons.delete, color: Colors.red)),
+                  title: Text(localizations.deleteNoti),
+                  onTap: () {
+                    widget.onDelete(widget.notification);
+                    showToast(
+                        "${localizations.delete} ${localizations.notification.toLowerCase()} ${localizations.success}");
+                    Navigator.pop(context); // Close the bottom sheet
+                  },
+                ),
+                // Other actions
+              ],
+            );
+          },
         ),
-      ),
-    );
+      );
+    } finally {
+      // Ensure the modal state is reset when the modal closes
+      modalController.closeModal();
+    }
   }
 }

@@ -10,17 +10,6 @@ class BottomNavController extends GetxController {
 
   void changeTabIndex(int index) {
     selectedIndex.value = index;
-
-    final NotificationController notificationController =
-        Get.find<NotificationController>();
-    if (notificationController.openTabIndex.value != -1 &&
-        notificationController.openTabIndex.value != index) {
-      // Close the notification page when switching tabs
-      Get.back(
-          id: notificationController
-              .openTabIndex.value); // Close the notification page
-      notificationController.closeNotificationPage();
-    }
   }
 }
 
@@ -128,11 +117,13 @@ class NotificationController extends GetxController {
   // Opens the NotificationPage and set the tab index where it's open
   void openNotificationPage(int tabIndex) {
     openTabIndex.value = tabIndex;
+    print("hehe");
   }
 
   // Closes the NotificationPage
   void closeNotificationPage() {
     openTabIndex.value = -1;
+    print("huhu");
   }
 
   // Rx variable to observe changes
@@ -153,5 +144,29 @@ class NotificationController extends GetxController {
       unreadCount.value = 0;
       haveUnread.value = false;
     }
+  }
+}
+
+class ModalStateController extends GetxController {
+  var isModalOpen = false.obs;
+  List<int> modalOnTab = <int>[].obs;
+
+  void openModal() {
+    isModalOpen.value = true;
+    final BottomNavController bottomNavController =
+        Get.find<BottomNavController>();
+    if (!modalOnTab.contains(bottomNavController.selectedIndex.value)) {
+      modalOnTab.add(bottomNavController.selectedIndex.value);
+    }
+    print("hehe");
+  }
+
+  void closeModal() {
+    isModalOpen.value = false;
+    final BottomNavController bottomNavController =
+        Get.find<BottomNavController>();
+    modalOnTab.remove(bottomNavController.selectedIndex.value);
+    print(modalOnTab.toString());
+    print("huhu");
   }
 }

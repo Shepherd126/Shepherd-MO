@@ -27,15 +27,37 @@ class _NotificationPageState extends State<NotificationPage> {
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
   final NotificationController notificationController =
       Get.find<NotificationController>();
+  final BottomNavController bottomNavController =
+      Get.find<BottomNavController>();
+  bool _isUnread = false;
+  String _filterType = "";
 
   @override
   void initState() {
     super.initState();
-
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
     });
     notificationController.fetchUnreadCount();
+  }
+
+  void _toggleUnreadView(bool isUnread) {
+    setState(() {
+      if (isUnread == false && _isUnread == isUnread) {
+        _filterType = "";
+      }
+      _isUnread = isUnread;
+      _refreshList();
+    });
+  }
+
+  void _onFilterTypeChanged(String? newValue) {
+    if (newValue != null) {
+      setState(() {
+        _filterType = newValue;
+        _refreshList(); // Refresh the list when the filter changes
+      });
+    }
   }
 
   Future<void> _fetchPage(int pageKey) async {
@@ -43,10 +65,11 @@ class _NotificationPageState extends State<NotificationPage> {
       ApiService apiService = ApiService();
 
       final newItems = await apiService.fetchNotifications(
-        searchKey: null,
-        pageNumber: pageKey,
-        pageSize: _pageSize,
-      );
+          searchKey: null,
+          pageNumber: pageKey,
+          pageSize: _pageSize,
+          type: (_filterType.isNotEmpty) ? _filterType : null,
+          isRead: _isUnread ? false : null);
 
       final isLastPage = newItems.length < _pageSize;
 
@@ -79,7 +102,6 @@ class _NotificationPageState extends State<NotificationPage> {
         notification.isRead = true; // Assuming there's an 'isRead' property
       }
     });
-    print('All notifications marked as read');
   }
 
   // Delete notification
@@ -100,6 +122,8 @@ class _NotificationPageState extends State<NotificationPage> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    final modalController = Get.find<ModalStateController>();
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -109,6 +133,14 @@ class _NotificationPageState extends State<NotificationPage> {
                 color: Colors.black,
               ),
         ),
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back), // Use the default back icon
+          onPressed: () {
+            notificationController.closeNotificationPage();
+            Navigator.of(context).pop();
+          },
+        ),
         iconTheme: IconThemeData(
           color: Colors.black, // Set leading icon color explicitly
         ),
@@ -116,95 +148,206 @@ class _NotificationPageState extends State<NotificationPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {
+            onPressed: () async {
               // Handle menu action here (e.g., show a menu, etc.)
-              showModalBottomSheet(
-                context: context,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+              modalController.openModal();
+              try {
+                await showModalBottomSheet(
+                  context: context,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                   ),
-                ),
-                builder: (context) => Consumer<UIProvider>(
-                  builder: (context, UIProvider notifier, child) {
-                    bool isDark = notifier.themeMode == ThemeMode.dark ||
-                        (MediaQuery.of(context).platformBrightness ==
-                            Brightness.dark);
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade300,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                          ),
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.red,
+                  builder: (context) => Consumer<UIProvider>(
+                    builder: (context, UIProvider notifier, child) {
+                      bool isDark = notifier.themeMode == ThemeMode.dark ||
+                          (MediaQuery.of(context).platformBrightness ==
+                              Brightness.dark);
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade300,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
+                            ),
+                            child: Align(
+                              alignment: Alignment.topRight,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                        // Mark as Read
-                        ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isDark
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade300,
-                            child: Icon(Icons.mark_chat_read_rounded,
-                                color: Colors.blue),
+                          // Mark as Read
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade300,
+                              child: Icon(Icons.mark_chat_read_rounded,
+                                  color: Colors.blue),
+                            ),
+                            title: Text(localizations.markAllAsRead),
+                            onTap: () async {
+                              _markAllAsRead();
+                              Navigator.pop(context); // Close the bottom sheet
+                            },
                           ),
-                          title: Text(localizations.markAllAsRead),
-                          onTap: () async {
-                            _markAllAsRead();
-                            Navigator.pop(context); // Close the bottom sheet
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              );
+                        ],
+                      );
+                    },
+                  ),
+                );
+              } finally {
+                modalController.closeModal();
+              }
             },
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: RefreshIndicator(
-          displacement: 20,
-          onRefresh: _refreshList, // Triggers the refresh method
-          child: PagedListView<int, NotificationModel>(
-            pagingController: _pagingController,
-            builderDelegate: PagedChildBuilderDelegate<NotificationModel>(
-              itemBuilder: (context, item, index) => NotificationCard(
-                notification: item,
-                onDelete: _deleteNotification,
-              ),
-              firstPageProgressIndicatorBuilder: (_) =>
-                  const Center(child: CircularProgressIndicator()),
-              newPageProgressIndicatorBuilder: (_) =>
-                  const Center(child: CircularProgressIndicator()),
-              noItemsFoundIndicatorBuilder: (context) => EmptyData(
-                noDataMessage: localizations.noNotification,
-                message: localizations.wellDoneServant,
-              ),
-              noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
-              animateTransitions: true,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ToggleButtons(
+                  isSelected: [_isUnread == false, _isUnread == true],
+                  onPressed: (index) {
+                    _toggleUnreadView(index == 1);
+                  },
+                  fillColor: isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                  selectedColor: Colors.white,
+                  borderColor: isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                  selectedBorderColor:
+                      isDark ? Colors.grey[700] : Color(0xFFEEC05C),
+                  borderRadius: BorderRadius.circular(15),
+                  children: [
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: screenWidth * 0.035),
+                      child: SizedBox(
+                        width: screenWidth *
+                            0.15, // Fixed width for equal-sized buttons
+                        child: Center(
+                          child: Text(
+                            localizations.all,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: screenWidth * 0.035),
+                      child: SizedBox(
+                        width: screenWidth *
+                            0.15, // Fixed width for equal-sized buttons
+                        child: Center(
+                          child: Text(
+                            localizations.unread,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                PopupMenuButton<String>(
+                  position: PopupMenuPosition
+                      .under, // Opens the popup menu below the button
+                  initialValue: _filterType,
+                  onSelected: (value) {
+                    modalController.closeModal();
+                    _onFilterTypeChanged(value);
+                  },
+                  onCanceled: () {
+                    modalController.closeModal();
+                  },
+                  itemBuilder: (context) {
+                    modalController.openModal();
+                    return [
+                      PopupMenuItem(
+                        value: "",
+                        child: Text(localizations.all),
+                      ),
+                      PopupMenuItem(
+                        value: "Group",
+                        child: Text(localizations.group),
+                      ),
+                      PopupMenuItem(
+                        value: "Event",
+                        child: Text(localizations.event),
+                      ),
+                      PopupMenuItem(
+                        value: "Activity",
+                        child: Text(localizations.activity),
+                      ),
+                      PopupMenuItem(
+                        value: "Task",
+                        child: Text(localizations.task),
+                      ),
+                      PopupMenuItem(
+                        value: "Transaction",
+                        child: Text(localizations.transaction),
+                      ),
+                      PopupMenuItem(
+                        value: "GroupUser",
+                        child: Text(localizations.groupUser),
+                      ),
+                    ];
+                  },
+                  icon: Icon(
+                    Icons.filter_alt_outlined,
+                  ),
+                ),
+              ],
             ),
-          ),
+            SizedBox(height: screenHeight * 0.01),
+            Expanded(
+              child: RefreshIndicator(
+                displacement: 20,
+                onRefresh: _refreshList, // Triggers the refresh method
+                child: PagedListView<int, NotificationModel>(
+                  pagingController: _pagingController,
+                  builderDelegate: PagedChildBuilderDelegate<NotificationModel>(
+                    itemBuilder: (context, item, index) => NotificationCard(
+                      notification: item,
+                      onDelete: _deleteNotification,
+                    ),
+                    firstPageProgressIndicatorBuilder: (_) =>
+                        const Center(child: CircularProgressIndicator()),
+                    newPageProgressIndicatorBuilder: (_) =>
+                        const Center(child: CircularProgressIndicator()),
+                    noItemsFoundIndicatorBuilder: (context) => EmptyData(
+                      noDataMessage: localizations.noNotification,
+                      message: localizations.wellDoneServant,
+                    ),
+                    noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
+                    animateTransitions: true,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -213,7 +356,6 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   void dispose() {
     _pagingController.dispose();
-    notificationController.closeNotificationPage();
     super.dispose();
   }
 }
