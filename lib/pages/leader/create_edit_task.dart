@@ -92,8 +92,9 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
       costController.text = widget.task!.cost != null
           ? formatter.formatString(widget.task!.cost!.toString())
           : '';
-      userController.text =
-          widget.task!.userName ?? ''; // Assuming `userName` exists in Task
+      if (widget.task!.status != "Bản nháp") {
+        userController.text = widget.task!.userName ?? '';
+      }
     } else {
       // If no task is passed, initialize a new task
       task = Task(
@@ -511,6 +512,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                       if (success) {
                         showToast(
                             '${localizations.create} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
+                        Get.back(id: 2);
                       } else {
                         if (message != null) {
                           showToast(message);
@@ -530,6 +532,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                       if (success) {
                         showToast(
                             '${localizations.edit} ${localizations.task.toLowerCase()} ${localizations.success.toLowerCase()}');
+                        Get.back(id: 2);
                       } else {
                         if (message != null) {
                           showToast(message);

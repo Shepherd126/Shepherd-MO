@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/pages/activity_detail_page.dart';
 
 class ActivityExpandableCard extends StatelessWidget {
   const ActivityExpandableCard({
@@ -80,22 +82,22 @@ class ActivityExpandableCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                // Action buttons
-                // Align(
-                //   alignment: Alignment.bottomRight,
-                //   child: TextButton(
-                //     onPressed: () {
-                //       final BottomNavController controller =
-                //           Get.find<BottomNavController>();
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: TextButton(
+                    onPressed: () {
+                      // final BottomNavController controller =
+                      //     Get.find<BottomNavController>();
 
-                //       if (controller.selectedIndex != 2)
-                //         controller.changeTabIndex(2);
-                //       Get.to(() => EventDetailsPage(eventId: event.id!),
-                //           id: 2, transition: Transition.rightToLeftWithFade);
-                //     },
-                //     child: Text(AppLocalizations.of(context)!.details),
-                //   ),
-                // ),
+                      // if (controller.selectedIndex != 2) {
+                      //   controller.changeTabIndex(2);
+                      // }
+                      Get.to(() => ActivityDetailPage(activityId: activity.id),
+                          id: 1, transition: Transition.rightToLeftWithFade);
+                    },
+                    child: Text(AppLocalizations.of(context)!.details),
+                  ),
+                ),
               ],
             ),
           ),

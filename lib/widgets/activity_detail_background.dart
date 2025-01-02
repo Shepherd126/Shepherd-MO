@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shepherd_mo/models/event.dart';
+import 'package:shepherd_mo/models/activity.dart';
 
-class EventDetailsBackground extends StatelessWidget {
-  const EventDetailsBackground({super.key});
+class ActivityDetailsBackground extends StatelessWidget {
+  const ActivityDetailsBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final event = Provider.of<Event>(context);
+    final activity = Provider.of<Activity>(context);
 
     // Get theme mode
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -26,9 +26,9 @@ class EventDetailsBackground extends StatelessWidget {
         clipper: ImageClipper(),
         child: Stack(
           children: [
-            event.imageURL != null
+            activity.imageURL != null
                 ? Image.network(
-                    event.imageURL!,
+                    activity.imageURL!,
                     fit: BoxFit.cover,
                     width: screenWidth,
                     height: screenHeight * 0.4,

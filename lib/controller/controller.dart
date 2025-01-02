@@ -158,7 +158,6 @@ class ModalStateController extends GetxController {
     if (!modalOnTab.contains(bottomNavController.selectedIndex.value)) {
       modalOnTab.add(bottomNavController.selectedIndex.value);
     }
-    print("hehe");
   }
 
   void closeModal() {
@@ -166,7 +165,5 @@ class ModalStateController extends GetxController {
     final BottomNavController bottomNavController =
         Get.find<BottomNavController>();
     modalOnTab.remove(bottomNavController.selectedIndex.value);
-    print(modalOnTab.toString());
-    print("huhu");
   }
 }

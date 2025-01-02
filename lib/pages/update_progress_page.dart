@@ -12,8 +12,13 @@ import 'package:shepherd_mo/utils/toast.dart';
 
 class UpdateProgress extends StatefulWidget {
   final List<Task> tasks;
+  final bool isLeader;
 
-  const UpdateProgress({super.key, required this.tasks});
+  const UpdateProgress({
+    super.key,
+    required this.tasks,
+    required this.isLeader,
+  });
 
   @override
   _UpdateProgressState createState() => _UpdateProgressState();
@@ -33,6 +38,16 @@ class _UpdateProgressState extends State<UpdateProgress> {
     'Đã hoàn thành': Colors.green,
   };
   final apiService = ApiService();
+
+  void _handleTaskUpdated(Task updatedTask) {
+    setState(() {
+      final index =
+          widget.tasks.indexWhere((task) => task.id == updatedTask.id);
+      if (index != -1) {
+        widget.tasks[index] = updatedTask;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -156,7 +171,23 @@ class _UpdateProgressState extends State<UpdateProgress> {
           ),
           Expanded(
             child: DragTarget<Task>(
-              onWillAcceptWithDetails: (details) => details.data != null,
+              onWillAcceptWithDetails: (details) {
+                final task = details.data;
+                if (widget.isLeader) {
+                  return task.status == 'Xem xét' &&
+                          status == 'Đã hoàn thành' ||
+                      status == 'Đang thực hiện';
+                } else {
+                  if (task.status == 'Việc cần làm' &&
+                      status == 'Đang thực hiện') {
+                    return true;
+                  } else if (task.status == 'Đang thực hiện' &&
+                      status == 'Xem xét') {
+                    return true;
+                  }
+                  return false;
+                }
+              },
               onAcceptWithDetails: (details) async {
                 final task = details.data;
 
@@ -194,7 +225,10 @@ class _UpdateProgressState extends State<UpdateProgress> {
                           child: Column(
                             children: statusTasks
                                 .map((task) => DraggableTaskCard(
-                                    key: ObjectKey(task), task: task))
+                                      key: ObjectKey(task),
+                                      task: task,
+                                      onTaskUpdated: _handleTaskUpdated,
+                                    ))
                                 .toList(),
                           ),
                         )
@@ -222,9 +256,13 @@ class _UpdateProgressState extends State<UpdateProgress> {
 
 class DraggableTaskCard extends StatelessWidget {
   final Task task;
+  final Function(Task) onTaskUpdated;
 
-  const DraggableTaskCard({required Key key, required this.task})
-      : super(key: key);
+  const DraggableTaskCard({
+    required Key key,
+    required this.task,
+    required this.onTaskUpdated,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -232,13 +270,15 @@ class DraggableTaskCard extends StatelessWidget {
       data: task,
       feedback: Material(
         color: Colors.transparent,
-        child: KanbanTaskCard(task: task, isDragging: true),
+        child: KanbanTaskCard(
+            task: task, isDragging: true, onTaskUpdated: onTaskUpdated),
       ),
       childWhenDragging: Opacity(
         opacity: 0.5,
-        child: KanbanTaskCard(task: task, isDragging: false),
+        child: KanbanTaskCard(
+            task: task, isDragging: false, onTaskUpdated: onTaskUpdated),
       ),
-      child: KanbanTaskCard(task: task),
+      child: KanbanTaskCard(task: task, onTaskUpdated: onTaskUpdated),
     );
   }
 }
@@ -246,9 +286,13 @@ class DraggableTaskCard extends StatelessWidget {
 class KanbanTaskCard extends StatelessWidget {
   final Task task;
   final bool isDragging;
-
-  const KanbanTaskCard(
-      {super.key, required this.task, this.isDragging = false});
+  final Function(Task) onTaskUpdated;
+  const KanbanTaskCard({
+    super.key,
+    required this.task,
+    this.isDragging = false,
+    required this.onTaskUpdated,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +309,7 @@ class KanbanTaskCard extends StatelessWidget {
           builder: (BuildContext context) {
             return TaskDetailsDialog(
               task: task, // Pass the task object
+              onTaskUpdated: onTaskUpdated,
             );
           },
         );

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -57,7 +58,6 @@ class _HomeState extends State<HomePage> {
 
   final List<String> _tabsRoutes = [
     '/home',
-    '/message',
     '/schedule',
     '/activities',
     '/menu',
@@ -65,7 +65,6 @@ class _HomeState extends State<HomePage> {
 
   final List<Widget> tabs = [
     const HomeTab(),
-    const MessageTab(),
     const ScheduleTab(),
     const ActivitiesTab(),
     const MenuTab(),
@@ -119,8 +118,6 @@ class _HomeState extends State<HomePage> {
   Future<void> _updateAuthorizationStatus() async {
     bool isAuthorized = await checkUserRoles();
     bool isLeader = await checkGroupUserRoles();
-    print(isAuthorized);
-    print(isLeader);
     Get.find<AuthorizationController>().updateAuthorizationStatus(isAuthorized);
     Get.find<AuthorizationController>()
         .updateGroupAuthorizationStatus(isLeader);
@@ -175,18 +172,9 @@ class _HomeState extends State<HomePage> {
               ),
             ),
             GButton(
-              icon: Icons.chat,
-              iconActiveColor: Const.primaryGoldenColor,
-              text: localizations.message,
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFEEC05C),
-              ),
-            ),
-            GButton(
               icon: Icons.event,
               iconActiveColor: Const.primaryGoldenColor,
-              text: localizations.event,
+              text: localizations.schedule,
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEEC05C),
@@ -230,9 +218,6 @@ class _HomeState extends State<HomePage> {
           case '/home':
             page = const HomeTab();
             break;
-          case '/message':
-            page = const MessageTab();
-            break;
           case '/schedule':
             page = const ScheduleTab();
             break;
@@ -248,7 +233,7 @@ class _HomeState extends State<HomePage> {
         return GetPageRoute(
           page: () => page,
           transition: Transition.fadeIn,
-          transitionDuration: const Duration(milliseconds: 1000),
+          transitionDuration: const Duration(milliseconds: 500),
         );
       },
     );
@@ -504,24 +489,6 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-class MessageTab extends StatefulWidget {
-  const MessageTab({super.key});
-  @override
-  State<MessageTab> createState() => _MessageTabState();
-}
-
-class _MessageTabState extends State<MessageTab> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
-
 class ScheduleTab extends StatefulWidget {
   final DateTime? chosenDate;
   const ScheduleTab({this.chosenDate, super.key});
@@ -542,20 +509,42 @@ class _ScheduleTabState extends State<ScheduleTab> {
   bool isLoading = true;
   Map<DateTime, List<Event>> eventsByDate = {};
   List<Event> selectedEvents = [];
+  Map<DateTime, List<Event>> ceremoniesByDate = {};
+  List<Event> selectedCeremonies = [];
 
-  Future<void> fetchEvents() async {
+  String? selectedGroup;
+  String? selectedOrganization;
+  String userOnly = "false";
+  Future<List<GroupRole>>? userGroups;
+
+  Future<void> fetchEventsAndCeremonies() async {
     setState(() {
       isLoading = true;
     });
     try {
       final apiService = ApiService();
-      eventsByDate = await apiService.fetchEventsCalendar(focusedDay.toString(),
-          "", _calendarFormat == CalendarFormat.week ? 0 : 1, "false", "false");
+      //Fetch events
+      eventsByDate = await apiService.fetchEventsCalendar(
+        focusedDay.toString(),
+        selectedOrganization ?? "",
+        _calendarFormat == CalendarFormat.week ? 0 : 1,
+        userOnly,
+        "false",
+      );
+
+      // Fetch ceremonies
+      ceremoniesByDate = await apiService.fetchCeremoniesCalendar(
+        focusedDay.toString(),
+        selectedOrganization ?? "",
+        _calendarFormat == CalendarFormat.week ? 0 : 1,
+        "false",
+        "false",
+      );
     } finally {
       setState(() {
         isLoading = false;
       });
-      _updateSelectedDayEvents();
+      _updateSelectedDayEventsAndCeremonies();
     }
   }
 
@@ -564,17 +553,18 @@ class _ScheduleTabState extends State<ScheduleTab> {
       setState(() {
         selectedDay = day;
         this.focusedDay = focusedDay;
-        _updateSelectedDayEvents();
+        _updateSelectedDayEventsAndCeremonies();
       });
     }
   }
 
-  void _updateSelectedDayEvents() {
+  void _updateSelectedDayEventsAndCeremonies() {
     setState(() {
       final date =
           DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
 
       selectedEvents = eventsByDate[date] ?? [];
+      selectedCeremonies = ceremoniesByDate[date] ?? [];
     });
   }
 
@@ -582,7 +572,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
   void initState() {
     super.initState();
     initializeData();
-    fetchEvents();
+    fetchEventsAndCeremonies();
   }
 
   Future<void> initializeData() async {
@@ -598,7 +588,109 @@ class _ScheduleTabState extends State<ScheduleTab> {
       focusedDay = today;
     }
 
-    //userGroups = loadUserGroupInfo();
+    userGroups = _loadUserGroupInfo();
+  }
+
+  Future<List<GroupRole>> _loadUserGroupInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userGroups = prefs.getString("loginUserGroups");
+    if (userGroups != null) {
+      final decodedJson = jsonDecode(userGroups) as List<dynamic>;
+      return decodedJson
+          .map((item) => GroupRole.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  void _onOrganizationChanged(String? newValue) {
+    setState(() {
+      selectedGroup = newValue;
+      if (newValue == "All") {
+        selectedOrganization = null;
+        userOnly = "false";
+      } else if (newValue == "AllOrg") {
+        selectedOrganization = null;
+        userOnly = "true";
+      } else {
+        selectedOrganization = newValue;
+        userOnly = "true";
+      }
+      isLoading = true;
+    });
+    fetchEventsAndCeremonies();
+  }
+
+  Widget _buildGroupDropdown(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isDark ? Colors.orangeAccent : Colors.orange.shade600,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: FutureBuilder<List<GroupRole>>(
+        future: userGroups,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Text(localizations.noParticipatedGroup);
+          } else {
+            final userGroups = snapshot.data!;
+            return DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isDense: true, // Reduce dropdown size
+                hint: Text(
+                  localizations.all,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                value: selectedGroup,
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down),
+                items: [
+                  DropdownMenuItem(
+                    value: "All",
+                    child: Text(
+                      localizations.all,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: "AllOrg",
+                    child: Text(
+                      localizations.allCurrentlyUserOrganizations,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  ...userGroups.map((group) {
+                    return DropdownMenuItem(
+                      value: group.groupId,
+                      child: Text(
+                        group.groupName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    );
+                  }),
+                ],
+                onChanged: _onOrganizationChanged,
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -621,14 +713,15 @@ class _ScheduleTabState extends State<ScheduleTab> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         title: Text(
-          localizations.event,
+          localizations.schedule,
           style: Theme.of(context).textTheme.headlineMedium,
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
         child: Column(
           children: [
+            _buildGroupDropdown(context),
             Obx(
               () => TableCalendar(
                 locale: localeController.currentLocale.languageCode,
@@ -645,6 +738,13 @@ class _ScheduleTabState extends State<ScheduleTab> {
                   formatButtonVisible: true,
                   titleCentered: true,
                   formatButtonShowsNext: false,
+                  formatButtonDecoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDark ? Colors.grey : Colors.black,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.transparent,
+                  ),
                   titleTextFormatter: (date, locale) {
                     if (locale == 'vi') {
                       final String formattedDate =
@@ -666,21 +766,31 @@ class _ScheduleTabState extends State<ScheduleTab> {
                 ),
                 eventLoader: (day) {
                   final date = DateTime(day.year, day.month, day.day);
-                  return eventsByDate[date] ?? [];
+                  final events = eventsByDate[date] ?? [];
+                  final ceremonies = ceremoniesByDate[date] ?? [];
+                  return [...events, ...ceremonies];
                 },
-
                 // Customizing Calendar Appearance
                 calendarStyle: CalendarStyle(
-                  todayDecoration: const BoxDecoration(
-                    color: Colors.orange,
+                  todayDecoration: BoxDecoration(
+                    color: Colors.transparent,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.grey, // Border color
+                      width: 1.0, // Border width
+                    ),
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: Colors.orange.shade800,
+                    color: isDark
+                        ? Colors.blueGrey.shade200
+                        : Colors.blue.shade300,
                     shape: BoxShape.circle,
                   ),
-                  selectedTextStyle: const TextStyle(
-                    color: Colors.white,
+                  selectedTextStyle: TextStyle(
+                    color: isDark ? Colors.black : Colors.white,
+                  ),
+                  todayTextStyle: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                   defaultTextStyle: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
@@ -698,33 +808,64 @@ class _ScheduleTabState extends State<ScheduleTab> {
                       _calendarFormat = format;
                       focusedDay = selectedDay;
                     });
-                    fetchEvents();
+                    fetchEventsAndCeremonies();
                   }
                 },
                 // Calendar builders to customize markers
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, day, events) {
-                    if (events.isNotEmpty) {
-                      return Container(
-                        width: screenHeight * 0.021,
-                        height: screenHeight * 0.021,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.red[700],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '${events.length}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: screenHeight * 0.011,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                    final date = DateTime(day.year, day.month, day.day);
+                    final events = eventsByDate[date] ?? [];
+                    final ceremonies = ceremoniesByDate[date] ?? [];
+
+                    if (events.isEmpty && ceremonies.isEmpty) return null;
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (events.isNotEmpty)
+                          Container(
+                            width: screenHeight * 0.021,
+                            height: screenHeight * 0.021,
+                            margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.orange, // Color for events
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${events.length}', // Number of events
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: screenHeight * 0.011,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    }
-                    return null;
+                        if (ceremonies.isNotEmpty)
+                          Container(
+                            width: screenHeight * 0.021,
+                            height: screenHeight * 0.021,
+                            margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.red, // Color for ceremonies
+                              shape:
+                                  BoxShape.circle, // Rectangle for ceremonies
+                            ),
+                            child: Text(
+                              '${ceremonies.length}', // Number of ceremonies
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: screenHeight * 0.011,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
                   },
                 ),
 
@@ -739,7 +880,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                       selectedDay = today;
                       focusedDay = today;
                     });
-                    fetchEvents();
+                    fetchEventsAndCeremonies();
                   }
                 },
 
@@ -749,29 +890,42 @@ class _ScheduleTabState extends State<ScheduleTab> {
                     focusedDay =
                         newFocusedDay; // Update the focused day without affecting selectedDay
                   });
-                  fetchEvents();
+                  fetchEventsAndCeremonies();
                 },
               ),
             ),
             Expanded(
-              child: selectedEvents.isEmpty
+              child: selectedEvents.isEmpty && selectedCeremonies.isEmpty
                   ? EmptyData(
                       noDataMessage: localizations.noEvent,
                       message: localizations.takeABreak)
-                  : ListView.builder(
-                      itemCount: selectedEvents.length,
-                      itemBuilder: (context, index) {
-                        final event = selectedEvents[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 4.0, horizontal: 8.0),
-                          child: EventCard(
+                  : ListView(
+                      children: [
+                        if (selectedEvents.isNotEmpty) ...[
+                          Text(localizations.event,
+                              style: Theme.of(context).textTheme.titleMedium),
+                          ...selectedEvents.map(
+                            (event) => EventCard(
                               event: event,
                               screenHeight: screenHeight,
                               isDark: isDark,
-                              screenWidth: screenWidth),
-                        );
-                      },
+                              screenWidth: screenWidth,
+                            ),
+                          ),
+                        ],
+                        if (selectedCeremonies.isNotEmpty) ...[
+                          Text(localizations.ceremony,
+                              style: Theme.of(context).textTheme.titleMedium),
+                          ...selectedCeremonies.map(
+                            (ceremony) => EventCard(
+                              event: ceremony,
+                              screenHeight: screenHeight,
+                              isDark: isDark,
+                              screenWidth: screenWidth,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
             ),
           ],
@@ -1151,8 +1305,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       title: Text(localizations.noGroup),
-                                      content: Text(
-                                          "This activity has no associated groups."),
+                                      content:
+                                          Text(localizations.noAssociatedOrgs),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
@@ -1177,7 +1331,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
                                   // Proceed with the found group
                                   await _checkRoleAndNavigate(
-                                      selectedGroup, activity);
+                                      selectedGroup, activity, localizations);
                                   return; // Exit after successful navigation
                                 } catch (e) {
                                   // Handle the case where no matching group is found
@@ -1185,9 +1339,9 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                                     context: context,
                                     builder: (BuildContext context) {
                                       return AlertDialog(
-                                        title: Text("Error"),
-                                        content: Text(
-                                            "Selected organization no longer exists."),
+                                        title: Text(localizations.error),
+                                        content:
+                                            Text(localizations.errorOccurred),
                                         actions: [
                                           TextButton(
                                             onPressed: () =>
@@ -1290,11 +1444,11 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
                                 // Proceed with the selected group
                                 await _checkRoleAndNavigate(
-                                    selectedGroup, activity);
+                                    selectedGroup, activity, localizations);
                               } else {
                                 // Only one group exists, proceed directly
-                                await _checkRoleAndNavigate(
-                                    groupAndUsers.first, activity);
+                                await _checkRoleAndNavigate(groupAndUsers.first,
+                                    activity, localizations);
                               }
                             },
                           ),
@@ -1308,8 +1462,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     );
   }
 
-  Future<void> _checkRoleAndNavigate(
-      GroupAndUser selectedGroup, Activity activity) async {
+  Future<void> _checkRoleAndNavigate(GroupAndUser selectedGroup,
+      Activity activity, AppLocalizations localizations) async {
     try {
       // Await the userGroups Future to get the actual list
       final userGroupList = await userGroups;
@@ -1318,10 +1472,12 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       final userGroup = userGroupList!.firstWhere(
         (group) => group.groupId == selectedGroup.groupID,
       );
+      final String leader = dotenv.env['LEADER'] ?? '';
+      final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
 
       // Determine if the user is a leader
       final isLeader =
-          userGroup.roleName == "Trưởng nhóm" || userGroup.roleName == "";
+          userGroup.roleName == leader || userGroup.roleName == accountant;
 
       // Navigate based on the user's role
       Get.to(
@@ -1336,7 +1492,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                 activityName: activity.activityName!,
                 group: userGroup,
               ),
-        id: 3,
+        id: 2,
         transition: Transition.rightToLeftWithFade,
       );
     } catch (e) {
@@ -1345,8 +1501,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("Error"),
-            content: Text("Failed to determine role: $e"),
+            title: Text(localizations.error),
+            content: Text(localizations.errorOccurred),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -1473,7 +1629,7 @@ class _MenuTabState extends State<MenuTab> {
                   child: ElevatedButton(
                     onPressed: () {
                       Get.to(() => const UpdateProfilePage(),
-                          id: 4, transition: Transition.rightToLeftWithFade);
+                          id: 3, transition: Transition.rightToLeftWithFade);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Const.primaryGoldenColor,
@@ -1500,7 +1656,7 @@ class _MenuTabState extends State<MenuTab> {
                       : Colors.orange.shade800,
                   onTap: () {
                     Get.to(() => const ChangePasswordPage(),
-                        id: 4, transition: Transition.rightToLeftWithFade);
+                        id: 3, transition: Transition.rightToLeftWithFade);
                   },
                 ),
                 ProfileMenuWidget(
@@ -1511,7 +1667,7 @@ class _MenuTabState extends State<MenuTab> {
                       : Colors.orange.shade800,
                   onTap: () {
                     Get.to(() => const SettingsPage(),
-                        id: 4, transition: Transition.rightToLeftWithFade);
+                        id: 3, transition: Transition.rightToLeftWithFade);
                   },
                 ),
                 ProfileMenuWidget(

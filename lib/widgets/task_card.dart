@@ -3,7 +3,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/constant/constant.dart';
-import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
@@ -120,7 +119,7 @@ class _TaskCardState extends State<TaskCard> {
                               group: widget.group,
                               task: widget.task,
                             ),
-                            id: 3,
+                            id: 2,
                             transition: Transition.rightToLeftWithFade,
                           );
                         },
@@ -141,17 +140,9 @@ class _TaskCardState extends State<TaskCard> {
                           builder: (BuildContext context) {
                             return TaskDetailsDialog(
                               task: widget.task, // Pass the task object
-                              // Pass the localizations object
                             );
                           },
-                        ).then((_) {
-                          // Cleanup logic when dialog is dismissed
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            final RefreshController refreshController =
-                                Get.find();
-                            refreshController.setShouldRefresh(true);
-                          });
-                        });
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Const.primaryGoldenColor,

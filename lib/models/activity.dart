@@ -1,3 +1,4 @@
+import 'package:shepherd_mo/models/event.dart';
 import 'package:shepherd_mo/models/group_activity.dart';
 import 'package:shepherd_mo/models/group_user.dart';
 
@@ -11,22 +12,29 @@ class Activity {
   DateTime? updateTime;
   String? status;
   int? totalCost;
+  String? location;
+  String? imageURL;
+  String? comment;
   List<GroupAndUser>? groupAndUsers;
   List<GroupActivity>? groupActivities;
+  Event? event;
 
-  Activity({
-    required this.id,
-    this.activityName,
-    this.description,
-    this.startTime,
-    this.endTime,
-    this.createTime,
-    this.updateTime,
-    this.status,
-    this.totalCost,
-    this.groupAndUsers,
-    this.groupActivities,
-  });
+  Activity(
+      {required this.id,
+      this.activityName,
+      this.description,
+      this.startTime,
+      this.endTime,
+      this.createTime,
+      this.updateTime,
+      this.status,
+      this.totalCost,
+      this.location,
+      this.imageURL,
+      this.comment,
+      this.groupAndUsers,
+      this.groupActivities,
+      this.event});
 
   // Factory method to create an Activity from a JSON map
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -50,6 +58,9 @@ class Activity {
       status: json['status'] as String,
       totalCost:
           json['totalCost'] != null ? (json['totalCost'] as num).toInt() : null,
+      location: json['location'] != null ? json['location'] as String : null,
+      imageURL: json['imageURL'] != null ? json['imageURL'] as String : null,
+      comment: json['comment'] != null ? json['comment'] as String : null,
       groupAndUsers: json['groupAndUsers'] != null
           ? (json['groupAndUsers'] as List<dynamic>)
               .map((e) => GroupAndUser.fromJson(e as Map<String, dynamic>))
@@ -60,6 +71,7 @@ class Activity {
               .map((e) => GroupActivity.fromJson(e as Map<String, dynamic>))
               .toList()
           : null,
+      event: json['event'] != null ? Event.fromJson(json['event']) : null,
     );
   }
 

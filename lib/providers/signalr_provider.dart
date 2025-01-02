@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:signalr_core/signalr_core.dart';
 
 class SignalRService with ChangeNotifier {
@@ -12,10 +13,11 @@ class SignalRService with ChangeNotifier {
   bool get isConnected => _isConnected;
 
   SignalRService() {
+    String url = dotenv.env['SIGNALR_URL'] ?? '';
     // Initialize the SignalR connection
     hubConnection = HubConnectionBuilder()
         .withUrl(
-          'https://shepherd-api-bnh0fkamhzbkagg2.southeastasia-01.azurewebsites.net/signalrServer', // Replace with your SignalR server URL
+          url,
           HttpConnectionOptions(
             logging: (level, message) =>
                 print("SignalR Log [$level]: $message"),

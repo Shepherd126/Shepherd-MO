@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/notification.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -24,13 +26,14 @@ class NotificationPage extends StatefulWidget {
 class _NotificationPageState extends State<NotificationPage> {
   static const _pageSize = 10;
   final PagingController<int, NotificationModel> _pagingController =
-      PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
+      PagingController(firstPageKey: 1, invisibleItemsThreshold: 2);
   final NotificationController notificationController =
       Get.find<NotificationController>();
   final BottomNavController bottomNavController =
       Get.find<BottomNavController>();
   bool _isUnread = false;
   String _filterType = "";
+  String role = dotenv.env['MEMBER'] ?? '';
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _NotificationPageState extends State<NotificationPage> {
       _fetchPage(pageKey);
     });
     notificationController.fetchUnreadCount();
+    _getUserRole();
   }
 
   void _toggleUnreadView(bool isUnread) {
@@ -84,6 +88,13 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
+  void _getUserRole() async {
+    final loginInfo = await getLoginInfoFromPrefs();
+    setState(() {
+      role = loginInfo!.role!;
+    });
+  }
+
   // Method to refresh the entire list
   Future<void> _refreshList() async {
     _pagingController.refresh(); // Refresh the PagingController
@@ -123,6 +134,8 @@ class _NotificationPageState extends State<NotificationPage> {
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     final modalController = Get.find<ModalStateController>();
+    final String accountant = dotenv.env['ACCOUNTANT'] ?? '';
+    final String council = dotenv.env['COUNCIL'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -305,14 +318,16 @@ class _NotificationPageState extends State<NotificationPage> {
                         value: "Task",
                         child: Text(localizations.task),
                       ),
-                      PopupMenuItem(
-                        value: "Transaction",
-                        child: Text(localizations.transaction),
-                      ),
-                      PopupMenuItem(
-                        value: "GroupUser",
-                        child: Text(localizations.groupUser),
-                      ),
+                      if (role == council)
+                        PopupMenuItem(
+                          value: "Request",
+                          child: Text(localizations.request),
+                        ),
+                      if (role == accountant)
+                        PopupMenuItem(
+                          value: "Transaction",
+                          child: Text(localizations.transaction),
+                        ),
                     ];
                   },
                   icon: Icon(

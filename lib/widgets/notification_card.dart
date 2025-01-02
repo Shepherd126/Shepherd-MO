@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/notification.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/pages/home_page.dart';
+import 'package:shepherd_mo/pages/leader/request_page.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
@@ -20,7 +22,8 @@ class NotificationCard extends StatefulWidget {
   final NotificationModel notification;
   final Function(NotificationModel) onDelete;
 
-  const NotificationCard({super.key, 
+  const NotificationCard({
+    super.key,
     required this.notification,
     required this.onDelete,
   });
@@ -78,6 +81,8 @@ class _NotificationCardState extends State<NotificationCard> {
         return Icons.wysiwyg;
       case 'Transaction':
         return Icons.attach_money;
+      case 'Request':
+        return Icons.request_page;
       default:
         return Icons.notifications_none;
     }
@@ -170,8 +175,8 @@ class _NotificationCardState extends State<NotificationCard> {
             final BottomNavController bottomNavController =
                 Get.find<BottomNavController>();
 
-            if (bottomNavController.selectedIndex.value != 3) {
-              bottomNavController.changeTabIndex(3);
+            if (bottomNavController.selectedIndex.value != 2) {
+              bottomNavController.changeTabIndex(2);
             }
 
             if (notificationController.openTabIndex.value != -1) {
@@ -183,15 +188,17 @@ class _NotificationCardState extends State<NotificationCard> {
               () => ActivitiesTab(
                 chosenDate: widget.notification.activityStartTime,
               ),
-              id: 3,
+              id: 2,
               transition: Transition.fade,
             );
 
             final userGroupList = await userGroups;
             final userGroup = userGroupList!
                 .firstWhere((group) => group.groupId == task.groupId);
-            final isLeader =
-                userGroup.roleName == "Trưởng nhóm" || userGroup.roleName == "";
+            final String leader = dotenv.env['LEADER'] ?? '';
+            final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
+            final isLeader = userGroup.roleName == leader ||
+                userGroup.roleName == accountant;
 
             // Navigate to the appropriate Task Page
             Get.to(
@@ -206,7 +213,7 @@ class _NotificationCardState extends State<NotificationCard> {
                       activityName: task.activityName!,
                       group: userGroup,
                     ),
-              id: 3,
+              id: 2,
               transition: Transition.rightToLeftWithFade,
             );
 
@@ -218,6 +225,25 @@ class _NotificationCardState extends State<NotificationCard> {
                   task: task,
                 );
               },
+            );
+          } else if (widget.notification.type == "Request") {
+            //check role
+            final BottomNavController bottomNavController =
+                Get.find<BottomNavController>();
+
+            if (bottomNavController.selectedIndex.value != 0) {
+              bottomNavController.changeTabIndex(0);
+            }
+
+            if (notificationController.openTabIndex.value != -1) {
+              notificationController.closeNotificationPage();
+            }
+
+            // Navigate to ActivitiesTab
+            Get.to(
+              () => RequestList(),
+              id: 0,
+              transition: Transition.fade,
             );
           }
         },

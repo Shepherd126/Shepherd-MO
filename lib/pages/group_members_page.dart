@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
@@ -7,11 +8,11 @@ import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/formatter/avatar.dart';
 import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_member.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
+import 'package:shepherd_mo/pages/search_transaction_list.dart';
 
 class GroupDetail extends StatefulWidget {
   final Group group;
@@ -25,13 +26,12 @@ class GroupDetail extends StatefulWidget {
 class _GroupDetailState extends State<GroupDetail> {
   static const _pageSize = 5;
   final PagingController<int, GroupMember> _pagingController =
-      PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
+      PagingController(firstPageKey: 1, invisibleItemsThreshold: 2);
 
   String _searchText = '';
   bool _isAscending = false;
-  String _sortBy = 'name';
+  String _sortBy = 'role';
   Timer? _debounce;
-  bool _showButton = false;
   int orderBy = 0;
   final searchController = TextEditingController();
   final searchFocus = FocusNode();
@@ -42,7 +42,6 @@ class _GroupDetailState extends State<GroupDetail> {
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
     });
-    _checkUserRole();
   }
 
   Future<void> _fetchPage(int pageKey) async {
@@ -72,15 +71,6 @@ class _GroupDetailState extends State<GroupDetail> {
     } catch (e) {
       _pagingController.error = e;
     }
-  }
-
-  Future<void> _checkUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('userRole') ?? '';
-
-    setState(() {
-      _showButton = role == 'admin' || role == 'group_manager';
-    });
   }
 
   void _unfocus() {
@@ -114,26 +104,6 @@ class _GroupDetailState extends State<GroupDetail> {
       _isAscending = !_isAscending;
     });
     _refreshList();
-  }
-
-  void _showDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Admin Action"),
-          content: const Text("This is a placeholder for admin actions."),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Close"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -199,31 +169,40 @@ class _GroupDetailState extends State<GroupDetail> {
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.01),
-                      Text(
-                        '${localizations.member}: ${widget.group.memberCount}',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.035,
-                          color:
-                              isDark ? Colors.grey.shade400 : Colors.grey[600],
-                        ),
-                      ),
-                      if (_showButton)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: _showDialog,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${localizations.member}: ${widget.group.memberCount}',
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.035,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Get.to(
+                                () => TransactionList(
+                                  groupId: widget.group.id,
+                                ),
+                                id: 0,
+                              );
+                            },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber[700],
+                              backgroundColor: Const.primaryGoldenColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: Text(
-                              "Admin Action",
+                              localizations.transaction,
                               style: TextStyle(fontSize: screenWidth * 0.035),
                             ),
                           ),
-                        ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

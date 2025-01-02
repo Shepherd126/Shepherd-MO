@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/user.dart';
@@ -28,11 +29,15 @@ Future<bool> checkUserRoles() async {
   // Check for roles in loginInfo
   if (loginInfoJson != null) {
     final loginInfo = User.fromJson(jsonDecode(loginInfoJson));
+    final String admin = dotenv.env['ADMIN'] ?? '';
+    final String priest = dotenv.env['PRIEST'] ?? '';
+    final String accountant = dotenv.env['ACCOUNTANT'] ?? '';
+    final String council = dotenv.env['COUNCIL'] ?? '';
 
-    if (loginInfo.role == 'Admin' ||
-        loginInfo.role == 'Cha xứ' ||
-        loginInfo.role == 'Thủ quỹ' ||
-        loginInfo.role == 'Hội đồng mục vụ') {
+    if (loginInfo.role == admin ||
+        loginInfo.role == priest ||
+        loginInfo.role == accountant ||
+        loginInfo.role == council) {
       return true;
     }
   }
@@ -54,10 +59,12 @@ Future<bool> checkGroupUserRoles() async {
     List<GroupRole> loginUserGroupsList = decodedJson
         .map((item) => GroupRole.fromJson(item as Map<String, dynamic>))
         .toList();
+    final String leader = dotenv.env['LEADER'] ?? '';
+    final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
 
     // Check for specific roles
     for (var group in loginUserGroupsList) {
-      if (group.roleName == 'Trưởng nhóm' || group.roleName == 'Accountant') {
+      if (group.roleName == leader || group.roleName == accountant) {
         return true; // Found role in loginUserGroups
       }
     }

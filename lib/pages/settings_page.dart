@@ -264,6 +264,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
+                  trailing: localeController.currentLocale.languageCode == 'en'
+                      ? Icon(Icons.done)
+                      : null,
                   title: Text(AppLocalizations.of(context)!.english),
                   onTap: () {
                     localeController.changeLanguage('en');
@@ -279,6 +282,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
+                  trailing: localeController.currentLocale.languageCode == 'vi'
+                      ? Icon(Icons.done)
+                      : null,
                   title: Text(AppLocalizations.of(context)!.vietnamese),
                   onTap: () {
                     localeController.changeLanguage('vi');

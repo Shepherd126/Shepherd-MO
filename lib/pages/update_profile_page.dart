@@ -312,7 +312,7 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                                 if (success) {
                                   showToast(
                                       '${localizations.editProfile} ${localizations.success.toLowerCase()}');
-                                  Get.back(id: 4);
+                                  Get.back(id: 3);
                                 } else {
                                   if (message != null) {
                                     showToast(

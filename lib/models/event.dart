@@ -13,6 +13,8 @@ class Event {
   DateTime? approvalDate;
   String? approvedBy;
   List<Activity>? activities;
+  String? location;
+  String? imageURL;
 
   Event({
     this.id,
@@ -27,6 +29,8 @@ class Event {
     this.approvalDate,
     this.approvedBy,
     this.activities,
+    this.location,
+    this.imageURL,
   });
 
   // Factory constructor to parse from JSON (for fetching from API)
@@ -52,6 +56,8 @@ class Event {
               .map((e) => Activity.fromJson(e as Map<String, dynamic>))
               .toList()
           : null,
+      location: json['location'],
+      imageURL: json['imageURL'],
     );
   }
 

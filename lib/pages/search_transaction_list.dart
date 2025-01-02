@@ -1,26 +1,30 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
-import 'package:shepherd_mo/models/request.dart';
+import 'package:shepherd_mo/formatter/custom_currency_format.dart';
+import 'package:shepherd_mo/models/transaction.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
-import 'package:shepherd_mo/services/get_login.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/end_of_line.dart';
 
-class RequestList extends StatefulWidget {
-  const RequestList({super.key});
+class TransactionList extends StatefulWidget {
+  final String groupId;
+  const TransactionList({
+    super.key,
+    required this.groupId,
+  });
 
   @override
-  _RequestListState createState() => _RequestListState();
+  _TransactionListState createState() => _TransactionListState();
 }
 
-class _RequestListState extends State<RequestList> {
+class _TransactionListState extends State<TransactionList> {
   static const _pageSize = 5;
-  final PagingController<int, RequestModel> _pagingController =
+  final PagingController<int, Transaction> _pagingController =
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
 
   String _searchText = '';
@@ -28,28 +32,17 @@ class _RequestListState extends State<RequestList> {
   String _sortBy = 'date';
   int orderBy = 0;
 
-  bool _isMyRequests = false;
   Timer? _debounce;
-  int _filterStatus = 0; // 0 - All, 1 - Accepted, 2 - Rejected, 3 - Pending
+  String _filterType = "";
   final searchController = TextEditingController();
   final searchFocus = FocusNode();
-
-  final String council = dotenv.env['COUNCIL'] ?? '';
   late bool isCouncil = false;
 
   @override
   void initState() {
-    initializeData();
     super.initState();
     _pagingController.addPageRequestListener((pageKey) {
       _fetchPage(pageKey);
-    });
-  }
-
-  Future<void> initializeData() async {
-    final loginInfo = await getLoginInfoFromPrefs();
-    setState(() {
-      isCouncil = loginInfo!.role == council;
     });
   }
 
@@ -61,14 +54,13 @@ class _RequestListState extends State<RequestList> {
       } else if (_sortBy == 'date') {
         _isAscending ? orderBy = 6 : orderBy = 7;
       }
-      final requests = await apiService.fetchRequests(
-        searchKey: _searchText,
-        pageNumber: pageKey,
-        pageSize: _pageSize,
-        filterBy: _filterStatus,
-        createdBy: _isMyRequests ? await _getUserId() : null,
-        orderBy: orderBy,
-      );
+      final requests = await apiService.fetchTransactions(
+          searchKey: _searchText,
+          pageNumber: pageKey,
+          pageSize: _pageSize,
+          groupId: widget.groupId,
+          orderBy: orderBy,
+          type: _filterType);
 
       final isLastPage = requests.length < _pageSize;
       if (isLastPage) {
@@ -83,11 +75,6 @@ class _RequestListState extends State<RequestList> {
     }
   }
 
-  Future<String?> _getUserId() async {
-    final loginInfo = await getLoginInfoFromPrefs();
-    return loginInfo?.id;
-  }
-
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -95,13 +82,6 @@ class _RequestListState extends State<RequestList> {
         _searchText = value;
         _refreshList();
       });
-    });
-  }
-
-  void _toggleRequestView(bool isMyRequests) {
-    setState(() {
-      _isMyRequests = isMyRequests;
-      _refreshList();
     });
   }
 
@@ -119,10 +99,10 @@ class _RequestListState extends State<RequestList> {
     _refreshList();
   }
 
-  void _onFilterStatusChanged(int? newValue) {
+  void _onFilterStatusChanged(String? newValue) {
     if (newValue != null) {
       setState(() {
-        _filterStatus = newValue;
+        _filterType = newValue;
         _refreshList(); // Refresh the list when the filter changes
       });
     }
@@ -153,7 +133,7 @@ class _RequestListState extends State<RequestList> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          localizations.request,
+          localizations.transaction,
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         backgroundColor: isDark ? Colors.grey[900] : Color(0xFFEEC05C),
@@ -165,44 +145,6 @@ class _RequestListState extends State<RequestList> {
           padding: EdgeInsets.all(screenHeight * 0.016),
           child: Column(
             children: [
-              // My Requests / All Requests Toggle
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  isCouncil
-                      ? ToggleButtons(
-                          isSelected: [
-                            _isMyRequests == false,
-                            _isMyRequests == true
-                          ],
-                          onPressed: (index) {
-                            _toggleRequestView(index == 1);
-                          },
-                          fillColor:
-                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                          selectedColor: Colors.white,
-                          borderColor:
-                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                          selectedBorderColor:
-                              isDark ? Colors.grey[700] : Color(0xFFEEC05C),
-                          borderRadius: BorderRadius.circular(15),
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.035),
-                              child: Text(localizations.allRequest),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.035),
-                              child: Text(localizations.myRequests),
-                            ),
-                          ],
-                        )
-                      : SizedBox.shrink(),
-                ],
-              ),
-              SizedBox(height: screenHeight * 0.016),
               // Search, Sort, and Filter Bar
               Container(
                 padding: EdgeInsets.all(screenHeight * 0.012),
@@ -288,29 +230,36 @@ class _RequestListState extends State<RequestList> {
                       ),
                       onPressed: _toggleSortDirection,
                     ),
-                    SizedBox(width: screenWidth * 0.025),
-                    PopupMenuButton<int>(
+                    PopupMenuButton<String>(
                       position: PopupMenuPosition
                           .under, // Opens the popup menu below the button
-                      initialValue: _filterStatus,
+                      initialValue: _filterType,
                       onSelected:
                           _onFilterStatusChanged, // Called when an option is selected
                       itemBuilder: (context) => [
                         PopupMenuItem(
-                          value: 0,
+                          value: "",
                           child: Text(localizations.all),
                         ),
                         PopupMenuItem(
-                          value: 1,
-                          child: Text(localizations.accepted),
+                          value: "Từ thiện",
+                          child: Text(localizations.donation),
                         ),
                         PopupMenuItem(
-                          value: 2,
-                          child: Text(localizations.rejected),
+                          value: "Chi phí",
+                          child: Text(localizations.expense),
                         ),
                         PopupMenuItem(
-                          value: 3,
-                          child: Text(localizations.pending),
+                          value: "Quỹ vào",
+                          child: Text(localizations.fundIn),
+                        ),
+                        PopupMenuItem(
+                          value: "Chi phí công việc",
+                          child: Text(localizations.taskCost),
+                        ),
+                        PopupMenuItem(
+                          value: "Hoàn trả công việc",
+                          child: Text(localizations.taskRefund),
                         ),
                       ],
                       icon: Icon(
@@ -320,16 +269,14 @@ class _RequestListState extends State<RequestList> {
                   ],
                 ),
               ),
-
               SizedBox(height: screenHeight * 0.01),
-
               // Request List
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async => _refreshList(),
-                  child: PagedListView<int, RequestModel>(
+                  child: PagedListView<int, Transaction>(
                     pagingController: _pagingController,
-                    builderDelegate: PagedChildBuilderDelegate<RequestModel>(
+                    builderDelegate: PagedChildBuilderDelegate<Transaction>(
                       itemBuilder: (context, request, index) => Container(
                         padding: EdgeInsets.all(screenHeight * 0.012),
                         margin: EdgeInsets.symmetric(
@@ -346,7 +293,7 @@ class _RequestListState extends State<RequestList> {
                           boxShadow: [
                             if (!isDark)
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withOpacity(0.4),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                                 offset: const Offset(0, 4),
@@ -355,37 +302,58 @@ class _RequestListState extends State<RequestList> {
                         ),
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            request.title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: screenHeight * 0.017,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          subtitle: Padding(
-                            padding: EdgeInsets.only(top: screenHeight * 0.006),
-                            child: Text(
-                              request.content,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[700],
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                request.type,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenHeight * 0.018,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
                               ),
-                            ),
+                              Text(
+                                "${widget.groupId == request.groupID ? "+" : "-"}${formatCurrency(request.amount.ceil())} VNĐ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenHeight * 0.016,
+                                  color: widget.groupId == request.groupID
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              ),
+                            ],
                           ),
-                          trailing: Icon(
-                            request.isAccepted == true
-                                ? Icons.check_circle
-                                : request.isAccepted == false
-                                    ? Icons.cancel
-                                    : Icons.pending,
-                            color: request.isAccepted == true
-                                ? Colors.green
-                                : request.isAccepted == false
-                                    ? Colors.red
-                                    : Color(0xFFEEC05C),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat('dd/MM/yyyy HH:mm')
+                                    .format(request.date),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[700],
+                                ),
+                              ),
+                              Text(
+                                "${localizations.to}: ${request.group.groupName}",
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[700],
+                                ),
+                              ),
+                            ],
                           ),
+                          leading: Icon(
+                              request.approvalStatus == "Chờ duyệt"
+                                  ? Icons.pending
+                                  : Icons.check_circle,
+                              color: request.approvalStatus == "Chờ duyệt"
+                                  ? Color(0xFFEEC05C)
+                                  : Colors.green),
                         ),
                       ),
                       firstPageProgressIndicatorBuilder: (_) =>
@@ -398,14 +366,10 @@ class _RequestListState extends State<RequestList> {
                                 noDataMessage: localizations.noResult,
                                 message: localizations.godAlwaysByYourSide)
                             : EmptyData(
-                                noDataMessage: localizations.noRequest,
+                                noDataMessage: localizations.noTransaction,
                                 message: localizations.godAlwaysByYourSide),
                       ),
-                      noMoreItemsIndicatorBuilder: (_) => Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                        child: EndOfListWidget(),
-                      ),
+                      noMoreItemsIndicatorBuilder: (_) => EndOfListWidget(),
                     ),
                   ),
                 ),

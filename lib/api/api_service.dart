@@ -11,6 +11,7 @@ import 'package:shepherd_mo/models/group_member.dart';
 import 'package:shepherd_mo/models/notification.dart';
 import 'package:shepherd_mo/models/request.dart';
 import 'package:shepherd_mo/models/task.dart';
+import 'package:shepherd_mo/models/transaction.dart';
 import 'package:shepherd_mo/models/user.dart';
 
 class ApiService {
@@ -106,6 +107,66 @@ class ApiService {
     }
   }
 
+  Future<Map<DateTime, List<Event>>> fetchCeremoniesCalendar(
+      String chosenDate,
+      String groupId,
+      int calendarTypeEnum,
+      String userOnly,
+      String getUpcoming) async {
+    final url = Uri.parse('$baseUrl/ceremony/calendar');
+    Map<DateTime, List<Event>> ceremoniesByDate = {};
+
+    // Set query parameters
+    final queryParams = {
+      'ChosenDate': chosenDate,
+      'GroupId': groupId,
+      'CalendarTypeEnum': calendarTypeEnum.toString(),
+      'UserOnly': userOnly,
+      'GetUpcoming': getUpcoming
+    };
+
+    final uriWithParams = url.replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data;
+        final ceremonies = results.map((json) => Event.fromJson(json)).toList();
+        ceremoniesByDate = {};
+        for (Event ceremony in ceremonies) {
+          final date = DateTime(ceremony.fromDate!.year,
+              ceremony.fromDate!.month, ceremony.fromDate!.day);
+          if (ceremoniesByDate[date] == null) {
+            ceremoniesByDate[date] = [];
+          }
+          ceremoniesByDate[date]!.add(ceremony);
+        }
+        return ceremoniesByDate;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
   Future<List<GroupMember>> fetchGroupMembers(
       {required String searchKey,
       required int pageNumber,
@@ -139,70 +200,6 @@ class ApiService {
         final data = jsonDecode(response.body);
         final List<dynamic> results = data['result'];
         return results.map((json) => GroupMember.fromJson(json)).toList();
-      } else if (response.statusCode == 401) {
-        throw Exception('Unauthorized: Please log in again.');
-      } else if (response.statusCode == 404) {
-        throw Exception(
-            'Not Found: The requested resource could not be found.');
-      } else if (response.statusCode == 500) {
-        throw Exception('Server Error: Please try again later.');
-      } else {
-        throw Exception(
-            'Error ${response.statusCode}: ${response.reasonPhrase}');
-      }
-    } catch (error) {
-      throw Exception('Error: $error');
-    }
-  }
-
-  Future<Map<DateTime, List<Activity>>> fetchActivitiesCalendar(
-      String chosenDate,
-      String? groupId,
-      int calendarTypeEnum,
-      String userOnly,
-      String getUpcoming) async {
-    final url = Uri.parse('$baseUrl/activity/calendar');
-    Map<DateTime, List<Activity>> activitiesByDate = {};
-
-    // Set query parameters
-    final queryParams = {
-      'ChosenDate': chosenDate,
-      if (groupId != null) 'GroupId': groupId,
-      'CalendarTypeEnum': calendarTypeEnum.toString(),
-      'UserOnly': userOnly,
-      'GetUpcoming': getUpcoming
-    };
-
-    final uriWithParams = url.replace(queryParameters: queryParams);
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'token');
-    try {
-      final response = await http.get(
-        uriWithParams,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> results = data['data'];
-        final activities =
-            results.map((json) => Activity.fromJson(json)).toList();
-        activitiesByDate = {};
-        for (Activity activity in activities) {
-          if (activity.startTime != null) {
-            final date = DateTime(activity.startTime!.year,
-                activity.startTime!.month, activity.startTime!.day);
-            if (activitiesByDate[date] == null) {
-              activitiesByDate[date] = [];
-            }
-
-            activitiesByDate[date]!.add(activity);
-          }
-        }
-        return activitiesByDate;
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized: Please log in again.');
       } else if (response.statusCode == 404) {
@@ -536,7 +533,7 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>?> fetchActivities({
+  Future<List<Activity>?> fetchActivities({
     String? eventId,
     String? groupId,
     DateTime? startTime,
@@ -577,8 +574,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         List<dynamic> results = body['result'];
-        //results.map((json) => Activity.fromJson(json)).toList();
-        return results;
+        return results.map((json) => Activity.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized: Please log in again.');
       } else if (response.statusCode == 40) {
@@ -590,6 +586,70 @@ class ApiService {
         throw Exception('Server Error: Please try again later.');
       } else {
         throw Exception("Failed to load event details");
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  Future<Map<DateTime, List<Activity>>> fetchActivitiesCalendar(
+      String chosenDate,
+      String? groupId,
+      int calendarTypeEnum,
+      String userOnly,
+      String getUpcoming) async {
+    final url = Uri.parse('$baseUrl/activity/calendar');
+    Map<DateTime, List<Activity>> activitiesByDate = {};
+
+    // Set query parameters
+    final queryParams = {
+      'ChosenDate': chosenDate,
+      if (groupId != null) 'GroupId': groupId,
+      'CalendarTypeEnum': calendarTypeEnum.toString(),
+      'UserOnly': userOnly,
+      'GetUpcoming': getUpcoming
+    };
+
+    final uriWithParams = url.replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      final response = await http.get(
+        uriWithParams,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['data'];
+        final activities =
+            results.map((json) => Activity.fromJson(json)).toList();
+        activitiesByDate = {};
+        for (Activity activity in activities) {
+          if (activity.startTime != null) {
+            final date = DateTime(activity.startTime!.year,
+                activity.startTime!.month, activity.startTime!.day);
+            if (activitiesByDate[date] == null) {
+              activitiesByDate[date] = [];
+            }
+
+            activitiesByDate[date]!.add(activity);
+          }
+        }
+        return activitiesByDate;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
       }
     } catch (error) {
       throw Exception('Error: $error');
@@ -1197,6 +1257,61 @@ class ApiService {
       }
     } catch (error) {
       print('Error updating noti: $error');
+    }
+  }
+
+  Future<List<Transaction>> fetchTransactions({
+    required String searchKey,
+    required int pageNumber,
+    required int pageSize,
+    String? groupId,
+    String? type,
+    int? orderBy,
+  }) async {
+    // Construct query parameters
+    final Map<String, String> queryParams = {
+      'SearchKey': searchKey,
+      'PageNumber': pageNumber.toString(),
+      'PageSize': pageSize.toString(),
+      if (groupId != null) 'GroupId': groupId,
+      if (type != null) 'Type': type,
+      if (orderBy != null) 'OrderBy': orderBy.toString(),
+      if (type != null && type.isNotEmpty) 'Type': type,
+    };
+
+    // Build URI with query parameters
+    final uri =
+        Uri.parse('$baseUrl/transaction').replace(queryParameters: queryParams);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    try {
+      // Send GET request
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['result'];
+        return results.map((json) => Transaction.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
     }
   }
 }

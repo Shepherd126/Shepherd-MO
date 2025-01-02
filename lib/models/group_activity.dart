@@ -6,6 +6,7 @@ class GroupActivity {
   String? id;
   String? groupID;
   String? activityID;
+  String? groupName;
   String? description;
   int? cost;
   DateTime? createDate;
@@ -21,6 +22,7 @@ class GroupActivity {
     this.id,
     this.groupID,
     this.activityID,
+    this.groupName,
     this.description,
     this.cost,
     this.createDate,
@@ -39,6 +41,7 @@ class GroupActivity {
       id: json['id'] as String?,
       groupID: json['groupID'] as String?,
       activityID: json['activityID'] as String?,
+      groupName: json['groupName'] as String?,
       description: json['description'] as String?,
       cost: json['cost'] != null ? (json['cost'] as num).toInt() : null,
       createDate: json['createDate'] != null

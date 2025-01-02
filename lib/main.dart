@@ -8,8 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/firebase_api.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/firebase_options.dart';
+import 'package:shepherd_mo/pages/home_page.dart';
 import 'package:shepherd_mo/pages/login_page.dart';
-import 'package:shepherd_mo/pages/token_check.dart';
 import 'package:shepherd_mo/providers/signalr_provider.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/route/route.dart';
@@ -40,18 +40,38 @@ void main() async {
   runApp(Shepherd(token: token));
 }
 
-class Shepherd extends StatelessWidget {
-  final token; // Specify type explicitly
+class Shepherd extends StatefulWidget {
+  final String? token;
   const Shepherd({super.key, required this.token});
 
   @override
-  Widget build(BuildContext context) {
-    bool isTokenExpired = true;
+  _ShepherdState createState() => _ShepherdState();
+}
 
-    // Check token expiration
-    if (token != null) {
-      isTokenExpired = JwtDecoder.isExpired(token!);
+class _ShepherdState extends State<Shepherd> {
+  late Future<bool> _tokenCheckFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _tokenCheckFuture = _checkToken();
+  }
+
+  Future<bool> _checkToken() async {
+    if (widget.token == null) {
+      return false;
     }
+
+    final isTokenExpired = JwtDecoder.isExpired(widget.token!);
+    if (isTokenExpired) {
+      // Handle logout logic here
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -82,9 +102,18 @@ class Shepherd extends StatelessWidget {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: notifier.themeMode,
-            home: token == null
-                ? const LoginPage()
-                : TokenCheckPage(isTokenExpired: isTokenExpired),
+            home: FutureBuilder<bool>(
+              future: _tokenCheckFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError || !(snapshot.data ?? false)) {
+                  return const LoginPage();
+                }
+
+                return const HomePage();
+              },
+            ),
             getPages: AppRoutes.routes,
             navigatorKey: navigatorKey,
           );

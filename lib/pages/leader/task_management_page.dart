@@ -24,6 +24,7 @@ import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:shepherd_mo/widgets/task_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'dart:math' show max;
 
 class TaskManagementPage extends StatefulWidget {
   final String activityId;
@@ -114,14 +115,14 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
     final data = results.first;
 
     setState(() {
-      eventId = data['event']['id'];
-      activity = Activity.fromJson(data);
-      event = Event.fromJson(data['event']);
+      eventId = data.event!.id;
+      activity = data;
+      event = data.event;
     });
 
     return {
-      'activity': Activity.fromJson(data),
-      'event': Event.fromJson(data['event']),
+      'activity': data,
+      'event': data.event,
     };
   }
 
@@ -269,7 +270,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                   activityId: widget.activityId,
                   activityName: widget.activityName,
                   group: widget.group),
-              id: 3,
+              id: 2,
               transition: Transition.rightToLeftWithFade,
             );
           }
@@ -289,106 +290,148 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
             final activity = snapshot.data!['activity'] as Activity;
             final event = snapshot.data!['event'] as Event;
 
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Event Header Card
-                  _buildEventHeaderCard(
-                    screenWidth,
-                    screenHeight,
-                    isDark,
-                    event,
-                    localizations,
-                  ),
-
-                  // Activity Details
-                  _buildActivityDetails(screenHeight, screenWidth, activity,
-                      localizations, isDark),
-
-                  // Tasks Section with Heading and Status Chips
-                  Container(
-                    padding: EdgeInsets.only(
-                        top: screenWidth * 0.04,
-                        left: screenWidth * 0.04,
-                        right: screenWidth * 0.04),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey.shade900 : Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(12),
+            return Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      // Event Header Card
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.03),
+                          child: _buildEventHeaderCard(
+                            screenWidth,
+                            screenHeight,
+                            isDark,
+                            event,
+                            localizations,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTasksHeading(
-                            screenHeight, screenWidth, localizations),
-                        _buildStatusChipsRow(
-                            screenWidth, screenHeight, localizations, isDark),
-                      ],
-                    ),
-                  ),
 
-                  // Expanded Task List to take up remaining height
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.only(
-                        bottom: screenWidth * 0.03,
-                        left: screenWidth * 0.03,
-                        right: screenWidth * 0.03,
+                      // Activity Details
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.03),
+                          child: _buildActivityDetails(
+                            screenHeight,
+                            screenWidth,
+                            activity,
+                            localizations,
+                            isDark,
+                          ),
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey.shade900 : Colors.white,
-                      ),
-                      child: Obx(() {
-                        if (refreshController.shouldRefresh.value) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            selectedIndex = 0;
-                            _refreshList();
-                            refreshController.setShouldRefresh(false);
-                          });
-                        }
-                        return RefreshIndicator(
-                          displacement: 10,
-                          key: taskRefreshKey,
-                          onRefresh: _refreshList,
-                          child: PagedListView<int, Task>(
-                            pagingController: _pagingController,
-                            builderDelegate: PagedChildBuilderDelegate<Task>(
-                              itemBuilder: (context, task, index) => TaskCard(
-                                task: task,
-                                showStatus: selectedIndex == 0 ? true : false,
-                                isLeader: true,
-                                activityId: widget.activityId,
-                                activityName: widget.activityName,
-                                group: widget.group,
-                              ),
-                              firstPageProgressIndicatorBuilder: (_) =>
-                                  const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              newPageProgressIndicatorBuilder: (_) =>
-                                  const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              noItemsFoundIndicatorBuilder: (context) =>
-                                  EmptyData(
-                                      noDataMessage: localizations.noTask,
-                                      message: localizations.takeABreak),
-                              noMoreItemsIndicatorBuilder: (_) => Padding(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: screenHeight * 0.02),
-                                child: EndOfListWidget(),
+
+                      // Tasks Section Header
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.03),
+                          child: Container(
+                            padding: EdgeInsets.only(
+                              top: screenWidth * 0.04,
+                              left: screenWidth * 0.04,
+                              right: screenWidth * 0.04,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.grey.shade900 : Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(12),
                               ),
                             ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildTasksHeading(
+                                    screenHeight, screenWidth, localizations),
+                                _buildStatusChipsRow(screenWidth, screenHeight,
+                                    localizations, isDark),
+                              ],
+                            ),
                           ),
-                        );
-                      }),
-                    ),
+                        ),
+                      ),
+
+                      // Tasks List
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.03),
+                          child: Container(
+                            padding: EdgeInsets.only(
+                              bottom: screenWidth * 0.03,
+                              left: screenWidth * 0.03,
+                              right: screenWidth * 0.03,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.grey.shade900 : Colors.white,
+                            ),
+                            child: SizedBox(
+                              height: screenHeight *
+                                  0.5, // Adjust this value as needed
+                              child: Obx(() {
+                                if (refreshController.shouldRefresh.value) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    selectedIndex = 0;
+                                    _refreshList();
+                                    refreshController.setShouldRefresh(false);
+                                  });
+                                }
+                                return RefreshIndicator(
+                                  displacement: 10,
+                                  key: taskRefreshKey,
+                                  onRefresh: _refreshList,
+                                  child: PagedListView<int, Task>(
+                                    pagingController: _pagingController,
+                                    builderDelegate:
+                                        PagedChildBuilderDelegate<Task>(
+                                      itemBuilder: (context, task, index) =>
+                                          TaskCard(
+                                        task: task,
+                                        showStatus:
+                                            selectedIndex == 0 ? true : false,
+                                        isLeader: true,
+                                        activityId: widget.activityId,
+                                        activityName: widget.activityName,
+                                        group: widget.group,
+                                      ),
+                                      firstPageProgressIndicatorBuilder: (_) =>
+                                          const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      newPageProgressIndicatorBuilder: (_) =>
+                                          const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      noItemsFoundIndicatorBuilder: (context) =>
+                                          EmptyData(
+                                        noDataMessage: localizations.noTask,
+                                        message: localizations.takeABreak,
+                                      ),
+                                      noMoreItemsIndicatorBuilder: (_) =>
+                                          Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: screenHeight * 0.02),
+                                        child: EndOfListWidget(),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           } else {
             return EmptyData(
@@ -559,41 +602,83 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                     margin: EdgeInsets.only(top: screenHeight * 0.01),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.grey, // Customize the color of the border
-                        width: 1.0, // Customize the thickness of the border
+                        color: isDark
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade300,
+                        width: 1.0,
                       ),
-                      borderRadius: BorderRadius.circular(
-                          8.0), // Optional: to round the corners
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                    child: ExpansionTile(
-                      title: Text(localizations.viewChart),
-                      children: [
-                        SizedBox(
-                          height: screenHeight * 0.18,
-                          child: SfCircularChart(
-                            legend: const Legend(
-                                isVisible: true,
-                                position: LegendPosition.right),
-                            series: <CircularSeries>[
-                              PieSeries<ChartData, String>(
-                                dataSource: chartData,
-                                pointColorMapper: (ChartData data, _) =>
-                                    data.color,
-                                xValueMapper: (ChartData data, _) =>
-                                    data.status,
-                                yValueMapper: (ChartData data, _) => data.value,
-                                dataLabelSettings: DataLabelSettings(
-                                  isVisible: true,
-                                  showZeroValue: false,
-                                  textStyle: TextStyle(
-                                      fontSize: screenHeight * 0.016,
-                                      fontWeight: FontWeight.bold),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        dividerColor: Colors.transparent,
+                      ),
+                      child: ExpansionTile(
+                        title: Text(
+                          localizations.viewChart,
+                          style: TextStyle(fontSize: screenHeight * 0.018),
+                        ),
+                        children: [
+                          LayoutBuilder(
+                            builder: (BuildContext context,
+                                BoxConstraints constraints) {
+                              return Container(
+                                constraints: BoxConstraints(
+                                  maxHeight: screenHeight * 0.25,
+                                  maxWidth: constraints.maxWidth,
                                 ),
-                              ),
-                            ],
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Container(
+                                    width: max(constraints.maxWidth,
+                                        screenWidth * 0.8),
+                                    padding: EdgeInsets.all(screenWidth * 0.02),
+                                    child: SfCircularChart(
+                                      margin: EdgeInsets.zero,
+                                      legend: Legend(
+                                        isVisible: true,
+                                        position: LegendPosition.right,
+                                        textStyle: TextStyle(
+                                          fontSize: screenHeight * 0.014,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                        itemPadding: 5,
+                                      ),
+                                      series: <CircularSeries>[
+                                        PieSeries<ChartData, String>(
+                                          dataSource: chartData,
+                                          pointColorMapper:
+                                              (ChartData data, _) => data.color,
+                                          xValueMapper: (ChartData data, _) =>
+                                              data.status,
+                                          yValueMapper: (ChartData data, _) =>
+                                              data.value,
+                                          dataLabelSettings: DataLabelSettings(
+                                            isVisible: true,
+                                            showZeroValue: false,
+                                            labelPosition:
+                                                ChartDataLabelPosition.outside,
+                                            textStyle: TextStyle(
+                                              fontSize: screenHeight * 0.014,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                          radius: '80%',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        )
-                      ],
+                        ],
+                      ),
                     ),
                   )
                 : SizedBox.shrink(),
@@ -747,7 +832,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   Widget _buildStatusChipsRow(double screenWidth, double screenHeight,
       AppLocalizations localizations, bool isDark) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -806,8 +891,8 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
         ),
         TextButton(
           onPressed: () {
-            Get.to(() => UpdateProgress(tasks: _allTasks),
-                id: 3, transition: Transition.rightToLeftWithFade);
+            Get.to(() => UpdateProgress(tasks: _allTasks, isLeader: true),
+                id: 2, transition: Transition.rightToLeftWithFade);
           },
           style: TextButton.styleFrom(
             shape:

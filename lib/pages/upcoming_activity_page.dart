@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
@@ -444,17 +445,19 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
       );
 
       // Determine if the user is a leader
+      final String leader = dotenv.env['LEADER'] ?? '';
+      final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
       final isLeader =
-          userGroup.roleName == "Trưởng nhóm" || userGroup.roleName == "";
+          userGroup.roleName == leader || userGroup.roleName == accountant;
 
       // Navigate based on the user's role
       final BottomNavController controller = Get.find<BottomNavController>();
-      if (controller.selectedIndex.toInt() != 3) controller.changeTabIndex(3);
+      if (controller.selectedIndex.toInt() != 2) controller.changeTabIndex(2);
       Get.to(
         () => ActivitiesTab(
           chosenDate: activity.startTime,
         ),
-        id: 3,
+        id: 2,
         transition: Transition.fade,
       );
       Get.to(
@@ -469,7 +472,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
                 activityName: activity.activityName!,
                 group: userGroup,
               ),
-        id: 3,
+        id: 2,
         transition: Transition.rightToLeftWithFade,
       );
     } catch (e) {
@@ -477,9 +480,10 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
       showDialog(
         context: context,
         builder: (BuildContext context) {
+          final localizations = AppLocalizations.of(context)!;
           return AlertDialog(
             title: Text("Error"),
-            content: Text("Failed to determine role: $e"),
+            content: Text(localizations.somethingWrong),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

@@ -100,12 +100,12 @@ class _TaskPageState extends State<TaskPage> {
     final data = results.first;
 
     setState(() {
-      eventId = data['event']['id'];
+      eventId = data.event!.id;
     });
 
     return {
-      'activity': Activity.fromJson(data),
-      'event': Event.fromJson(data['event']),
+      'activity': data,
+      'event': data.event,
     };
   }
 
@@ -596,8 +596,13 @@ class _TaskPageState extends State<TaskPage> {
         ),
         TextButton(
           onPressed: () {
-            Get.to(() => UpdateProgress(tasks: _allTasks),
-                id: 3, transition: Transition.rightToLeftWithFade);
+            Get.to(
+                () => UpdateProgress(
+                      tasks: _allTasks,
+                      isLeader: false,
+                    ),
+                id: 2,
+                transition: Transition.rightToLeftWithFade);
           },
           style: TextButton.styleFrom(
             shape:

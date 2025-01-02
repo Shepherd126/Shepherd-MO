@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
-import 'package:shepherd_mo/models/event.dart';
-import 'package:shepherd_mo/widgets/event_detail_background.dart';
-import 'package:shepherd_mo/widgets/event_detail_content.dart';
+import 'package:shepherd_mo/models/activity.dart';
+import 'package:shepherd_mo/widgets/activity_detail_background.dart';
+import 'package:shepherd_mo/widgets/activity_detail_content.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class EventDetailsPage extends StatefulWidget {
-  final String eventId;
+class ActivityDetailPage extends StatefulWidget {
+  final String activityId;
 
-  const EventDetailsPage({super.key, required this.eventId});
+  const ActivityDetailPage({super.key, required this.activityId});
 
   @override
-  _EventDetailsPageState createState() => _EventDetailsPageState();
+  _ActivityDetailPageState createState() => _ActivityDetailPageState();
 }
 
-class _EventDetailsPageState extends State<EventDetailsPage> {
-  Future<Event>? event;
+class _ActivityDetailPageState extends State<ActivityDetailPage> {
+  Future<Activity>? activity;
   Future<void>? backgroundLoad;
   bool isLoading = true;
   bool backgroundLoaded = false;
@@ -25,7 +25,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   @override
   void initState() {
     super.initState();
-    event = fetchEventDetail(widget.eventId);
+    activity = fetchActivityDetail(widget.activityId);
   }
 
   @override
@@ -38,14 +38,15 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     }
   }
 
-  Future<Event> fetchEventDetail(String id) async {
+  Future<Activity> fetchActivityDetail(String id) async {
     setState(() {
       isLoading = true;
     });
     try {
       final apiService = ApiService();
-      List<Event> events = await apiService.fetchEvents(eventId: id) ?? [];
-      return events.first;
+      final activities =
+          await apiService.fetchActivities(searchKey: widget.activityId) ?? [];
+      return activities.first;
     } finally {
       setState(() {
         isLoading = false;
@@ -68,7 +69,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          localizations.event,
+          localizations.activity,
           style: Theme.of(context)
               .textTheme
               .headlineMedium
@@ -79,8 +80,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       ),
       body: ProgressHUD(
         inAsyncCall: isLoading,
-        child: FutureBuilder<Event>(
-          future: event,
+        child: FutureBuilder<Activity>(
+          future: activity,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Container();
@@ -109,13 +110,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     );
                   }
                   // Both background and event data are ready; display the content
-                  return Provider<Event>.value(
+                  return Provider<Activity>.value(
                     value: snapshot.data!,
                     child: Stack(
                       fit: StackFit.expand,
                       children: const <Widget>[
-                        EventDetailsBackground(),
-                        EventDetailsContent(),
+                        ActivityDetailsBackground(),
+                        ActivityDetailsContent(),
                       ],
                     ),
                   );

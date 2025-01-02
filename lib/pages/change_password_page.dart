@@ -343,7 +343,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 if (success) {
                                   showToast(
                                       '${localizations.changePassword} ${localizations.success.toLowerCase()}');
-                                  Get.back(id: 4);
+                                  Get.back(id: 3);
                                 } else {
                                   if (message.isEmpty) {
                                     showToast(
