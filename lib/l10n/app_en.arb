@@ -179,5 +179,9 @@
   "errorOccurred": "An Error Has Occurred!",
   "error": "Error",
   "participating": "Participating",
-  "noAssociatedOrgs": "This activity has no associated organizations."
+  "noAssociatedOrgs": "This activity has no associated organizations.",
+  "parishChurch": "Parish Church",
+  "remainingBudget": "Remaining Budget:",
+  "activityBudget": "Activity Budget",
+  "groupActivityBudget": "Organization Budget"
 }

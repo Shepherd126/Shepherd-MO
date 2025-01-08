@@ -179,5 +179,9 @@
   "errorOccurred": "Đã có lỗi xảy ra!",
   "error": "Lỗi",
   "participating": "Đang tham gia",
-  "noAssociatedOrgs": "Hoạt động này không có đoàn thể tương ứng."
+  "noAssociatedOrgs": "Hoạt động này không có đoàn thể tương ứng.",
+  "parishChurch": "Nhà thờ Giáo xứ",
+  "remainingBudget": "Kinh phí còn lại:",
+  "activityBudget": "Kinh phí hoạt động",
+  "groupActivityBudget": "Kinh phí đoàn thể"
 }

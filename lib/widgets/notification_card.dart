@@ -15,6 +15,7 @@ import 'package:shepherd_mo/pages/leader/request_page.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
 import 'package:shepherd_mo/pages/task_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
+import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
 
@@ -33,11 +34,12 @@ class NotificationCard extends StatefulWidget {
 }
 
 class _NotificationCardState extends State<NotificationCard> {
-  Future<List<GroupRole>>? userGroups;
+  List<GroupRole>? userGroups;
   final Stream<DateTime> _realTimeStream = Stream.periodic(
     const Duration(seconds: 1),
     (_) => DateTime.now(),
   );
+  bool isAuthorized = false;
 
   @override
   void initState() {
@@ -51,7 +53,18 @@ class _NotificationCardState extends State<NotificationCard> {
   }
 
   Future<void> initializeData() async {
-    userGroups = _loadUserGroupInfo();
+    final userGroupInfo = await _loadUserGroupInfo();
+    setState(() {
+      userGroups = userGroupInfo;
+    });
+    _getUserRole();
+  }
+
+  void _getUserRole() async {
+    final checkRole = await checkUserRoles();
+    setState(() {
+      isAuthorized = checkRole;
+    });
   }
 
   Future<List<GroupRole>> _loadUserGroupInfo() async {
@@ -109,6 +122,10 @@ class _NotificationCardState extends State<NotificationCard> {
             : const Color.fromARGB(255, 192, 224, 250);
 
     final localizations = AppLocalizations.of(context)!;
+    final council = dotenv.env['COUNCIL'] ?? '';
+    final accountant = dotenv.env['ACCOUNTANT'] ?? '';
+    final String leader = dotenv.env['LEADER'] ?? '';
+    final String groupAccountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
 
     // Function to format the time duration
     String formatTimeAgo(DateTime pastTime, DateTime currentTime) {
@@ -156,6 +173,15 @@ class _NotificationCardState extends State<NotificationCard> {
       }
     }
 
+    if (userGroups == null) {
+      return SizedBox.shrink();
+    }
+    final userGroup = userGroups!
+        .firstWhere((group) => group.groupId == widget.notification.groupId);
+
+    final isLeader =
+        userGroup.roleName == leader || userGroup.roleName == groupAccountant;
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
       child: ElevatedButton(
@@ -192,13 +218,11 @@ class _NotificationCardState extends State<NotificationCard> {
               transition: Transition.fade,
             );
 
-            final userGroupList = await userGroups;
-            final userGroup = userGroupList!
+            final userGroup = userGroups!
                 .firstWhere((group) => group.groupId == task.groupId);
-            final String leader = dotenv.env['LEADER'] ?? '';
-            final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
+
             final isLeader = userGroup.roleName == leader ||
-                userGroup.roleName == accountant;
+                userGroup.roleName == groupAccountant;
 
             // Navigate to the appropriate Task Page
             Get.to(
@@ -227,24 +251,29 @@ class _NotificationCardState extends State<NotificationCard> {
               },
             );
           } else if (widget.notification.type == "Request") {
-            //check role
-            final BottomNavController bottomNavController =
-                Get.find<BottomNavController>();
+            final isLeader = await checkGroupUserRoles();
+            if (isLeader || isAuthorized) {
+              final BottomNavController bottomNavController =
+                  Get.find<BottomNavController>();
 
-            if (bottomNavController.selectedIndex.value != 0) {
-              bottomNavController.changeTabIndex(0);
+              if (bottomNavController.selectedIndex.value != 0) {
+                bottomNavController.changeTabIndex(0);
+              }
+
+              if (notificationController.openTabIndex.value != -1) {
+                notificationController.closeNotificationPage();
+              }
+
+              // Navigate to ActivitiesTab
+              Get.to(
+                () => RequestList(),
+                id: 0,
+                transition: Transition.fade,
+              );
             }
-
-            if (notificationController.openTabIndex.value != -1) {
-              notificationController.closeNotificationPage();
-            }
-
-            // Navigate to ActivitiesTab
-            Get.to(
-              () => RequestList(),
-              id: 0,
-              transition: Transition.fade,
-            );
+          } else if (widget.notification.type == "Transaction" &&
+              isAuthorized) {
+            // navigate to churchbudget screen
           }
         },
         onLongPress: () {
@@ -328,154 +357,158 @@ class _NotificationCardState extends State<NotificationCard> {
                         );
                       },
                     ),
-                    if (widget.notification.type == 'Task' &&
-                        widget.notification.taskStatus != null) ...[
-                      if (widget.notification.taskStatus == 0) ...[
-                        // Task not confirmed, show buttons (Accept / Decline)
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.005),
-                          child: Row(
-                            children: [
-                              // Confirm Button
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    await apiService.readNoti(
-                                        widget.notification.id, true);
-                                    notificationController.fetchUnreadCount();
+                    if (!isLeader) ...[
+                      if (widget.notification.type == 'Task' &&
+                          widget.notification.taskStatus != null) ...[
+                        if (widget.notification.taskStatus == 0) ...[
+                          // Task not confirmed, show buttons (Accept / Decline)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.005),
+                            child: Row(
+                              children: [
+                                // Confirm Button
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      await apiService.readNoti(
+                                          widget.notification.id, true);
+                                      notificationController.fetchUnreadCount();
 
-                                    // Handle accept task logic
-                                    final success =
-                                        await apiService.confirmTask(
-                                            widget.notification.relevantId!,
-                                            true);
-                                    if (success) {
-                                      if (!widget.notification.isRead) {}
-                                      showToast(
-                                          '${localizations.confirmTask} ${localizations.success.toLowerCase()}');
-                                      setState(() {
-                                        widget.notification.taskStatus = 1;
-                                        widget.notification.isRead = true;
-                                      });
-                                    } else {
-                                      showToast(
-                                          '${localizations.confirmTask} ${localizations.unsuccess.toLowerCase()}');
-                                    }
-                                  },
-                                  icon: Icon(Icons.check, color: Colors.white),
-                                  label: Text(
-                                    localizations.accept,
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          screenHeight * 0.008),
+                                      // Handle accept task logic
+                                      final success =
+                                          await apiService.confirmTask(
+                                              widget.notification.relevantId!,
+                                              true);
+                                      if (success) {
+                                        if (!widget.notification.isRead) {}
+                                        showToast(
+                                            '${localizations.confirmTask} ${localizations.success.toLowerCase()}');
+                                        setState(() {
+                                          widget.notification.taskStatus = 1;
+                                          widget.notification.isRead = true;
+                                        });
+                                      } else {
+                                        showToast(
+                                            '${localizations.confirmTask} ${localizations.unsuccess.toLowerCase()}');
+                                      }
+                                    },
+                                    icon:
+                                        Icon(Icons.check, color: Colors.white),
+                                    label: Text(
+                                      localizations.accept,
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.005),
-                                    elevation: 5,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            screenHeight * 0.008),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: screenHeight * 0.005),
+                                      elevation: 5,
+                                    ),
                                   ),
                                 ),
-                              ),
 
-                              // Optional space between the buttons
-                              SizedBox(width: screenWidth * 0.025),
+                                // Optional space between the buttons
+                                SizedBox(width: screenWidth * 0.025),
 
-                              // Decline Button
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    await apiService.readNoti(
-                                        widget.notification.id, true);
-                                    notificationController.fetchUnreadCount();
+                                // Decline Button
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      await apiService.readNoti(
+                                          widget.notification.id, true);
+                                      notificationController.fetchUnreadCount();
 
-                                    // Handle reject task logic
-                                    final success =
-                                        await apiService.confirmTask(
-                                            widget.notification.relevantId!,
-                                            false);
-                                    if (success) {
-                                      if (!widget.notification.isRead) {}
-                                      showToast(
-                                          '${localizations.declineTask} ${localizations.success.toLowerCase()}');
-                                      setState(() {
-                                        widget.notification.taskStatus = 2;
-                                        widget.notification.isRead = true;
-                                      });
-                                    } else {
-                                      showToast(
-                                          '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');
-                                    }
-                                  },
-                                  icon: Icon(Icons.close, color: Colors.white),
-                                  label: Text(
-                                    localizations.decline,
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          screenHeight * 0.008),
+                                      // Handle reject task logic
+                                      final success =
+                                          await apiService.confirmTask(
+                                              widget.notification.relevantId!,
+                                              false);
+                                      if (success) {
+                                        if (!widget.notification.isRead) {}
+                                        showToast(
+                                            '${localizations.declineTask} ${localizations.success.toLowerCase()}');
+                                        setState(() {
+                                          widget.notification.taskStatus = 2;
+                                          widget.notification.isRead = true;
+                                        });
+                                      } else {
+                                        showToast(
+                                            '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');
+                                      }
+                                    },
+                                    icon:
+                                        Icon(Icons.close, color: Colors.white),
+                                    label: Text(
+                                      localizations.decline,
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.005),
-                                    elevation: 5,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            screenHeight * 0.008),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: screenHeight * 0.005),
+                                      elevation: 5,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else if (widget.notification.taskStatus == 1) ...[
-                        // Task is accepted, show text
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.005),
-                          child: Text(
-                            localizations
-                                .taskAccepted, // "Task Accepted" message
-                            style: TextStyle(
-                              fontSize: screenHeight * 0.015,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              ],
                             ),
                           ),
-                        ),
-                      ] else if (widget.notification.taskStatus == 2) ...[
-                        // Task is rejected, show text
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.005),
-                          child: Text(
-                            localizations
-                                .taskDeclined, // "Task Declined" message
-                            style: TextStyle(
-                              fontSize: screenHeight * 0.015,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                      ] else if (widget.notification.taskStatus == 3) ...[
-                        // Task is assigned to another person, show text
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.005),
-                          child: Text(
-                            localizations
-                                .taskAssignedToAnother, // "Task Assigned to Another" message
-                            style: TextStyle(
+                        ] else if (widget.notification.taskStatus == 1) ...[
+                          // Task is accepted, show text
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.005),
+                            child: Text(
+                              localizations
+                                  .taskAccepted, // "Task Accepted" message
+                              style: TextStyle(
                                 fontSize: screenHeight * 0.015,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blueGrey),
+                                color: Colors.green,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ]
+                        ] else if (widget.notification.taskStatus == 2) ...[
+                          // Task is rejected, show text
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.005),
+                            child: Text(
+                              localizations
+                                  .taskDeclined, // "Task Declined" message
+                              style: TextStyle(
+                                fontSize: screenHeight * 0.015,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ] else if (widget.notification.taskStatus == 3) ...[
+                          // Task is assigned to another person, show text
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.005),
+                            child: Text(
+                              localizations
+                                  .taskAssignedToAnother, // "Task Assigned to Another" message
+                              style: TextStyle(
+                                  fontSize: screenHeight * 0.015,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueGrey),
+                            ),
+                          ),
+                        ],
+                      ]
+                    ],
                   ],
                 ),
               ),

@@ -75,6 +75,12 @@ class _HomeState extends State<HomePage> {
 
   void _onTabTapped(int index) {
     if (controller.selectedIndex.value == index) {
+      final NotificationController notificationController =
+          Get.find<NotificationController>();
+      if (notificationController.openTabIndex.value ==
+          controller.selectedIndex.value) {
+        notificationController.closeNotificationPage();
+      }
       Get.offAllNamed(_tabsRoutes[index], id: index);
     } else {
       controller.selectedIndex.value = index;
@@ -110,7 +116,6 @@ class _HomeState extends State<HomePage> {
       _roleUpdateTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
         await apiService.fetchAndCompareGroupRoles(null);
         await _updateAuthorizationStatus();
-        print('Fetched roles');
       });
     }
   }
@@ -729,7 +734,6 @@ class _ScheduleTabState extends State<ScheduleTab> {
                 focusedDay: focusedDay,
                 firstDay: DateTime.utc(2020, 01, 01),
                 lastDay: DateTime.utc(2040, 12, 31),
-                startingDayOfWeek: StartingDayOfWeek.monday,
                 calendarFormat: _calendarFormat,
                 availableCalendarFormats:
                     localeController.availableCalendarFormats,
@@ -900,10 +904,11 @@ class _ScheduleTabState extends State<ScheduleTab> {
                       noDataMessage: localizations.noEvent,
                       message: localizations.takeABreak)
                   : ListView(
+                      padding: EdgeInsets.symmetric(vertical: 8),
                       children: [
                         if (selectedEvents.isNotEmpty) ...[
                           Text(localizations.event,
-                              style: Theme.of(context).textTheme.titleMedium),
+                              style: Theme.of(context).textTheme.titleLarge),
                           ...selectedEvents.map(
                             (event) => EventCard(
                               event: event,
@@ -913,9 +918,12 @@ class _ScheduleTabState extends State<ScheduleTab> {
                             ),
                           ),
                         ],
+                        if (selectedEvents.isNotEmpty &&
+                            selectedCeremonies.isNotEmpty)
+                          SizedBox(height: screenHeight * 0.016),
                         if (selectedCeremonies.isNotEmpty) ...[
                           Text(localizations.ceremony,
-                              style: Theme.of(context).textTheme.titleMedium),
+                              style: Theme.of(context).textTheme.titleLarge),
                           ...selectedCeremonies.map(
                             (ceremony) => EventCard(
                               event: ceremony,
@@ -1155,9 +1163,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                 locale: localeController.currentLocale.languageCode,
                 rowHeight: screenHeight * 0.05,
                 focusedDay: focusedDay,
-                firstDay: DateTime.utc(2020, 01, 01),
-                lastDay: DateTime.utc(2040, 12, 31),
-                startingDayOfWeek: StartingDayOfWeek.monday,
+                firstDay: DateTime.utc(2010, 01, 01),
+                lastDay: DateTime.utc(2050, 12, 31),
                 calendarFormat: _calendarFormat,
                 availableCalendarFormats:
                     localeController.availableCalendarFormats,

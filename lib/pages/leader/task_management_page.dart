@@ -57,6 +57,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
   Activity? activity;
   Event? event;
   bool isLoading = false;
+  int totalCost = 0;
 
   @override
   void initState() {
@@ -144,6 +145,12 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
 
       if (selectedIndex == 0) {
         _allTasks = newTasks;
+
+        final taskCost = _allTasks.fold(
+          0,
+          (sum, task) => sum + (task.cost ?? 0),
+        );
+        totalCost = activity!.groupActivities!.first.cost! - taskCost;
         _updateTaskCounts();
       } else {
         _updateTaskCounts(); // Keep task counts based on _allTasks
@@ -267,9 +274,11 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
           if (activity != null) {
             Get.to(
               () => CreateEditTaskPage(
-                  activityId: widget.activityId,
-                  activityName: widget.activityName,
-                  group: widget.group),
+                activityId: widget.activityId,
+                activityName: widget.activityName,
+                group: widget.group,
+                totalCost: totalCost <= 0 ? 0 : totalCost,
+              ),
               id: 2,
               transition: Transition.rightToLeftWithFade,
             );
@@ -371,60 +380,58 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                               color:
                                   isDark ? Colors.grey.shade900 : Colors.white,
                             ),
-                            child: SizedBox(
-                              height: screenHeight *
-                                  0.5, // Adjust this value as needed
-                              child: Obx(() {
-                                if (refreshController.shouldRefresh.value) {
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    selectedIndex = 0;
-                                    _refreshList();
-                                    refreshController.setShouldRefresh(false);
-                                  });
-                                }
-                                return RefreshIndicator(
-                                  displacement: 10,
-                                  key: taskRefreshKey,
-                                  onRefresh: _refreshList,
-                                  child: PagedListView<int, Task>(
-                                    pagingController: _pagingController,
-                                    builderDelegate:
-                                        PagedChildBuilderDelegate<Task>(
-                                      itemBuilder: (context, task, index) =>
-                                          TaskCard(
-                                        task: task,
-                                        showStatus:
-                                            selectedIndex == 0 ? true : false,
-                                        isLeader: true,
-                                        activityId: widget.activityId,
-                                        activityName: widget.activityName,
-                                        group: widget.group,
-                                      ),
-                                      firstPageProgressIndicatorBuilder: (_) =>
-                                          const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                      newPageProgressIndicatorBuilder: (_) =>
-                                          const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                      noItemsFoundIndicatorBuilder: (context) =>
-                                          EmptyData(
-                                        noDataMessage: localizations.noTask,
-                                        message: localizations.takeABreak,
-                                      ),
-                                      noMoreItemsIndicatorBuilder: (_) =>
-                                          Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            vertical: screenHeight * 0.02),
-                                        child: EndOfListWidget(),
-                                      ),
+                            child: Obx(() {
+                              if (refreshController.shouldRefresh.value) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  selectedIndex = 0;
+                                  _refreshList();
+                                  refreshController.setShouldRefresh(false);
+                                });
+                              }
+                              return RefreshIndicator(
+                                displacement: 10,
+                                key: taskRefreshKey,
+                                onRefresh: _refreshList,
+                                child: PagedListView<int, Task>(
+                                  shrinkWrap: true,
+                                  physics: ClampingScrollPhysics(),
+                                  pagingController: _pagingController,
+                                  builderDelegate:
+                                      PagedChildBuilderDelegate<Task>(
+                                    itemBuilder: (context, task, index) =>
+                                        TaskCard(
+                                      task: task,
+                                      showStatus:
+                                          selectedIndex == 0 ? true : false,
+                                      isLeader: true,
+                                      activityId: widget.activityId,
+                                      activityName: widget.activityName,
+                                      group: widget.group,
+                                      totalCost: totalCost,
+                                    ),
+                                    firstPageProgressIndicatorBuilder: (_) =>
+                                        const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    newPageProgressIndicatorBuilder: (_) =>
+                                        const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    noItemsFoundIndicatorBuilder: (context) =>
+                                        EmptyData(
+                                      noDataMessage: localizations.noTask,
+                                      message: localizations.takeABreak,
+                                    ),
+                                    noMoreItemsIndicatorBuilder: (_) => Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: screenHeight * 0.02),
+                                      child: EndOfListWidget(),
                                     ),
                                   ),
-                                );
-                              }),
-                            ),
+                                ),
+                              );
+                            }),
                           ),
                         ),
                       ),
@@ -786,7 +793,39 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text: '${localizations.budget}: ',
+                            text: '${localizations.activityBudget}: ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenHeight * 0.016,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade800),
+                          ),
+                          TextSpan(
+                            text: activity.totalCost != null
+                                ? '${formatCurrency(activity.totalCost!)} VND'
+                                : localizations.noData,
+                            style: TextStyle(
+                                fontSize: screenHeight * 0.016,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade800),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.attach_money,
+                        size: screenHeight * 0.02, color: Colors.black),
+                    SizedBox(width: screenWidth * 0.008),
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${localizations.groupActivityBudget}: ',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: screenHeight * 0.016,

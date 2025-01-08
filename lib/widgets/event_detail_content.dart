@@ -26,55 +26,62 @@ class EventDetailsContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Event Name with custom text style and shadows for readability
-          Padding(
-            padding: EdgeInsets.only(
-              left: screenWidth * 0.24,
-              top: screenHeight * 0.05,
-            ),
-            child: Text(
-              event.eventName ?? localizations.noData,
-              style: TextStyle(
-                fontSize: screenHeight * 0.03,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                shadows: const [
-                  Shadow(
-                    offset: Offset(1, 1),
-                    color: Colors.black26,
-                    blurRadius: 2,
+          SizedBox(
+            height: screenHeight * 0.17,
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: screenWidth * 0.24,
+                    top: screenHeight * 0.05,
                   ),
-                ],
-              ),
-            ),
-          ),
-          // Status row with custom padding
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
-            child: FittedBox(
-              child: Row(
-                children: <Widget>[
-                  Text(
-                    "-",
+                  child: Text(
+                    event.eventName ?? localizations.noData,
                     style: TextStyle(
-                      fontSize: screenHeight * 0.02,
-                      fontWeight: FontWeight.w700,
+                      fontSize: screenHeight * 0.03,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
+                      shadows: const [
+                        Shadow(
+                          offset: Offset(1, 1),
+                          color: Colors.black26,
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
-                  Icon(Icons.star,
-                      color: Colors.white, size: screenHeight * 0.02),
-                  SizedBox(width: screenHeight * 0.005),
-                  Text(
-                    event.location ?? localizations.noData,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.02,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                ),
+                // Status row with custom padding
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
+                  child: FittedBox(
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          "-",
+                          style: TextStyle(
+                            fontSize: screenHeight * 0.02,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Icon(Icons.star,
+                            color: Colors.white, size: screenHeight * 0.02),
+                        SizedBox(width: screenHeight * 0.005),
+                        Text(
+                          event.location ?? localizations.noData,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: screenHeight * 0.02,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: screenHeight * 0.045),
@@ -127,17 +134,6 @@ class EventDetailsContent extends StatelessWidget {
                     children: [
                       Text(
                         event.status!,
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.02,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        textAlign: TextAlign.right,
-                        event.isPublic ?? true
-                            ? localizations.public
-                            : localizations.private,
                         style: TextStyle(
                           fontSize: screenHeight * 0.02,
                           fontWeight: FontWeight.w700,

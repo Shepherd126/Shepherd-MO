@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/event.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shepherd_mo/pages/ceremony_detail_page.dart';
 import 'package:shepherd_mo/pages/event_detail_page.dart';
 import 'package:shepherd_mo/pages/home_page.dart';
 
@@ -58,7 +59,8 @@ class EventCard extends StatelessWidget {
             ),
           ],
         ),
-        leading: const Icon(Icons.event, color: Colors.orange),
+        leading: Icon(Icons.event,
+            color: event.ceremonyId != null ? Colors.red : Colors.orange),
         children: [
           Padding(
             padding:
@@ -97,8 +99,18 @@ class EventCard extends StatelessWidget {
                                 chosenDate: event.fromDate,
                               ),
                           id: 1);
-                      Get.to(() => EventDetailsPage(eventId: event.id!),
-                          id: 1, transition: Transition.rightToLeftWithFade);
+                      if (event.id != null && event.ceremonyId == null) {
+                        Get.to(() => EventDetailsPage(eventId: event.id!),
+                            id: 1, transition: Transition.rightToLeftWithFade);
+                      } else if (event.id == null && event.ceremonyId != null) {
+                        Get.to(
+                            () => CeremonyDetailsPage(
+                                  ceremonyId: event.ceremonyId!,
+                                  ceremony: event,
+                                ),
+                            id: 1,
+                            transition: Transition.rightToLeftWithFade);
+                      }
                     },
                     child: Text(AppLocalizations.of(context)!.details),
                   ),

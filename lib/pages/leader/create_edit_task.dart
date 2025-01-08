@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/formatter/currency_vnd_formatter.dart';
+import 'package:shepherd_mo/formatter/custom_currency_format.dart';
 import 'package:shepherd_mo/models/group_member.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/task.dart';
@@ -19,6 +20,7 @@ class CreateEditTaskPage extends StatefulWidget {
   final String activityName;
   final GroupRole group;
   final Task? task;
+  final int totalCost;
 
   const CreateEditTaskPage({
     super.key,
@@ -26,6 +28,7 @@ class CreateEditTaskPage extends StatefulWidget {
     required this.activityName,
     required this.group,
     this.task,
+    required this.totalCost,
   });
 
   @override
@@ -52,6 +55,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
   TimeOfDay? toTime;
   bool isPublic = false;
   late Task task;
+  late Task oldTask;
   bool isApiCallProcess = false;
   final CurrencyTextInputFormatter formatter =
       CurrencyTextInputFormatter.currency(
@@ -59,6 +63,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     decimalDigits: 0,
     symbol: ' VND',
   );
+  int totalCost = 0;
 
   @override
   void initState() {
@@ -87,23 +92,30 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     if (widget.task != null) {
       // Populate controllers with task data
       task = widget.task!;
-      titleController.text = widget.task!.title ?? '';
-      descriptionController.text = widget.task!.description ?? '';
-      costController.text = widget.task!.cost != null
-          ? formatter.formatString(widget.task!.cost!.toString())
+      oldTask = Task(
+          title: task.title,
+          description: task.description,
+          cost: task.cost,
+          userId: task.userId);
+      titleController.text = task.title ?? '';
+      descriptionController.text = task.description ?? '';
+      costController.text = task.cost != null
+          ? formatter.formatString(task.cost!.toString())
           : '';
-      if (widget.task!.status != "Bản nháp") {
-        userController.text = widget.task!.userName ?? '';
+      if (task.status != "Bản nháp") {
+        userController.text = task.userName ?? '';
       }
+      task.groupId = widget.group.groupId;
+      task.activityId = widget.activityId;
+      totalCost = widget.totalCost + task.cost!;
     } else {
       // If no task is passed, initialize a new task
       task = Task(
         groupId: widget.group.groupId,
         activityId: widget.activityId,
       );
+      totalCost = widget.totalCost;
     }
-
-    task = Task(groupId: widget.group.groupId, activityId: widget.activityId);
   }
 
   void _unfocus() {
@@ -414,19 +426,21 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                       // }
                       return null;
                     },
-                    inputFormatters: <TextInputFormatter>[formatter],
-                    onChanged: (value) {
-                      print(formatter.getUnformattedValue());
-                    },
+                    inputFormatters: [
+                      CurrencyVNDFormatter(maxValue: totalCost),
+                    ],
                     onSaved: (input) {
-                      task.cost = formatter.getUnformattedValue().toInt();
+                      final numericValue =
+                          input?.replaceAll(RegExp(r'[^\d]'), '');
+                      task.cost =
+                          numericValue != null ? int.parse(numericValue) : 0;
                     },
                     decoration: InputDecoration(
                       icon: const Icon(
                         Icons.attach_money,
                       ),
                       border: InputBorder.none,
-                      labelText: localizations.totalCost,
+                      labelText: localizations.cost,
                       hintText:
                           '${localizations.enter} ${localizations.totalCost.toLowerCase()}',
                       suffixIcon: costController.text.isNotEmpty
@@ -441,7 +455,26 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                   ),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.015),
+              Padding(
+                padding: EdgeInsets.only(
+                    left: screenWidth * 0.15,
+                    top: screenHeight * 0.01,
+                    bottom: screenHeight * 0.015),
+                child: Row(
+                  children: [
+                    Text(
+                      "${localizations.remainingBudget} ",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      "${formatCurrency(totalCost)} VND",
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.green,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: isDark ? Colors.black : Colors.grey.shade100,
@@ -497,6 +530,15 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                 onPressed: () async {
                   _unfocus();
                   if (validateAndSave()) {
+                    if (widget.task != null) {
+                      if (task.title == oldTask.title &&
+                          task.description == oldTask.description &&
+                          task.cost == oldTask.cost &&
+                          task.userId == oldTask.userId) {
+                        showToast(localizations.notChange);
+                        return;
+                      }
+                    }
                     setState(() {
                       isApiCallProcess = true;
                     });
@@ -584,6 +626,8 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     if (groupMember != null) {
       task.userId = groupMember.userID;
       userController.text = groupMember.name;
+    } else {
+      task.userId = "00000000-0000-0000-0000-000000000000";
     }
   }
 }

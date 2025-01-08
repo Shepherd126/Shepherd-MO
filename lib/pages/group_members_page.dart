@@ -348,6 +348,17 @@ class _GroupDetailState extends State<GroupDetail> {
                                       fontSize: screenWidth * 0.03,
                                     ),
                                   ),
+                                  SizedBox(height: screenHeight * 0.003),
+                                  Text(
+                                    "${localizations.phone} ${item.phone}" ??
+                                        localizations.noData,
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey.shade500
+                                          : Colors.grey[700],
+                                      fontSize: screenWidth * 0.03,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

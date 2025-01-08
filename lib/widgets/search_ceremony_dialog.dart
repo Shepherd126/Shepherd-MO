@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:intl/intl.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/models/ceremony.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -149,9 +148,6 @@ class _CeremonyListDialogState extends State<CeremonyListDialog> {
                         builderDelegate: PagedChildBuilderDelegate<Ceremony>(
                           itemBuilder: (context, item, index) => ListTile(
                             title: Text(item.name ?? localizations.noData),
-                            subtitle: Text(
-                                DateFormat('dd/MM/yyyy').format(item.date) ??
-                                    localizations.noData),
                             onTap: () => Navigator.of(context).pop(item),
                           ),
                           firstPageProgressIndicatorBuilder: (_) =>

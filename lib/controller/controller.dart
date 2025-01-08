@@ -67,8 +67,6 @@ class LocaleController extends GetxController {
     }
 
     Get.updateLocale(_currentLocale.value);
-    print(Get.locale);
-    print(_currentLocale.value);
   }
 
   Map<CalendarFormat, String> get availableCalendarFormats {
@@ -117,13 +115,11 @@ class NotificationController extends GetxController {
   // Opens the NotificationPage and set the tab index where it's open
   void openNotificationPage(int tabIndex) {
     openTabIndex.value = tabIndex;
-    print("hehe");
   }
 
   // Closes the NotificationPage
   void closeNotificationPage() {
     openTabIndex.value = -1;
-    print("huhu");
   }
 
   // Rx variable to observe changes

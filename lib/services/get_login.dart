@@ -62,12 +62,9 @@ Future<bool> checkGroupUserRoles() async {
     final String leader = dotenv.env['LEADER'] ?? '';
     final String accountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
 
-    // Check for specific roles
-    for (var group in loginUserGroupsList) {
-      if (group.roleName == leader || group.roleName == accountant) {
-        return true; // Found role in loginUserGroups
-      }
-    }
+    final isLeader = loginUserGroupsList.any((userGroup) =>
+        (userGroup.roleName == leader || userGroup.roleName == accountant));
+    return isLeader;
   }
 
   return false; // No specified roles found

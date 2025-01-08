@@ -38,14 +38,13 @@ class AuthInputField extends StatelessWidget {
       child: TextFormField(
         focusNode: focusNode,
         controller: controller,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         obscureText: isPasswordField ? hidePassword : false,
         validator: (value) {
-          if (value!.isEmpty) {
+          if (value!.trim().isEmpty) {
             return localizations.required;
           }
-          if (isPasswordField && value.length < 5) {
-            return 'Password must be at least 5 characters long.';
-          }
+
           return null;
         },
         onSaved: onSaved,

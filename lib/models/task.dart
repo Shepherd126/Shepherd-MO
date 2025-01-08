@@ -85,7 +85,7 @@ class Task {
       if (groupPresetId != null) 'groupPresetID': groupPresetId,
       if (title != null) 'title': title,
       if (description != null) 'description': description,
-      if (cost != null) 'cost': cost.toString(),
+      if (cost != null) 'cost': cost,
     };
   }
 

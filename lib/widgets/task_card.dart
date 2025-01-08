@@ -17,16 +17,17 @@ class TaskCard extends StatefulWidget {
   final String activityId;
   final String activityName;
   final GroupRole group;
+  final int? totalCost;
 
-  const TaskCard({
-    super.key,
-    required this.task,
-    this.showStatus = true, // Defaults to true to show status by default
-    this.isLeader = false,
-    required this.activityId,
-    required this.activityName,
-    required this.group,
-  });
+  const TaskCard(
+      {super.key,
+      required this.task,
+      this.showStatus = true, // Defaults to true to show status by default
+      this.isLeader = false,
+      required this.activityId,
+      required this.activityName,
+      required this.group,
+      this.totalCost});
 
   @override
   _TaskCardState createState() => _TaskCardState();
@@ -118,6 +119,9 @@ class _TaskCardState extends State<TaskCard> {
                               activityName: widget.activityName,
                               group: widget.group,
                               task: widget.task,
+                              totalCost: widget.totalCost != null
+                                  ? widget.totalCost!
+                                  : 0,
                             ),
                             id: 2,
                             transition: Transition.rightToLeftWithFade,

@@ -144,13 +144,6 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                             focusNode: roleFocus,
                             controller: roleController,
                             readOnly: true,
-                            validator: (value) {
-                              if (value!.trim().isEmpty) {
-                                return localizations.required;
-                              }
-
-                              return null;
-                            },
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: localizations.role,
@@ -170,13 +163,6 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                             focusNode: emailFocus,
                             controller: emailController,
                             readOnly: true,
-                            validator: (value) {
-                              if (value!.trim().isEmpty) {
-                                return localizations.required;
-                              }
-
-                              return null;
-                            },
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: 'Email',
@@ -197,6 +183,8 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                                 keyboardType: TextInputType.phone,
                                 focusNode: phoneFocus,
                                 controller: phoneController,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 onChanged: (value) {
                                   setState(() {
                                     // Validate the phone number dynamically
@@ -251,8 +239,10 @@ class _UpdateProfilePageState extends State<UpdateProfilePage> {
                           child: TextFormField(
                             focusNode: fullNameFocus,
                             controller: fullNameController,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: (value) {
-                              if (value!.isEmpty) {
+                              if (value!.trim().isEmpty) {
                                 return localizations.required;
                               }
                               return null;

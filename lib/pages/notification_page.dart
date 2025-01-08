@@ -33,7 +33,7 @@ class _NotificationPageState extends State<NotificationPage> {
       Get.find<BottomNavController>();
   bool _isUnread = false;
   String _filterType = "";
-  String role = dotenv.env['MEMBER'] ?? '';
+  bool isAuthorized = false;
 
   @override
   void initState() {
@@ -89,9 +89,9 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   void _getUserRole() async {
-    final loginInfo = await getLoginInfoFromPrefs();
+    final checkRole = await checkUserRoles();
     setState(() {
-      role = loginInfo!.role!;
+      isAuthorized = checkRole;
     });
   }
 
@@ -204,7 +204,7 @@ class _NotificationPageState extends State<NotificationPage> {
                               ),
                             ),
                           ),
-                          // Mark as Read
+                          // Mark All as Read
                           ListTile(
                             leading: CircleAvatar(
                               backgroundColor: isDark
@@ -318,12 +318,12 @@ class _NotificationPageState extends State<NotificationPage> {
                         value: "Task",
                         child: Text(localizations.task),
                       ),
-                      if (role == council)
+                      if (isAuthorized)
                         PopupMenuItem(
                           value: "Request",
                           child: Text(localizations.request),
                         ),
-                      if (role == accountant)
+                      if (isAuthorized)
                         PopupMenuItem(
                           value: "Transaction",
                           child: Text(localizations.transaction),

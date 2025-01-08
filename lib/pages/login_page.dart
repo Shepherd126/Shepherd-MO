@@ -7,7 +7,9 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/auth.dart';
+import 'package:shepherd_mo/pages/change_password_page.dart';
 import 'package:shepherd_mo/pages/home_page.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
@@ -137,8 +139,10 @@ class _LoginPageState extends State<LoginPage> {
                           children: <Widget>[
                             AuthInputField(
                               controller: emailController,
-                              labelText: 'Email',
-                              hintText: '${localizations.enter} email',
+                              labelText:
+                                  'Email ${localizations.or.toLowerCase()} ${localizations.phone}',
+                              hintText:
+                                  '${localizations.enter} email ${localizations.or.toLowerCase()} ${localizations.phone.toLowerCase()}',
                               prefixIcon: Icons.email,
                               isPasswordField: false,
                               hidePassword: false,
@@ -304,6 +308,7 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200 && responseData['success'] == true) {
         // Parse the response to the LoginResponseModel
         final loginResponse = LoginResponseModel.fromJson(responseData);
+        final isActive = loginResponse.isActive;
 
         // Show success snackbar
         showToast(localizations.loginSuccess);
@@ -329,7 +334,18 @@ class _LoginPageState extends State<LoginPage> {
           isApiCallProcess = false;
         });
         // Navigate to HomePage
+
         Get.off(() => const HomePage());
+        if (isActive != "Active") {
+          final BottomNavController bottomNavController =
+              Get.find<BottomNavController>();
+
+          if (bottomNavController.selectedIndex.value != 3) {
+            bottomNavController.changeTabIndex(3);
+          }
+          Get.to(() => const ChangePasswordPage(),
+              id: 3, transition: Transition.rightToLeftWithFade);
+        }
       } else {
         // Handle error message
         final errorMessage =

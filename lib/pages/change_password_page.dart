@@ -190,7 +190,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
                             validator: (value) {
-                              if (value!.isEmpty) {
+                              if (value!.trim().isEmpty) {
                                 return localizations.required;
                               }
                               return null;
@@ -221,7 +221,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             controller: newPasswordController,
                             obscureText: hideNewPassword,
                             validator: (value) {
-                              if (value!.isEmpty) {
+                              if (value!.trim().isEmpty) {
                                 return localizations.required;
                               }
                               return null;
@@ -270,7 +270,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
                             validator: (value) {
-                              if (value!.isEmpty) {
+                              if (value!.trim().isEmpty) {
                                 return localizations.required;
                               }
 

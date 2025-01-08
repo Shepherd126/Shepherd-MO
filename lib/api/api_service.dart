@@ -107,6 +107,44 @@ class ApiService {
     }
   }
 
+  Future<Ceremony> fetchCeremonyDetail({
+    required String id,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/ceremony/$id');
+
+      // Retrieve token from SharedPreferences
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // Add Bearer token
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final Map<String, dynamic> result = data['data'];
+        return Ceremony.fromJson(result);
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        throw Exception(
+            'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
   Future<Map<DateTime, List<Event>>> fetchCeremoniesCalendar(
       String chosenDate,
       String groupId,
@@ -139,7 +177,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> results = data;
+        final List<dynamic> results = data['data'];
         final ceremonies = results.map((json) => Event.fromJson(json)).toList();
         ceremoniesByDate = {};
         for (Event ceremony in ceremonies) {
@@ -828,9 +866,9 @@ class ApiService {
     final url = Uri.parse('$baseUrl/task/${task.id}');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
-    print(jsonEncode(task.toJson()));
 
     try {
+      task.userId ??= "00000000-0000-0000-0000-000000000000";
       final response = await http.put(
         url,
         headers: {
