@@ -184,7 +184,7 @@ class _UpcomingEventPageState extends State<UpcomingEventPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            return Text(localizations.errorOccurred);
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Text(localizations.noParticipatedGroup);
           } else {

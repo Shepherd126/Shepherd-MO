@@ -21,6 +21,7 @@ import 'package:shepherd_mo/models/group.dart';
 import 'package:shepherd_mo/models/group_role.dart';
 import 'package:shepherd_mo/models/group_user.dart';
 import 'package:shepherd_mo/models/user.dart';
+import 'package:shepherd_mo/observer/route_observer.dart';
 import 'package:shepherd_mo/pages/change_password_page.dart';
 import 'package:shepherd_mo/pages/group_members_page.dart';
 import 'package:shepherd_mo/pages/leader/task_management_page.dart';
@@ -40,6 +41,7 @@ import 'package:shepherd_mo/widgets/custom_marquee.dart';
 import 'package:shepherd_mo/widgets/empty_data.dart';
 import 'package:shepherd_mo/widgets/event_card.dart';
 import 'package:shepherd_mo/widgets/organization_card.dart';
+import 'package:shepherd_mo/widgets/photo_viewer.dart';
 import 'package:shepherd_mo/widgets/profile_menu_widget.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
 import 'package:shepherd_mo/widgets/upcoming_card.dart';
@@ -217,6 +219,12 @@ class _HomeState extends State<HomePage> {
     return Navigator(
       key: Get.nestedKey(index),
       initialRoute: _getInitialRouteForTab(index),
+      observers: [
+        RouteTracker(onRouteChange: (route) {
+          final RouteController routeController = Get.find<RouteController>();
+          routeController.updateRoute(route);
+        })
+      ],
       onGenerateRoute: (RouteSettings settings) {
         Widget page;
         switch (settings.name) {
@@ -262,6 +270,11 @@ class _HomeTabState extends State<HomeTab> {
   void initState() {
     super.initState();
     initializeData();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> initializeData() async {
@@ -341,7 +354,6 @@ class _HomeTabState extends State<HomeTab> {
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     final localizations = AppLocalizations.of(context)!;
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -385,7 +397,7 @@ class _HomeTabState extends State<HomeTab> {
                       } else if (snapshot.hasError) {
                         return Center(
                           child: Text(
-                            "${snapshot.error}",
+                            localizations.errorOccurred,
                             style: const TextStyle(color: Colors.red),
                           ),
                         );
@@ -645,7 +657,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            return Text(localizations.errorOccurred);
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Text(localizations.noParticipatedGroup);
           } else {
@@ -1096,7 +1108,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
                   } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
+                    return Text(localizations.errorOccurred);
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Text(localizations.noParticipatedGroup);
                   } else {
@@ -1488,20 +1500,20 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
       // Navigate based on the user's role
       Get.to(
-        () => isLeader
-            ? TaskManagementPage(
-                activityId: activity.id,
-                activityName: activity.activityName!,
-                group: userGroup,
-              )
-            : TaskPage(
-                activityId: activity.id,
-                activityName: activity.activityName!,
-                group: userGroup,
-              ),
-        id: 2,
-        transition: Transition.rightToLeftWithFade,
-      );
+          () => isLeader
+              ? TaskManagementPage(
+                  activityId: activity.id,
+                  activityName: activity.activityName!,
+                  group: userGroup,
+                )
+              : TaskPage(
+                  activityId: activity.id,
+                  activityName: activity.activityName!,
+                  group: userGroup,
+                ),
+          id: 2,
+          transition: Transition.rightToLeftWithFade,
+          routeName: isLeader ? "/TaskManagementPage" : "/TaskPage");
     } catch (e) {
       // Handle errors during role checking
       showDialog(
@@ -1593,6 +1605,11 @@ class _MenuTabState extends State<MenuTab> {
           getUserLogin();
           refreshController.setShouldRefresh(false);
         });
+      } else if (refreshController.user.value.id != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          getUserLogin();
+          refreshController.resetUser();
+        });
       }
       return Scaffold(
         appBar: AppBar(
@@ -1607,20 +1624,78 @@ class _MenuTabState extends State<MenuTab> {
             child: Column(
               children: [
                 Center(
-                  child: CircleAvatar(
-                    backgroundColor: AvatarFormat().getRandomAvatarColor(),
-                    radius: screenHeight * 0.065,
-                    child: Text(
-                      AvatarFormat().getInitials(
-                          currentUser?.name ?? localizations.noData,
-                          twoLetters: true),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: screenWidth * 0.1,
-                      ),
-                    ),
-                  ),
+                  child: currentUser?.imageURL != null
+                      ? GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              barrierColor: Colors.black.withOpacity(0.8),
+                              builder: (context) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                child: PhotoViewer(
+                                  imageUrl: currentUser!.imageURL!,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: screenHeight * 0.13,
+                            height: screenHeight * 0.13,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade200,
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                currentUser!.imageURL!,
+                                fit: BoxFit.cover,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  (loadingProgress
+                                                          .expectedTotalBytes ??
+                                                      1)
+                                              : null,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Icon(
+                                      Icons.error,
+                                      color: Colors.red,
+                                      size: screenHeight * 0.065,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        )
+                      : CircleAvatar(
+                          backgroundColor:
+                              AvatarFormat().getRandomAvatarColor(),
+                          radius: screenHeight * 0.065,
+                          child: Text(
+                            AvatarFormat().getInitials(
+                                currentUser?.name ?? localizations.noData,
+                                twoLetters: true),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: screenWidth * 0.1,
+                            ),
+                          ),
+                        ),
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 Text(currentUser?.name ?? localizations.noData,

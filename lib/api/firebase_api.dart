@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shepherd_mo/main.dart';
-import 'package:shepherd_mo/route/route.dart';
+import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/pages/notification_page.dart';
 
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
   print('Title: ${message.notification?.title}');
@@ -29,14 +29,20 @@ class FirebaseApi {
   void handleMessage(RemoteMessage? message) {
     if (message == null) return;
 
-    final currentRoute =
-        ModalRoute.of(navigatorKey.currentContext!)?.settings.name;
+    final NotificationController notiControl =
+        Get.find<NotificationController>();
+    final BottomNavController bottomNavControl =
+        Get.find<BottomNavController>();
 
-    if (currentRoute != AppRoutes.notifications) {
-      navigatorKey.currentState?.pushNamed(
-        AppRoutes.notifications, // Use the centralized route name here
-        arguments: message,
+    if (notiControl.openTabIndex.value != -1) {
+      bottomNavControl.selectedIndex.value = notiControl.openTabIndex.value;
+    } else if (notiControl.openTabIndex.value == -1) {
+      Get.to(
+        () => const NotificationPage(),
+        id: bottomNavControl.selectedIndex.value,
+        transition: Transition.topLevel,
       );
+      notiControl.openNotificationPage(bottomNavControl.selectedIndex.value);
     }
   }
 

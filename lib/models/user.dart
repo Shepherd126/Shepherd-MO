@@ -4,6 +4,7 @@ class User {
   String? phone;
   String? email;
   String? role;
+  String? imageURL;
   DateTime? createDate;
   DateTime? updateDate;
   bool? isDeleted;
@@ -14,6 +15,7 @@ class User {
     this.phone,
     this.email,
     this.role,
+    this.imageURL,
     this.createDate,
     this.updateDate,
     this.isDeleted,
@@ -26,6 +28,7 @@ class User {
       phone: json['phone'],
       email: json['email'],
       role: json['role'],
+      imageURL: json['imageURL'],
       createDate: json['createDate'] != null
           ? DateTime.parse(json['createDate'])
           : null,
@@ -43,6 +46,7 @@ class User {
       'phone': phone,
       'email': email,
       'role': role,
+      'imageURL': imageURL,
     };
   }
 }

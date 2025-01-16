@@ -177,7 +177,7 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
+            return Text(localizations.errorOccurred);
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Text(localizations.noParticipatedGroup);
           } else {
@@ -461,20 +461,20 @@ class _UpcomingActivityPageState extends State<UpcomingActivityPage> {
         transition: Transition.fade,
       );
       Get.to(
-        () => isLeader
-            ? TaskManagementPage(
-                activityId: activity.id,
-                activityName: activity.activityName!,
-                group: userGroup,
-              )
-            : TaskPage(
-                activityId: activity.id,
-                activityName: activity.activityName!,
-                group: userGroup,
-              ),
-        id: 2,
-        transition: Transition.rightToLeftWithFade,
-      );
+          () => isLeader
+              ? TaskManagementPage(
+                  activityId: activity.id,
+                  activityName: activity.activityName!,
+                  group: userGroup,
+                )
+              : TaskPage(
+                  activityId: activity.id,
+                  activityName: activity.activityName!,
+                  group: userGroup,
+                ),
+          id: 2,
+          transition: Transition.rightToLeftWithFade,
+          routeName: isLeader ? "/TaskManagementPage" : "/TaskPage");
     } catch (e) {
       // Handle errors during role checking
       showDialog(

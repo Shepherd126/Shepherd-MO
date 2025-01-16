@@ -122,8 +122,6 @@ class _NotificationCardState extends State<NotificationCard> {
             : const Color.fromARGB(255, 192, 224, 250);
 
     final localizations = AppLocalizations.of(context)!;
-    final council = dotenv.env['COUNCIL'] ?? '';
-    final accountant = dotenv.env['ACCOUNTANT'] ?? '';
     final String leader = dotenv.env['LEADER'] ?? '';
     final String groupAccountant = dotenv.env['GROUPACCOUNTANT'] ?? '';
 
@@ -176,11 +174,14 @@ class _NotificationCardState extends State<NotificationCard> {
     if (userGroups == null) {
       return SizedBox.shrink();
     }
-    final userGroup = userGroups!
-        .firstWhere((group) => group.groupId == widget.notification.groupId);
-
-    final isLeader =
-        userGroup.roleName == leader || userGroup.roleName == groupAccountant;
+    bool isLeader = false;
+    if (widget.notification.groupId != null &&
+        widget.notification.type == "Task") {
+      final userGroup = userGroups!
+          .firstWhere((group) => group.groupId == widget.notification.groupId);
+      isLeader =
+          userGroup.roleName == leader || userGroup.roleName == groupAccountant;
+    }
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.005),
@@ -196,60 +197,63 @@ class _NotificationCardState extends State<NotificationCard> {
 
           // Executes the callback if provided
           if (widget.notification.type == "Task") {
-            final task = await apiService.fetchTaskDetail(
-                id: widget.notification.relevantId!);
-            final BottomNavController bottomNavController =
-                Get.find<BottomNavController>();
+            if (widget.notification.taskStatus == 0 ||
+                widget.notification.taskStatus == 1 ||
+                isLeader) {
+              final task = await apiService.fetchTaskDetail(
+                  id: widget.notification.relevantId!);
+              final BottomNavController bottomNavController =
+                  Get.find<BottomNavController>();
 
-            if (bottomNavController.selectedIndex.value != 2) {
-              bottomNavController.changeTabIndex(2);
+              if (bottomNavController.selectedIndex.value != 2) {
+                bottomNavController.changeTabIndex(2);
+              }
+
+              if (notificationController.openTabIndex.value == 2) {
+                notificationController.closeNotificationPage();
+              }
+
+              // Navigate to ActivitiesTab
+              Get.to(
+                () => ActivitiesTab(
+                  chosenDate: widget.notification.activityStartTime,
+                ),
+                id: 2,
+                transition: Transition.fade,
+              );
+              final userGroup = userGroups!
+                  .firstWhere((group) => group.groupId == task.groupId);
+
+              final isLeader = userGroup.roleName == leader ||
+                  userGroup.roleName == groupAccountant;
+
+              // Navigate to the appropriate Task Page
+              Get.to(
+                  () => isLeader
+                      ? TaskManagementPage(
+                          activityId: task.activityId!,
+                          activityName: task.activityName!,
+                          group: userGroup,
+                        )
+                      : TaskPage(
+                          activityId: task.activityId!,
+                          activityName: task.activityName!,
+                          group: userGroup,
+                        ),
+                  id: 2,
+                  transition: Transition.rightToLeftWithFade,
+                  routeName: isLeader ? "/TaskManagementPage" : "/TaskPage");
+
+              // Show dialog after both navigations
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return TaskDetailsDialog(
+                    task: task,
+                  );
+                },
+              );
             }
-
-            if (notificationController.openTabIndex.value != -1) {
-              notificationController.closeNotificationPage();
-            }
-
-            // Navigate to ActivitiesTab
-            Get.to(
-              () => ActivitiesTab(
-                chosenDate: widget.notification.activityStartTime,
-              ),
-              id: 2,
-              transition: Transition.fade,
-            );
-
-            final userGroup = userGroups!
-                .firstWhere((group) => group.groupId == task.groupId);
-
-            final isLeader = userGroup.roleName == leader ||
-                userGroup.roleName == groupAccountant;
-
-            // Navigate to the appropriate Task Page
-            Get.to(
-              () => isLeader
-                  ? TaskManagementPage(
-                      activityId: task.activityId!,
-                      activityName: task.activityName!,
-                      group: userGroup,
-                    )
-                  : TaskPage(
-                      activityId: task.activityId!,
-                      activityName: task.activityName!,
-                      group: userGroup,
-                    ),
-              id: 2,
-              transition: Transition.rightToLeftWithFade,
-            );
-
-            // Show dialog after both navigations
-            showDialog(
-              context: context,
-              builder: (context) {
-                return TaskDetailsDialog(
-                  task: task,
-                );
-              },
-            );
           } else if (widget.notification.type == "Request") {
             final isLeader = await checkGroupUserRoles();
             if (isLeader || isAuthorized) {
@@ -260,11 +264,18 @@ class _NotificationCardState extends State<NotificationCard> {
                 bottomNavController.changeTabIndex(0);
               }
 
-              if (notificationController.openTabIndex.value != -1) {
+              if (notificationController.openTabIndex.value == 0) {
                 notificationController.closeNotificationPage();
               }
 
-              // Navigate to ActivitiesTab
+              // Navigate to HomeTab
+              Get.to(
+                () => HomeTab(),
+                id: 0,
+                transition: Transition.fade,
+              );
+              // Navigate to Request
+
               Get.to(
                 () => RequestList(),
                 id: 0,
@@ -371,10 +382,13 @@ class _NotificationCardState extends State<NotificationCard> {
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: () async {
-                                      await apiService.readNoti(
-                                          widget.notification.id, true);
-                                      notificationController.fetchUnreadCount();
+                                      if (!widget.notification.isRead) {
+                                        await apiService.readNoti(
+                                            widget.notification.id, true);
 
+                                        notificationController
+                                            .fetchUnreadCount();
+                                      }
                                       // Handle accept task logic
                                       final success =
                                           await apiService.confirmTask(
@@ -388,6 +402,8 @@ class _NotificationCardState extends State<NotificationCard> {
                                           widget.notification.taskStatus = 1;
                                           widget.notification.isRead = true;
                                         });
+                                        notificationController
+                                            .shouldReload.value = true;
                                       } else {
                                         showToast(
                                             '${localizations.confirmTask} ${localizations.unsuccess.toLowerCase()}');
@@ -419,9 +435,12 @@ class _NotificationCardState extends State<NotificationCard> {
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: () async {
-                                      await apiService.readNoti(
-                                          widget.notification.id, true);
-                                      notificationController.fetchUnreadCount();
+                                      if (!widget.notification.isRead) {
+                                        await apiService.readNoti(
+                                            widget.notification.id, true);
+                                        notificationController
+                                            .fetchUnreadCount();
+                                      }
 
                                       // Handle reject task logic
                                       final success =
@@ -429,13 +448,14 @@ class _NotificationCardState extends State<NotificationCard> {
                                               widget.notification.relevantId!,
                                               false);
                                       if (success) {
-                                        if (!widget.notification.isRead) {}
                                         showToast(
                                             '${localizations.declineTask} ${localizations.success.toLowerCase()}');
                                         setState(() {
                                           widget.notification.taskStatus = 2;
                                           widget.notification.isRead = true;
                                         });
+                                        notificationController
+                                            .shouldReload.value = true;
                                       } else {
                                         showToast(
                                             '${localizations.declineTask} ${localizations.unsuccess.toLowerCase()}');

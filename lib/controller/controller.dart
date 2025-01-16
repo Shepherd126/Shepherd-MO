@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
+import 'package:shepherd_mo/models/task.dart';
+import 'package:shepherd_mo/models/user.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class BottomNavController extends GetxController {
@@ -102,9 +104,24 @@ class AuthorizationController extends GetxController {
 
 class RefreshController extends GetxController {
   var shouldRefresh = false.obs;
+  var shouldRefreshSignal = false.obs;
+  var task = Task().obs;
+  var user = User().obs;
 
   void setShouldRefresh(bool value) {
     shouldRefresh.value = value;
+  }
+
+  void setShouldRefreshSignal(bool value) {
+    shouldRefreshSignal.value = value;
+  }
+
+  void resetTask() {
+    task.value = Task();
+  }
+
+  void resetUser() {
+    user.value = User();
   }
 }
 
@@ -125,6 +142,7 @@ class NotificationController extends GetxController {
   // Rx variable to observe changes
   var unreadCount = 0.obs;
   var haveUnread = false.obs;
+  Rx shouldReload = false.obs;
 
   // Function to fetch the unread notification count from API
   Future<void> fetchUnreadCount() async {
@@ -161,5 +179,13 @@ class ModalStateController extends GetxController {
     final BottomNavController bottomNavController =
         Get.find<BottomNavController>();
     modalOnTab.remove(bottomNavController.selectedIndex.value);
+  }
+}
+
+class RouteController extends GetxController {
+  var currentRoute = '/Home'.obs; // Initialize with a default route
+
+  void updateRoute(String newRoute) {
+    currentRoute.value = newRoute;
   }
 }

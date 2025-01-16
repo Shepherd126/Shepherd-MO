@@ -6,25 +6,28 @@ import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
-import 'package:shepherd_mo/providers/signalr_provider.dart';
 import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 
 class UpdateProgress extends StatefulWidget {
   final List<Task> tasks;
   final bool isLeader;
+  final String activityId;
+  final String groupId;
 
   const UpdateProgress({
     super.key,
     required this.tasks,
     required this.isLeader,
+    required this.activityId,
+    required this.groupId,
   });
 
   @override
-  _UpdateProgressState createState() => _UpdateProgressState();
+  UpdateProgressState createState() => UpdateProgressState();
 }
 
-class _UpdateProgressState extends State<UpdateProgress> {
+class UpdateProgressState extends State<UpdateProgress> {
   final List<String> statuses = [
     'Việc cần làm',
     'Đang thực hiện',
@@ -67,9 +70,31 @@ class _UpdateProgressState extends State<UpdateProgress> {
     bool isDark = uiProvider.themeMode == ThemeMode.dark ||
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+    final refreshController = Get.find<RefreshController>();
+    final activityId = widget.activityId;
+    final groupId = widget.groupId;
 
-    return Consumer<SignalRService>(
-      builder: (context, signalRService, child) {
+    return Obx(
+      () {
+        final newTask = refreshController.task.value;
+        if (refreshController.shouldRefreshSignal.value == true &&
+            newTask.id != null &&
+            newTask.activityId == activityId &&
+            newTask.groupId == groupId) {
+          Future.microtask(() {
+            final taskIndex =
+                widget.tasks.indexWhere((task) => task.id == newTask.id);
+            if (taskIndex != -1) {
+              widget.tasks[taskIndex] = newTask; // Update existing task
+            } else {
+              widget.tasks.add(newTask); // Add new task
+            }
+
+            refreshController.shouldRefreshSignal.value = false;
+            refreshController.resetTask();
+          });
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -193,8 +218,6 @@ class _UpdateProgressState extends State<UpdateProgress> {
 
                 if (task.status != status) {
                   // Save the original status
-                  final originalStatus = task.status;
-
                   bool success =
                       await apiService.updateTaskStatus(task, status);
 

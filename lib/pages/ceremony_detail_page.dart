@@ -92,7 +92,7 @@ class _CeremonyDetailsPageState extends State<CeremonyDetailsPage> {
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  "Error: ${snapshot.error}",
+                  localizations.errorOccurred,
                   style: TextStyle(fontSize: screenHeight * 0.02),
                 ),
               );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -694,7 +695,7 @@ class ApiService {
     }
   }
 
-  Future<List<Task>> fetchTasks({
+  Future<(int, List<Task>)> fetchTasks({
     required String searchKey,
     required int pageNumber,
     required int pageSize,
@@ -737,7 +738,11 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List<dynamic> results = data['result'];
-        return results.map((json) => Task.fromJson(json)).toList();
+        final int totalCount = data['pagination']['totalCount'] ?? 0;
+        return (
+          totalCount,
+          results.map((json) => Task.fromJson(json)).toList()
+        );
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized: Please log in again.');
       } else if (response.statusCode == 404) {
@@ -883,7 +888,6 @@ class ApiService {
         final bool success = responseBody['success'] as bool;
         final String? message = responseBody['message'] as String?;
         if (success == true) {
-          print('Update Successfully');
           return (true, "");
         } else {
           if (message != null) {
@@ -1347,6 +1351,51 @@ class ApiService {
       } else {
         throw Exception(
             'Error ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  Future<String?> uploadImage(File imageFile) async {
+    try {
+      // Create multipart request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/image/Upload'),
+      );
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'token');
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      // Add the file to the request
+      var multipartFile = await http.MultipartFile.fromPath(
+        'file', // field name matching API expectation
+        imageFile.path,
+      );
+      request.files.add(multipartFile);
+
+      // Send the request
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final String? data = body['data'];
+        return data;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Please log in again.');
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Not Found: The requested resource could not be found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: Please try again later.');
+      } else {
+        return null;
       }
     } catch (error) {
       throw Exception('Error: $error');

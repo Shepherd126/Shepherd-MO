@@ -83,7 +83,7 @@ class TaskDetailsDialog extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text("Error"));
+          return Center(child: Text(localizations.errorOccurred));
         } else {
           final user = snapshot.data;
           return FutureBuilder<bool>(
@@ -92,7 +92,7 @@ class TaskDetailsDialog extends StatelessWidget {
               if (isLeaderSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (isLeaderSnapshot.hasError) {
-                return Center(child: Text("Error: ${isLeaderSnapshot.error}"));
+                return Center(child: Text(localizations.errorOccurred));
               } else {
                 final isLeader = isLeaderSnapshot.data ?? false;
 

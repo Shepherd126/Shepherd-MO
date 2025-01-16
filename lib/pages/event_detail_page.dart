@@ -87,7 +87,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  "Error: ${snapshot.error}",
+                  localizations.errorOccurred,
                   style: TextStyle(fontSize: screenHeight * 0.02),
                 ),
               );

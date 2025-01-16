@@ -88,7 +88,7 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  "Error: ${snapshot.error}",
+                  localizations.errorOccurred,
                   style: TextStyle(fontSize: screenHeight * 0.02),
                 ),
               );

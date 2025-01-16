@@ -19,8 +19,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
-final RouteObserver<ModalRoute<void>> routeObserver =
-    RouteObserver<ModalRoute<void>>();
+final RouteObserver<PageRoute<void>> routeObserver =
+    RouteObserver<PageRoute<void>>();
+// Optionally, you can perform any action here on route change
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ void main() async {
   Get.put(RefreshController());
   Get.put(NotificationController());
   Get.put(ModalStateController());
+  Get.put(RouteController());
   await localeController.loadPreferredLocale();
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'token');
@@ -45,10 +47,10 @@ class Shepherd extends StatefulWidget {
   const Shepherd({super.key, required this.token});
 
   @override
-  _ShepherdState createState() => _ShepherdState();
+  ShepherdState createState() => ShepherdState();
 }
 
-class _ShepherdState extends State<Shepherd> {
+class ShepherdState extends State<Shepherd> {
   late Future<bool> _tokenCheckFuture;
 
   @override

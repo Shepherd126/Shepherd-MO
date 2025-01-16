@@ -12,7 +12,7 @@ class AppRoutes {
   static const String notifications = '/notifications';
 
   static final List<GetPage> routes = [
-    GetPage(name: home, page: () => const HomePage()),
+    GetPage(name: home, page: () => const HomeTab()),
     GetPage(name: schedule, page: () => const ScheduleTab()),
     GetPage(name: activities, page: () => const ActivitiesTab()),
     GetPage(name: menu, page: () => const MenuTab()),

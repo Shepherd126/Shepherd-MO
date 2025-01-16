@@ -37,10 +37,10 @@ class TaskManagementPage extends StatefulWidget {
       required this.group});
 
   @override
-  State<TaskManagementPage> createState() => _TaskManagementPageState();
+  TaskManagementPageState createState() => TaskManagementPageState();
 }
 
-class _TaskManagementPageState extends State<TaskManagementPage> {
+class TaskManagementPageState extends State<TaskManagementPage> {
   int selectedIndex = 0;
   final PagingController<int, Task> _pagingController =
       PagingController(firstPageKey: 1);
@@ -133,7 +133,7 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
         selectedIndex == 0 ? null : statusList[selectedIndex]['label'];
 
     try {
-      final newTasks = await apiService.fetchTasks(
+      final response = await apiService.fetchTasks(
         searchKey: '',
         pageNumber: pageKey,
         pageSize: _pageSize,
@@ -143,6 +143,8 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
         status: selectedStatus,
       );
 
+      final int totalCount = response.$1;
+      final List<Task> newTasks = response.$2;
       if (selectedIndex == 0) {
         _allTasks = newTasks;
 
@@ -387,6 +389,21 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
                                   selectedIndex = 0;
                                   _refreshList();
                                   refreshController.setShouldRefresh(false);
+                                });
+                              } else if (refreshController
+                                      .shouldRefreshSignal.value &&
+                                  refreshController.task.value.id != null &&
+                                  refreshController.task.value.activityId ==
+                                      widget.activityId &&
+                                  refreshController.task.value.groupId ==
+                                      widget.group.groupId) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  selectedIndex = 0;
+                                  _refreshList();
+                                  refreshController
+                                      .setShouldRefreshSignal(false);
+                                  refreshController.resetTask();
                                 });
                               }
                               return RefreshIndicator(
@@ -930,8 +947,15 @@ class _TaskManagementPageState extends State<TaskManagementPage> {
         ),
         TextButton(
           onPressed: () {
-            Get.to(() => UpdateProgress(tasks: _allTasks, isLeader: true),
-                id: 2, transition: Transition.rightToLeftWithFade);
+            Get.to(
+                () => UpdateProgress(
+                      tasks: _allTasks,
+                      isLeader: true,
+                      activityId: widget.activityId,
+                      groupId: widget.group.groupId,
+                    ),
+                id: 2,
+                transition: Transition.rightToLeftWithFade);
           },
           style: TextButton.styleFrom(
             shape:

@@ -113,7 +113,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text(localizations.errorOccurred));
           } else if (!snapshot.hasData || snapshot.data == null) {
             return Center(child: Text(localizations.noData));
           } else {

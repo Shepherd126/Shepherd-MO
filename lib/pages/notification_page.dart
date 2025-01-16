@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +33,8 @@ class _NotificationPageState extends State<NotificationPage> {
   bool _isUnread = false;
   String _filterType = "";
   bool isAuthorized = false;
+  bool isLeader = false;
+  bool shouldRefreshList = true;
 
   @override
   void initState() {
@@ -43,6 +44,10 @@ class _NotificationPageState extends State<NotificationPage> {
     });
     notificationController.fetchUnreadCount();
     _getUserRole();
+    ever(notificationController.shouldReload, (value) {
+      _refreshList();
+      notificationController.shouldReload.value = false;
+    }, condition: () => notificationController.shouldReload.value);
   }
 
   void _toggleUnreadView(bool isUnread) {
@@ -90,15 +95,17 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _getUserRole() async {
     final checkRole = await checkUserRoles();
+    final checkGroupRole = await checkGroupUserRoles();
     setState(() {
       isAuthorized = checkRole;
+      isLeader = checkGroupRole;
     });
   }
 
   // Method to refresh the entire list
   Future<void> _refreshList() async {
-    _pagingController.refresh(); // Refresh the PagingController
     notificationController.fetchUnreadCount();
+    _pagingController.refresh(); // Refresh the PagingController
   }
 
   void _markAllAsRead() async {
@@ -134,8 +141,6 @@ class _NotificationPageState extends State<NotificationPage> {
         (uiProvider.themeMode == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     final modalController = Get.find<ModalStateController>();
-    final String accountant = dotenv.env['ACCOUNTANT'] ?? '';
-    final String council = dotenv.env['COUNCIL'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -318,7 +323,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         value: "Task",
                         child: Text(localizations.task),
                       ),
-                      if (isAuthorized)
+                      if (isAuthorized || isLeader)
                         PopupMenuItem(
                           value: "Request",
                           child: Text(localizations.request),
@@ -370,6 +375,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   void dispose() {
+    _pagingController.removePageRequestListener(_fetchPage);
     _pagingController.dispose();
     super.dispose();
   }

@@ -35,10 +35,10 @@ class TaskPage extends StatefulWidget {
       required this.group});
 
   @override
-  State<TaskPage> createState() => _TaskPageState();
+  TaskPageState createState() => TaskPageState();
 }
 
-class _TaskPageState extends State<TaskPage> {
+class TaskPageState extends State<TaskPage> {
   int selectedIndex = 0;
   final PagingController<int, Task> _pagingController =
       PagingController(firstPageKey: 1);
@@ -49,6 +49,7 @@ class _TaskPageState extends State<TaskPage> {
 
   List<Map<String, dynamic>> statusList = [];
   List<Task> _allTasks = [];
+  int totalCount = 0;
 
   @override
   void initState() {
@@ -116,7 +117,7 @@ class _TaskPageState extends State<TaskPage> {
     final loginInfo = await getLoginInfoFromPrefs();
 
     try {
-      final newTasks = await apiService.fetchTasks(
+      final response = await apiService.fetchTasks(
         searchKey: '',
         pageNumber: pageKey,
         pageSize: _pageSize,
@@ -126,8 +127,16 @@ class _TaskPageState extends State<TaskPage> {
         status: selectedStatus,
       );
 
+      totalCount = response.$1;
+      final List<Task> newTasks = response.$2;
       if (selectedIndex == 0) {
-        _allTasks = newTasks;
+        if (pageKey == 1) {
+          // If it's the first page, initialize _allTasks with newTasks
+          _allTasks = newTasks;
+        } else {
+          // Otherwise, append the new tasks to the existing list
+          _allTasks.addAll(newTasks);
+        }
         _updateTaskCounts();
       } else {
         _updateTaskCounts();
@@ -148,7 +157,7 @@ class _TaskPageState extends State<TaskPage> {
     final localizations = AppLocalizations.of(context)!;
     setState(() {
       final taskCounts = {
-        localizations.all: _allTasks.length,
+        localizations.all: totalCount,
         localizations.pendingTask:
             _allTasks.where((task) => task.status == 'Đang chờ').length,
         localizations.toDo:
@@ -216,7 +225,7 @@ class _TaskPageState extends State<TaskPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text(localizations.errorOccurred));
           } else if (snapshot.hasData) {
             final activity = snapshot.data!['activity'] as Activity;
             final event = snapshot.data!['event'] as Event;
@@ -279,6 +288,19 @@ class _TaskPageState extends State<TaskPage> {
                             selectedIndex = 0;
                             _refreshList();
                             refreshController.setShouldRefresh(false);
+                          });
+                        } else if (refreshController
+                                .shouldRefreshSignal.value &&
+                            refreshController.task.value.id != null &&
+                            refreshController.task.value.activityId ==
+                                widget.activityId &&
+                            refreshController.task.value.groupId ==
+                                widget.group.groupId) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            selectedIndex = 0;
+                            _refreshList();
+                            refreshController.setShouldRefreshSignal(false);
+                            refreshController.resetTask();
                           });
                         }
                         return RefreshIndicator(
@@ -600,6 +622,8 @@ class _TaskPageState extends State<TaskPage> {
                 () => UpdateProgress(
                       tasks: _allTasks,
                       isLeader: false,
+                      activityId: widget.activityId,
+                      groupId: widget.group.groupId,
                     ),
                 id: 2,
                 transition: Transition.rightToLeftWithFade);

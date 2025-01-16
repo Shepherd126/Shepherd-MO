@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CustomMarquee extends StatefulWidget {
   final String text;
@@ -18,6 +19,7 @@ class _CustomMarqueeState extends State<CustomMarquee> {
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
+    final localizations = AppLocalizations.of(context)!;
 
     try {
       return Marquee(
@@ -39,8 +41,7 @@ class _CustomMarqueeState extends State<CustomMarquee> {
         decelerationCurve: Curves.easeOut,
       );
     } catch (e) {
-      print("Marquee error: $e");
-      return const Text("Error loading marquee"); // Fallback UI
+      return Text(localizations.errorOccurred); // Fallback UI
     }
   }
 }
