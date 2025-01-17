@@ -1185,6 +1185,13 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                   formatButtonVisible: true,
                   titleCentered: true,
                   formatButtonShowsNext: false,
+                  formatButtonDecoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDark ? Colors.grey : Colors.black,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.transparent,
+                  ),
                   titleTextFormatter: (date, locale) {
                     if (locale == 'vi') {
                       final String formattedDate =
@@ -1211,16 +1218,25 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
                 // Customizing Calendar Appearance
                 calendarStyle: CalendarStyle(
-                  todayDecoration: const BoxDecoration(
-                    color: Colors.orange,
+                  todayDecoration: BoxDecoration(
+                    color: Colors.transparent,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.grey, // Border color
+                      width: 1.0, // Border width
+                    ),
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: Colors.orange.shade800,
+                    color: isDark
+                        ? Colors.blueGrey.shade200
+                        : Colors.blue.shade300,
                     shape: BoxShape.circle,
                   ),
-                  selectedTextStyle: const TextStyle(
-                    color: Colors.white,
+                  selectedTextStyle: TextStyle(
+                    color: isDark ? Colors.black : Colors.white,
+                  ),
+                  todayTextStyle: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                   defaultTextStyle: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
@@ -1611,6 +1627,29 @@ class _MenuTabState extends State<MenuTab> {
           refreshController.resetUser();
         });
       }
+
+      String getLocalizedRole(BuildContext context, String roleKey) {
+        final role = dotenv.env[roleKey.toUpperCase()];
+        if (role == null) {
+          return localizations.noData; // Fallback for unknown roles
+        }
+        switch (role.toLowerCase()) {
+          case 'admin':
+            return localizations.admin;
+          case 'priest':
+            return localizations.priest;
+          case 'council':
+            return localizations.council;
+          case 'accountant':
+            return localizations.accountant;
+          case 'member':
+            return localizations.member;
+          default:
+            return localizations.noData;
+        }
+      }
+
+      final role = getLocalizedRole(context, currentUser!.role!);
       return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -1704,6 +1743,7 @@ class _MenuTabState extends State<MenuTab> {
                         fontWeight: FontWeight.bold)),
                 Text(currentUser?.email ?? localizations.noData,
                     style: TextStyle(fontSize: screenHeight * 0.016)),
+                Text(role, style: TextStyle(fontSize: screenHeight * 0.016)),
                 SizedBox(height: screenHeight * 0.02),
                 SizedBox(
                   width: screenWidth * 0.45,

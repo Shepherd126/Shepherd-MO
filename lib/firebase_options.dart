@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'shepherd-1f1c9.firebaseapp.com',
     storageBucket: 'shepherd-1f1c9.appspot.com',
   );
+
 }

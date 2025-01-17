@@ -23,7 +23,7 @@ class TransactionList extends StatefulWidget {
 }
 
 class _TransactionListState extends State<TransactionList> {
-  static const _pageSize = 5;
+  static const _pageSize = 10;
   final PagingController<int, Transaction> _pagingController =
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
 

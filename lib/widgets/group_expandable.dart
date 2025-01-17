@@ -106,6 +106,9 @@ class GroupExpandableCard extends StatelessWidget {
                                     ),
                               id: 2,
                               transition: Transition.rightToLeftWithFade,
+                              routeName: isLeader!
+                                  ? "/TaskManagementPage"
+                                  : "/TaskPage",
                             );
                           },
                           child: Text(AppLocalizations.of(context)!.details),
