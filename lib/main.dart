@@ -42,11 +42,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await FirebaseApi().initNotifications();
-  SystemChannels.platform.setMethodCallHandler((call) async {
-    if (call.method == 'popRoute') {
-      Get.back();
-    }
-  });
   runApp(Shepherd(token: token));
 }
 
@@ -82,52 +77,85 @@ class ShepherdState extends State<Shepherd> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (context) => UIProvider()..init(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => SignalRService()..startConnection(),
-        ),
-      ],
-      child: Consumer<UIProvider>(
-        builder: (context, UIProvider notifier, child) {
-          return GetMaterialApp(
-            navigatorObservers: [routeObserver],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              AppLocalizations.delegate,
-            ],
-            supportedLocales: const [
-              Locale('en', 'US'),
-              Locale('vi', 'VN'),
-            ],
-            locale: Get.locale,
-            fallbackLocale: const Locale('en', 'US'),
-            title: 'Shepherd',
-            debugShowCheckedModeBanner: false,
-            theme: lightTheme,
-            darkTheme: darkTheme,
-            themeMode: notifier.themeMode,
-            home: FutureBuilder<bool>(
-              future: _tokenCheckFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError || !(snapshot.data ?? false)) {
-                  return const LoginPage();
-                }
-
-                return const HomePage();
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        // Global back button handling
+        if (Get.currentRoute == '/home') {
+          final localizations = AppLocalizations.of(context)!;
+          // Show confirmation dialog before exiting the app
+          if (didPop) {
+            await showDialog<bool>(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text(localizations.exitApp),
+                  content: Text(localizations.confirmExit),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(localizations.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text(localizations.exit),
+                    ),
+                  ],
+                );
               },
-            ),
-            getPages: AppRoutes.routes,
-            navigatorKey: navigatorKey,
-          );
-        },
+            );
+          } else {
+            Get.back();
+          }
+        }
+        ;
+      },
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (context) => UIProvider()..init(),
+          ),
+          ChangeNotifierProvider(
+            create: (context) => SignalRService()..startConnection(),
+          ),
+        ],
+        child: Consumer<UIProvider>(
+          builder: (context, UIProvider notifier, child) {
+            return GetMaterialApp(
+              navigatorObservers: [routeObserver],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                AppLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en', 'US'),
+                Locale('vi', 'VN'),
+              ],
+              locale: Get.locale,
+              fallbackLocale: const Locale('en', 'US'),
+              title: 'Shepherd',
+              debugShowCheckedModeBanner: false,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: notifier.themeMode,
+              home: FutureBuilder<bool>(
+                future: _tokenCheckFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError || !(snapshot.data ?? false)) {
+                    return const LoginPage();
+                  }
+
+                  return const HomePage();
+                },
+              ),
+              getPages: AppRoutes.routes,
+              navigatorKey: navigatorKey,
+            );
+          },
+        ),
       ),
     );
   }

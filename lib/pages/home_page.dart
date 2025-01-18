@@ -1650,6 +1650,7 @@ class _MenuTabState extends State<MenuTab> {
       }
 
       final role = getLocalizedRole(context, currentUser!.role!);
+      final defaultAvatar = AvatarFormat().getRandomAvatarColor();
       return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -1721,8 +1722,7 @@ class _MenuTabState extends State<MenuTab> {
                           ),
                         )
                       : CircleAvatar(
-                          backgroundColor:
-                              AvatarFormat().getRandomAvatarColor(),
+                          backgroundColor: defaultAvatar,
                           radius: screenHeight * 0.065,
                           child: Text(
                             AvatarFormat().getInitials(

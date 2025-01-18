@@ -120,6 +120,9 @@ class SignalRService with ChangeNotifier {
           refreshController.shouldRefreshSignal.value = true;
           refreshController.task.value = Task.fromJson(arguments[0]);
         }
+        if (!_isDisposed) {
+          notifyListeners();
+        }
       }
     });
 
@@ -137,6 +140,9 @@ class SignalRService with ChangeNotifier {
             refreshController.user.value = user;
             prefs.setString('loginInfo', jsonEncode(user));
           }
+        }
+        if (!_isDisposed) {
+          notifyListeners();
         }
       }
     });

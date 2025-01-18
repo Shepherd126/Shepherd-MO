@@ -131,6 +131,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;
+    final defaultAvatar = AvatarFormat().getRandomAvatarColor();
 
     return ProgressHUD(
         inAsyncCall: isApiCallProcess,
@@ -141,18 +142,24 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               padding: EdgeInsets.all(screenWidth * 0.1),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: AvatarFormat().getRandomAvatarColor(),
-                    radius: screenHeight * 0.065,
-                    child: Text(
-                      AvatarFormat().getInitials(user!.name!, twoLetters: true),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: screenWidth * 0.1,
-                      ),
-                    ),
-                  ),
+                  loginInfo.imageURL != null
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(loginInfo.imageURL!),
+                          radius: screenHeight * 0.065,
+                        )
+                      : CircleAvatar(
+                          backgroundColor: defaultAvatar,
+                          radius: screenHeight * 0.065,
+                          child: Text(
+                            AvatarFormat()
+                                .getInitials(user!.name!, twoLetters: true),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: screenWidth * 0.1,
+                            ),
+                          ),
+                        ),
                   SizedBox(height: screenHeight * 0.025),
                   Form(
                     key: globalFormKey,

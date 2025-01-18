@@ -260,7 +260,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           EdgeInsets.symmetric(horizontal: screenWidth * 0.035),
                       child: SizedBox(
                         width: screenWidth *
-                            0.15, // Fixed width for equal-sized buttons
+                            0.18, // Fixed width for equal-sized buttons
                         child: Center(
                           child: Text(
                             localizations.all,
@@ -276,7 +276,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           EdgeInsets.symmetric(horizontal: screenWidth * 0.035),
                       child: SizedBox(
                         width: screenWidth *
-                            0.15, // Fixed width for equal-sized buttons
+                            0.18, // Fixed width for equal-sized buttons
                         child: Center(
                           child: Text(
                             localizations.unread,

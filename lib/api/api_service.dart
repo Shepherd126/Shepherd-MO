@@ -937,6 +937,42 @@ class ApiService {
     }
   }
 
+  Future<(bool, String?)> firstUpdate(Map<String, dynamic> user) async {
+    final url = Uri.parse('$baseUrl/user/FirstUpdate');
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'token');
+    print(jsonEncode(user));
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(user),
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final bool success = responseBody['success'] as bool;
+        final String? message = responseBody['message'] as String?;
+        if (success) {
+          final data = responseBody['data'];
+          final token = data['token'];
+          await storage.write(key: 'token', value: token);
+          return (true, null);
+        } else {
+          return (false, message);
+        }
+      } else {
+        return (false, null);
+      }
+    } catch (error) {
+      print('Error updating user: $error');
+      return (false, null);
+    }
+  }
+
   Future<(bool, String?)> updateUser(User user) async {
     final url = Uri.parse('$baseUrl/user');
     const storage = FlutterSecureStorage();
@@ -978,10 +1014,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/user/UpdatePassword');
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'token');
-    print(
-      jsonEncode(
-          {'id': id, 'oldPassword': oldPassword, 'newPassword': newPassword}),
-    );
+
     try {
       final response = await http.put(
         url,

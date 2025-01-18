@@ -203,5 +203,10 @@
   "failedToDownloadImg": "Không thể tải xuống hình ảnh",
   "failedToLoadImg": "Không thể tải hình ảnh",
   "loadingImage": "Đang tải hình ảnh...",
-  "file": "Tệp"
+  "file": "Tệp",
+  "exit": "Thoát",
+  "exitApp": "Thoát ứng dụng",
+  "confirmExit": "Bạn có chắc chắn muốn thoát ứng dụng không?",
+  "firstUpdate": "Cập nhật thông tin lần đầu",
+  "pleaseUpdate": "Vì đây là lần đầu tiên bạn đăng nhập\nHãy Cập Nhật Thông Tin Của Bạn"
 }

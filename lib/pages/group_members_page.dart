@@ -283,121 +283,124 @@ class _GroupDetailState extends State<GroupDetail> {
                   child: PagedListView<int, GroupMember>(
                     pagingController: _pagingController,
                     builderDelegate: PagedChildBuilderDelegate<GroupMember>(
-                      itemBuilder: (context, item, index) => Container(
-                        padding: EdgeInsets.all(screenWidth * 0.03),
-                        margin: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.003),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey.shade800 : Colors.white,
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.grey.shade700
-                                : Colors.grey.shade400,
-                            width: screenWidth * 0.002,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
+                      itemBuilder: (context, item, index) {
+                        final defaultAvatar =
+                            AvatarFormat().getRandomAvatarColor();
+                        return Container(
+                          padding: EdgeInsets.all(screenWidth * 0.03),
+                          margin: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.003),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey.shade800 : Colors.white,
+                            border: Border.all(
                               color: isDark
-                                  ? Colors.black.withOpacity(0.3)
-                                  : Colors.grey.withOpacity(0.2),
-                              blurRadius: screenWidth * 0.02,
-                              spreadRadius: screenWidth * 0.005,
-                              offset: const Offset(0, 3),
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade400,
+                              width: screenWidth * 0.002,
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor:
-                                  AvatarFormat().getRandomAvatarColor(),
-                              radius: screenWidth * 0.055,
-                              child: Text(
-                                AvatarFormat()
-                                    .getInitials(item.name, twoLetters: true),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: screenWidth * 0.04,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDark
+                                    ? Colors.black.withOpacity(0.3)
+                                    : Colors.grey.withOpacity(0.2),
+                                blurRadius: screenWidth * 0.02,
+                                spreadRadius: screenWidth * 0.005,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: defaultAvatar,
+                                radius: screenWidth * 0.055,
+                                child: Text(
+                                  AvatarFormat()
+                                      .getInitials(item.name, twoLetters: true),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: screenWidth * 0.04,
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: screenWidth * 0.03),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.name ?? localizations.noData,
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.04,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
+                              SizedBox(width: screenWidth * 0.03),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name ?? localizations.noData,
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.04,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(height: screenHeight * 0.003),
-                                  Text(
-                                    item.email ?? localizations.noData,
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey.shade500
-                                          : Colors.grey[700],
-                                      fontSize: screenWidth * 0.03,
+                                    SizedBox(height: screenHeight * 0.003),
+                                    Text(
+                                      item.email ?? localizations.noData,
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.grey.shade500
+                                            : Colors.grey[700],
+                                        fontSize: screenWidth * 0.03,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(height: screenHeight * 0.003),
-                                  Text(
-                                    "${localizations.phone} ${item.phone}" ??
-                                        localizations.noData,
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey.shade500
-                                          : Colors.grey[700],
-                                      fontSize: screenWidth * 0.03,
+                                    SizedBox(height: screenHeight * 0.003),
+                                    Text(
+                                      "${localizations.phone}: ${item.phone}" ??
+                                          localizations.noData,
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.grey.shade500
+                                            : Colors.grey[700],
+                                        fontSize: screenWidth * 0.03,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            SizedBox(width: screenWidth * 0.03),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.03,
-                                  vertical: screenHeight * 0.005),
-                              decoration: BoxDecoration(
-                                color: item.groupRole == 'Thành viên'
-                                    ? (isDark
-                                        ? Colors.grey.shade500
-                                        : Colors.grey
-                                            .shade500) // Use white or dark grey for "Member"
-                                    : (isDark
-                                        ? Colors.amber.shade900
-                                        : Colors.amber[
-                                            100]), // Use amber color for non-members
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                item.groupRole ?? localizations.noData,
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.03,
-                                  fontWeight: FontWeight.bold,
+                              SizedBox(width: screenWidth * 0.03),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: screenWidth * 0.03,
+                                    vertical: screenHeight * 0.005),
+                                decoration: BoxDecoration(
                                   color: item.groupRole == 'Thành viên'
                                       ? (isDark
-                                          ? Colors.white
-                                          : Colors
-                                              .black) // Adjust text color based on background
+                                          ? Colors.grey.shade500
+                                          : Colors.grey
+                                              .shade500) // Use white or dark grey for "Member"
                                       : (isDark
-                                          ? Colors.white
-                                          : Colors.amber[800]),
+                                          ? Colors.amber.shade900
+                                          : Colors.amber[
+                                              100]), // Use amber color for non-members
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
+                                child: Text(
+                                  item.groupRole ?? localizations.noData,
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.03,
+                                    fontWeight: FontWeight.bold,
+                                    color: item.groupRole == 'Thành viên'
+                                        ? (isDark
+                                            ? Colors.white
+                                            : Colors
+                                                .black) // Adjust text color based on background
+                                        : (isDark
+                                            ? Colors.white
+                                            : Colors.amber[800]),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      },
                       firstPageProgressIndicatorBuilder: (_) =>
                           const Center(child: CircularProgressIndicator()),
                       newPageProgressIndicatorBuilder: (_) =>

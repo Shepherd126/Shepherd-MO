@@ -107,6 +107,8 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
           : '';
       if (task.status != "Bản nháp") {
         userController.text = task.userName ?? '';
+      } else {
+        oldTask.userId = "00000000-0000-0000-0000-000000000000";
       }
       task.groupId = widget.group.groupId;
       task.activityId = widget.activityId;

@@ -203,5 +203,10 @@
   "failedToDownloadImg": "Failed to download image",
   "failedToLoadImg": "Failed to load image",
   "loadingImage": "Loading image...",
-  "file": "File"
+  "file": "File",
+  "exit": "Exit",
+  "exitApp": "Exit App",
+  "confirmExit": "Are you sure you want to exit the app?",
+  "firstUpdate": "Update Info First Time",
+  "pleaseUpdate": "Because this is your first time login\nPlease Update Your Information"
 }

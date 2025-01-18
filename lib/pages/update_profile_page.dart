@@ -169,7 +169,9 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
       // Initialize controllers here
       emailController.text = userDetails.email ?? '';
       fullNameController.text = userDetails.name ?? '';
-      phoneController.text = userDetails.phone ?? '';
+      phoneController.text = userDetails.phone != null
+          ? formatPhoneNumber(userDetails.phone!)
+          : '';
       setState(() {
         user = userDetails; // Update the local user state
       });
@@ -319,6 +321,7 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
     }
 
     roleController.text = getLocalizedRole(context, loginInfo.role!);
+    final defaultAvatar = AvatarFormat().getRandomAvatarColor();
 
     return ProgressHUD(
         inAsyncCall: isApiCallProcess,
@@ -333,25 +336,29 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                     onTap: () => showImageSource(context, localizations),
                     child: Stack(
                       children: [
-                        imageURL != null
+                        image != null
                             ? CircleAvatar(
-                                backgroundImage: NetworkImage(imageURL!),
+                                backgroundImage: FileImage(image!),
                                 radius: screenHeight * 0.065,
                               )
-                            : CircleAvatar(
-                                backgroundColor:
-                                    AvatarFormat().getRandomAvatarColor(),
-                                radius: screenHeight * 0.065,
-                                child: Text(
-                                  AvatarFormat().getInitials(user!.name!,
-                                      twoLetters: true),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: screenWidth * 0.1,
+                            : imageURL != null
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(imageURL!),
+                                    radius: screenHeight * 0.065,
+                                  )
+                                : CircleAvatar(
+                                    backgroundColor: defaultAvatar,
+                                    radius: screenHeight * 0.065,
+                                    child: Text(
+                                      AvatarFormat().getInitials(user!.name!,
+                                          twoLetters: true),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: screenWidth * 0.1,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
                         Positioned(
                           bottom: 0,
                           right: 4,
@@ -419,62 +426,49 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                         SizedBox(height: screenHeight * 0.015),
                         SizedBox(
                           width: screenWidth * 0.8,
-                          child: StatefulBuilder(
-                            builder: (context, setState) {
-                              String?
-                                  phoneError; // Track dynamic validation error
-                              return TextFormField(
-                                keyboardType: TextInputType.phone,
-                                focusNode: phoneFocus,
-                                controller: phoneController,
-                                autovalidateMode:
-                                    AutovalidateMode.onUserInteraction,
-                                onChanged: (value) {
-                                  setState(() {
-                                    // Validate the phone number dynamically
-                                    if (value.trim().isEmpty) {
-                                      phoneError = localizations.required;
-                                    } else if (!isPhoneNumberValid(
-                                        value.trim())) {
-                                      phoneError = localizations.invalidPhone;
-                                    } else {
-                                      phoneError = null; // Clear error if valid
-                                      // Dynamically format the number
-                                      final formattedNumber =
-                                          formatPhoneNumber(value);
-                                      phoneController.value = TextEditingValue(
-                                        text: formattedNumber,
-                                        selection: TextSelection.collapsed(
-                                            offset: formattedNumber.length),
-                                      );
-                                    }
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  border: const OutlineInputBorder(),
-                                  labelText: localizations.phone,
-                                  hintText:
-                                      '${localizations.enter} ${localizations.phone.toLowerCase()}',
-                                  errorText:
-                                      phoneError, // Display dynamic validation error
-                                  prefixIcon: Icon(Icons.phone,
-                                      color:
-                                          isDark ? Colors.white : Colors.black),
-                                  suffixIcon: phoneController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            phoneController.clear();
-                                            setState(() {
-                                              phoneError =
-                                                  null; // Clear error on clear
-                                            });
-                                          },
-                                        )
-                                      : null,
-                                ),
+                          child: // Track dynamic validation error
+                              TextFormField(
+                            keyboardType: TextInputType.phone,
+                            focusNode: phoneFocus,
+                            controller: phoneController,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: (value) {
+                              // Validate the phone number dynamically
+                              if (value!.trim().isEmpty) {
+                                return localizations.required;
+                              } else if (!isPhoneNumberValid(value!.trim())) {
+                                return localizations.invalidPhone;
+                              } else {
+                                return null; // Clear error if valid
+                              }
+                            },
+                            onChanged: (value) {
+                              // Dynamically format the number
+
+                              final formattedNumber = formatPhoneNumber(value);
+                              phoneController.value = TextEditingValue(
+                                text: formattedNumber,
+                                selection: TextSelection.collapsed(
+                                    offset: formattedNumber.length),
                               );
                             },
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              labelText: localizations.phone,
+                              hintText:
+                                  '${localizations.enter} ${localizations.phone.toLowerCase()}',
+                              prefixIcon: Icon(Icons.phone,
+                                  color: isDark ? Colors.white : Colors.black),
+                              suffixIcon: phoneController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        phoneController.clear();
+                                      },
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
                         SizedBox(height: screenHeight * 0.015),
@@ -515,6 +509,9 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                           child: ElevatedButton(
                             onPressed: () async {
                               if (validateAndSave()) {
+                                if (imageName != null && image != null) {
+                                  await uploadFile(imageName!, image!);
+                                }
                                 if (loginInfo.name == fullNameController.text &&
                                     loginInfo.phone ==
                                         phoneController.text.trim() &&
@@ -525,9 +522,6 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                                 setState(() {
                                   isApiCallProcess = true;
                                 });
-                                if (imageName != null && image != null) {
-                                  await uploadFile(imageName!, image!);
-                                }
 
                                 final id = loginInfo.id;
                                 final updatedUser = User(
@@ -557,7 +551,8 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                                     showToast(
                                         '${localizations.editProfile} ${localizations.unsuccess.toLowerCase()}');
                                   } else {
-                                    showToast(message!);
+                                    showToast(
+                                        message ?? localizations.errorOccurred);
                                   }
                                 }
                               }

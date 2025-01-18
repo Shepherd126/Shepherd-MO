@@ -208,7 +208,10 @@ class UpdateProgressState extends State<UpdateProgress> {
                       status == 'Đang thực hiện') {
                     return true;
                   } else if (task.status == 'Đang thực hiện' &&
-                      status == 'Xem xét') {
+                      (status == 'Xem xét')) {
+                    return true;
+                  } else if (task.status == 'Xem xét' &&
+                      status == 'Đang thực hiện') {
                     return true;
                   }
                   return false;

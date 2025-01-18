@@ -79,9 +79,12 @@ class FirebaseApi {
 
       if (notification == null) return;
       final LocaleController localeController = Get.find<LocaleController>();
-      bool isEnglish = localeController.currentLocale.languageCode == 'en';
-      print(localeController.currentLocale.languageCode);
-      showToast("Thông báo mới");
+      bool isEnglish = localeController.currentLocale.countryCode == 'en';
+      if (isEnglish) {
+        showToast("New notification");
+      } else {
+        showToast("Thông báo mới");
+      }
 
       _localNotifications.show(
           notification.hashCode,
