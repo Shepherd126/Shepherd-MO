@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:get/get.dart';
@@ -97,6 +99,7 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
           description: task.description,
           cost: task.cost,
           userId: task.userId);
+      print(jsonEncode(oldTask));
       titleController.text = task.title ?? '';
       descriptionController.text = task.description ?? '';
       costController.text = task.cost != null
@@ -517,6 +520,8 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                           ? IconButton(
                               icon: const Icon(Icons.clear),
                               onPressed: () {
+                                task.userId =
+                                    "00000000-0000-0000-0000-000000000000";
                                 userController.clear();
                               },
                             )
@@ -531,6 +536,12 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
                   _unfocus();
                   if (validateAndSave()) {
                     if (widget.task != null) {
+                      if (task.userId ==
+                              "00000000-0000-0000-0000-000000000000" &&
+                          oldTask.userId == null) {
+                        task.userId = null;
+                      }
+
                       if (task.title == oldTask.title &&
                           task.description == oldTask.description &&
                           task.cost == oldTask.cost &&
@@ -626,8 +637,6 @@ class _CreateEditTaskPageState extends State<CreateEditTaskPage> {
     if (groupMember != null) {
       task.userId = groupMember.userID;
       userController.text = groupMember.name;
-    } else {
-      task.userId = "00000000-0000-0000-0000-000000000000";
     }
   }
 }

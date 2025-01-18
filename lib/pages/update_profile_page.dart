@@ -41,6 +41,7 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
   late Future<User?> userFuture; // For storing the Future
   File? image;
   String? imageURL;
+  String? imageName;
 
   @override
   void initState() {
@@ -63,7 +64,7 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
   }
 
   Future<bool> requestPermission(Permission permission) async {
-    if (await permission.isGranted) {
+    if (await permission.isGranted || await permission.isLimited) {
       return true;
     } else {
       final result = await permission.request();
@@ -127,16 +128,15 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
       }
 
       // Proceed to pick an image only if permission is granted
-      if (status.isGranted) {
+      if (status.isGranted || status.isLimited) {
         final image = await ImagePicker().pickImage(source: source);
         if (image == null) return;
 
         final imageTemporary = File(image.path);
-        var imageName = image.name;
         setState(() {
           this.image = imageTemporary;
+          this.imageName = image.name;
         });
-        await uploadFile(imageName, imageTemporary);
       }
     } on PlatformException {
       showToast(localizations.errorPickingImage);
@@ -525,6 +525,9 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
                                 setState(() {
                                   isApiCallProcess = true;
                                 });
+                                if (imageName != null && image != null) {
+                                  await uploadFile(imageName!, image!);
+                                }
 
                                 final id = loginInfo.id;
                                 final updatedUser = User(

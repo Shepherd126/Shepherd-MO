@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/formatter/custom_currency_format.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/ceremony.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/models/event.dart';
@@ -53,7 +54,7 @@ class CeremonyDetailsContent extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Status row with custom padding
+                // Location row with custom padding
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
                   child: FittedBox(
@@ -133,7 +134,8 @@ class CeremonyDetailsContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        event.status!,
+                        getStatus(event.status!, localizations) ??
+                            localizations.noData,
                         style: TextStyle(
                           fontSize: screenHeight * 0.02,
                           fontWeight: FontWeight.w700,

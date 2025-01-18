@@ -56,7 +56,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomeState extends State<HomePage> {
-  final BottomNavController controller = Get.put(BottomNavController());
+  final BottomNavController controller = Get.find<BottomNavController>();
 
   final List<String> _tabsRoutes = [
     '/home',

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/controller/controller.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/task.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/widgets/task_detail_dialog.dart';
@@ -110,11 +111,11 @@ class UpdateProgressState extends State<UpdateProgress> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: buildStatusColumn(localizations.toDo,
-                            screenWidth, screenHeight, localizations, isDark)),
+                        child: buildStatusColumn("Việc cần làm", screenWidth,
+                            screenHeight, localizations, isDark)),
                     Expanded(
-                        child: buildStatusColumn(localizations.inProgress,
-                            screenWidth, screenHeight, localizations, isDark)),
+                        child: buildStatusColumn("Đang thực hiện", screenWidth,
+                            screenHeight, localizations, isDark)),
                   ],
                 ),
               ),
@@ -122,11 +123,11 @@ class UpdateProgressState extends State<UpdateProgress> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: buildStatusColumn(localizations.review,
-                            screenWidth, screenHeight, localizations, isDark)),
+                        child: buildStatusColumn("Xem xét", screenWidth,
+                            screenHeight, localizations, isDark)),
                     Expanded(
-                        child: buildStatusColumn(localizations.done,
-                            screenWidth, screenHeight, localizations, isDark)),
+                        child: buildStatusColumn("Đã hoàn thành", screenWidth,
+                            screenHeight, localizations, isDark)),
                   ],
                 ),
               ),
@@ -166,7 +167,8 @@ class UpdateProgressState extends State<UpdateProgress> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    status,
+                    getTaskStatus(status!, localizations) ??
+                        localizations.noData,
                     style: TextStyle(
                       fontSize: screenWidth * 0.04,
                       fontWeight: FontWeight.w900,
@@ -200,8 +202,7 @@ class UpdateProgressState extends State<UpdateProgress> {
                 final task = details.data;
                 if (widget.isLeader) {
                   return task.status == 'Xem xét' &&
-                          status == 'Đã hoàn thành' ||
-                      status == 'Đang thực hiện';
+                      (status == 'Đã hoàn thành' || status == 'Đang thực hiện');
                 } else {
                   if (task.status == 'Việc cần làm' &&
                       status == 'Đang thực hiện') {

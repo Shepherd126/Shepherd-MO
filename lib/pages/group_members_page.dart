@@ -24,7 +24,7 @@ class GroupDetail extends StatefulWidget {
 }
 
 class _GroupDetailState extends State<GroupDetail> {
-  static const _pageSize = 5;
+  static const _pageSize = 20;
   final PagingController<int, GroupMember> _pagingController =
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 2);
 
@@ -48,7 +48,7 @@ class _GroupDetailState extends State<GroupDetail> {
     try {
       ApiService apiService = ApiService();
       if (_sortBy == 'name') {
-        _isAscending ? orderBy = 0 : orderBy = 1;
+        _isAscending ? orderBy = 1 : orderBy = 0;
       } else if (_sortBy == 'role') {
         _isAscending ? orderBy = 10 : orderBy = 11;
       }

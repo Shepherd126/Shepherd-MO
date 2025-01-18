@@ -78,23 +78,38 @@ class TaskManagementPageState extends State<TaskManagementPage> {
         statusList = [
           {
             'label': localizations.all,
-            'backgroundColor': Const.primaryGoldenColor
+            'backgroundColor': Const.primaryGoldenColor,
           },
           {
             'label': localizations.draft,
-            'backgroundColor': Colors.blueGrey.shade300
+            'backgroundColor': Colors.yellow.shade700,
+            'status': 'Bản nháp'
           },
           {
             'label': localizations.pendingTask,
-            'backgroundColor': Colors.yellow.shade700
+            'backgroundColor': Colors.yellow.shade700,
+            'status': 'Đang chờ'
           },
-          {'label': localizations.toDo, 'backgroundColor': Colors.blueAccent},
+          {
+            'label': localizations.toDo,
+            'backgroundColor': Colors.blueAccent,
+            'status': 'Việc cần làm'
+          },
           {
             'label': localizations.inProgress,
-            'backgroundColor': Colors.orangeAccent
+            'backgroundColor': Colors.orangeAccent,
+            'status': 'Đang diễn ra'
           },
-          {'label': localizations.review, 'backgroundColor': Colors.redAccent},
-          {'label': localizations.done, 'backgroundColor': Colors.green},
+          {
+            'label': localizations.review,
+            'backgroundColor': Colors.redAccent,
+            'status': 'Xem xét'
+          },
+          {
+            'label': localizations.done,
+            'backgroundColor': Colors.green,
+            'status': 'Đã hoàn thành'
+          },
         ];
       });
     });
@@ -130,7 +145,7 @@ class TaskManagementPageState extends State<TaskManagementPage> {
   Future<void> _fetchTasks(int pageKey) async {
     final apiService = ApiService();
     String? selectedStatus =
-        selectedIndex == 0 ? null : statusList[selectedIndex]['label'];
+        selectedIndex == 0 ? null : statusList[selectedIndex]['status'];
 
     try {
       final response = await apiService.fetchTasks(

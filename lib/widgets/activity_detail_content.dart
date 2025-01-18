@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/formatter/custom_currency_format.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/models/group_role.dart';
@@ -196,7 +197,7 @@ class _ActivitiesDetailsContentState extends State<ActivityDetailsContent> {
                     ),
                   ),
                 ),
-                // Status row with custom padding
+                // Location row with custom padding
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
                   child: FittedBox(
@@ -275,7 +276,8 @@ class _ActivitiesDetailsContentState extends State<ActivityDetailsContent> {
                     ],
                   ),
                   Text(
-                    activity.status!,
+                    getStatus(activity.status!, localizations) ??
+                        localizations.noData,
                     style: TextStyle(
                       fontSize: screenHeight * 0.02,
                       fontWeight: FontWeight.w700,

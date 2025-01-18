@@ -26,7 +26,11 @@ class _OrganizationCardState extends State<OrganizationCard> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     final localizations = AppLocalizations.of(context)!;
-    final membersText = localizations.member ?? localizations.noData;
+    final currentLocale = Localizations.localeOf(context);
+    final isEnglish = currentLocale.languageCode == 'en';
+    final membersText =
+        "${localizations.member}${(isEnglish && widget.membersCount > 1) ? 's' : ''}" ??
+            localizations.noData;
     final detailsText = localizations.details ?? localizations.noData;
 
     // Define a fixed minimum height for the title (2 lines)

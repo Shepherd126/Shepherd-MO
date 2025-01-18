@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/pages/notification_page.dart';
+import 'package:shepherd_mo/utils/toast.dart';
 
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
   print('Title: ${message.notification?.title}');
@@ -77,6 +78,10 @@ class FirebaseApi {
       final notification = message.notification;
 
       if (notification == null) return;
+      final LocaleController localeController = Get.find<LocaleController>();
+      bool isEnglish = localeController.currentLocale.languageCode == 'en';
+      print(localeController.currentLocale.languageCode);
+      showToast("Thông báo mới");
 
       _localNotifications.show(
           notification.hashCode,

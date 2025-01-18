@@ -69,19 +69,33 @@ class TaskPageState extends State<TaskPage> {
         statusList = [
           {
             'label': localizations.all,
-            'backgroundColor': Const.primaryGoldenColor
+            'backgroundColor': Const.primaryGoldenColor,
           },
           {
             'label': localizations.pendingTask,
-            'backgroundColor': Colors.yellow.shade700
+            'backgroundColor': Colors.yellow.shade700,
+            'status': 'Đang chờ'
           },
-          {'label': localizations.toDo, 'backgroundColor': Colors.blueAccent},
+          {
+            'label': localizations.toDo,
+            'backgroundColor': Colors.blueAccent,
+            'status': 'Việc cần làm'
+          },
           {
             'label': localizations.inProgress,
-            'backgroundColor': Colors.orangeAccent
+            'backgroundColor': Colors.orangeAccent,
+            'status': 'Đang diễn ra'
           },
-          {'label': localizations.review, 'backgroundColor': Colors.redAccent},
-          {'label': localizations.done, 'backgroundColor': Colors.green},
+          {
+            'label': localizations.review,
+            'backgroundColor': Colors.redAccent,
+            'status': 'Xem xét'
+          },
+          {
+            'label': localizations.done,
+            'backgroundColor': Colors.green,
+            'status': 'Đã hoàn thành'
+          },
         ];
       });
     });
@@ -113,7 +127,7 @@ class TaskPageState extends State<TaskPage> {
   Future<void> _fetchTasks(int pageKey) async {
     final apiService = ApiService();
     String selectedStatus =
-        selectedIndex == 0 ? '' : statusList[selectedIndex]['label'];
+        selectedIndex == 0 ? '' : statusList[selectedIndex]['status'];
     final loginInfo = await getLoginInfoFromPrefs();
 
     try {

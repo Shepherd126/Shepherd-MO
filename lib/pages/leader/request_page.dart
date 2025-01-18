@@ -19,7 +19,7 @@ class RequestList extends StatefulWidget {
 }
 
 class _RequestListState extends State<RequestList> {
-  static const _pageSize = 5;
+  static const _pageSize = 10;
   final PagingController<int, RequestModel> _pagingController =
       PagingController(firstPageKey: 1, invisibleItemsThreshold: 1);
 

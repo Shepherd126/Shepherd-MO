@@ -87,9 +87,13 @@ class _TaskCardState extends State<TaskCard> {
                     fontStyle: widget.task.userName == null
                         ? FontStyle.italic
                         : FontStyle.normal,
-                    color: widget.task.userName == null
-                        ? Colors.grey
-                        : Colors.black,
+                    color: isDark
+                        ? widget.task.userName == null
+                            ? Colors.grey
+                            : Colors.white
+                        : widget.task.userName == null
+                            ? Colors.grey
+                            : Colors.black,
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.005),
@@ -176,12 +180,14 @@ class _TaskCardState extends State<TaskCard> {
         return Colors.red.shade400;
       case 'Đang thực hiện':
         return Colors.orange.shade400;
+      case 'Xem xét':
+        return Colors.orange.shade400;
       case 'Quá hạn':
         return Colors.deepOrange.shade600;
       case 'Đã hoàn thành':
         return Colors.green.shade600;
       default:
-        return Colors.grey.shade300;
+        return Colors.grey.shade500;
     }
   }
 }

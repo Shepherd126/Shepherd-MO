@@ -1,5 +1,7 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -31,6 +33,7 @@ void main() async {
   Get.put(NotificationController());
   Get.put(ModalStateController());
   Get.put(RouteController());
+  Get.put(BottomNavController());
   await localeController.loadPreferredLocale();
   const storage = FlutterSecureStorage();
   final token = await storage.read(key: 'token');
@@ -39,6 +42,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await FirebaseApi().initNotifications();
+  SystemChannels.platform.setMethodCallHandler((call) async {
+    if (call.method == 'popRoute') {
+      Get.back();
+    }
+  });
   runApp(Shepherd(token: token));
 }
 

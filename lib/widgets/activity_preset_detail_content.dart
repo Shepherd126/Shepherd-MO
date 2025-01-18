@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/formatter/custom_currency_format.dart';
+import 'package:shepherd_mo/formatter/status_language.dart';
 import 'package:shepherd_mo/models/activity.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shepherd_mo/models/ceremony.dart';
@@ -126,7 +127,7 @@ class _ActivityPresetDetailsContentState
                     ),
                   ),
                 ),
-                // Status row with custom padding
+                // Location custom padding
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.24),
                   child: FittedBox(
@@ -206,7 +207,8 @@ class _ActivityPresetDetailsContentState
                     ],
                   ),
                   Text(
-                    widget.activity.status!,
+                    getStatus(widget.activity.status!, localizations) ??
+                        localizations.noData,
                     style: TextStyle(
                       fontSize: screenHeight * 0.02,
                       fontWeight: FontWeight.w700,
