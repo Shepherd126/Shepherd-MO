@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -9,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
@@ -596,6 +598,11 @@ class FirstLoginPageState extends State<FirstLoginPage> {
                               });
 
                               if (success) {
+                                final user = await apiService
+                                    .getUserDetails(loginInfo.id!);
+                                final SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                prefs.setString('loginInfo', jsonEncode(user));
                                 showToast(
                                     '${localizations.editProfile} ${localizations.success.toLowerCase()}');
                                 Get.off(() => const HomePage());
