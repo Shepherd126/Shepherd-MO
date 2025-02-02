@@ -20,8 +20,12 @@ workflows:
       - name: Set iOS Deployment Target to 13.0
         script: |
           cd ios
-          sed -i '' 's/platform :ios, .*$/platform :ios, '13.0'/' Podfile
-          cat Podfile  # This is optional, to view the changes made
+          sed -i '' "s/platform :ios, .*$/platform :ios, '13.0'/" Podfile  # Modify the Podfile
+          cat Podfile
+      - name: Set Swift Version
+        script: |
+          cd ios
+          sed -i '' 's/\"SWIFT_VERSION\" = .*/\"SWIFT_VERSION\" = \"5.0\"/' ios/Pods/Target\ Support\ Files/Pods-Runner/Pods-Runner.release.xcconfig
       - name: Install CocoaPods dependencies
         script: |
           cd ios
