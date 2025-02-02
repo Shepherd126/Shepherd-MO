@@ -5,40 +5,43 @@ workflows:
       xcode: latest
       cocoapods: default
       flutter: stable
+      vars:
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
     scripts:
-      - name: Set up code signing settings
-        script: |
-          echo "Setting up code signing settings"
       - name: Get Flutter packages
         script: |
           flutter pub get
+      - name: Clean previous builds and pods
+        script: |
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod cache clean --all
       - name: Set up Podfile configurations
         script: |
           cd ios
           echo "platform :ios, '12.0'" > Podfile.tmp
           echo "use_frameworks! :linkage => :static" >> Podfile.tmp
           echo "\$RNFirebaseAsStaticFramework = true" >> Podfile.tmp
+          echo "inhibit_all_warnings!" >> Podfile.tmp
           cat Podfile >> Podfile.tmp
           mv Podfile.tmp Podfile
       - name: Install CocoaPods dependencies
         script: |
           cd ios
-          pod install
-      - name: Configure Firebase settings
+          pod install --repo-update
+      - name: Set Xcode build settings
         script: |
           cd ios
-          /usr/libexec/PlistBuddy -c "Add :FirebaseAppDelegateProxyEnabled bool false" Runner/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" Runner/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string 'remote-notification'" Runner/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:1 string 'fetch'" Runner/Info.plist || true
+          xcrun xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+            -configuration Release \
+            CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
+            VALID_ARCHS=arm64 \
+            ENABLE_BITCODE=NO \
+            ONLY_ACTIVE_ARCH=NO
       - name: Flutter build iOS
         script: |
           flutter build ios --release --no-codesign
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-    publishing:
-      email:
-        recipients:
-          - nguyenviminhloc@gmail.com # Replace with your email
