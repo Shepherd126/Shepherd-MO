@@ -17,30 +17,21 @@ workflows:
           cd ios
           rm -rf Pods Podfile.lock
           pod cache clean --all
-      - name: Modify Podfile
-        script: |
-          cd ios
-          # Set platform :ios to 13.0
-          sed -i '' "s/^\(platform :ios,\).*/\1 '13.0'/" Podfile
-          # Set SWIFT_VERSION to 5.0 in Podfile (if needed for targets)
-          sed -i '' "s/^\(.*SWIFT_VERSION = \).*/\1'5.0'/" Podfile
-          # Display Podfile to confirm the changes
-          cat Podfile
       - name: Install CocoaPods dependencies
         script: |
           cd ios
           pod install --repo-update
-      - name: Set Xcode build settings (Non-modular includes)
-        script: |
-          cd ios
-          xcrun xcodebuild -workspace Runner.xcworkspace -scheme Runner \
-            -configuration Release \
-            CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
-            VALID_ARCHS=arm64 \
-            ENABLE_BITCODE=NO \
-            ONLY_ACTIVE_ARCH=NO
       - name: Flutter build iOS
         script: |
           flutter build ios --release --no-codesign
     artifacts:
       - build/ios/ipa
+
+ios:
+  xcode_workspace: "ios/Runner.xcworkspace"
+  xcode_scheme: "Runner"
+  build_settings:
+    ENABLE_BITCODE: NO
+    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "12.0"
+    SWIFT_VERSION: "5.0"
