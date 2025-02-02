@@ -2,6 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Add these entries for Firebase Messaging -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Permission requests for notifications -->
+    <key>NSAppleEventsUsageDescription</key>
+    <string>We need your permission to send you important notifications.</string>
+    <key>NSUserNotificationAlertStyle</key>
+    <string>alert</string>
+	
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to upload photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
