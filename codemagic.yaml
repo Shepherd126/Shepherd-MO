@@ -17,15 +17,15 @@ workflows:
           cd ios
           rm -rf Pods Podfile.lock
           pod cache clean --all
-      - name: Set iOS Deployment Target to 13.0
+      - name: Modify Podfile
         script: |
           cd ios
-          sed -i '' "s/# platform :ios, .*$/platform :ios, '13.0'/" Podfile  # Uncomment and modify the platform
+          # Set platform :ios to 13.0
+          sed -i '' "s/^\(platform :ios,\).*/\1 '13.0'/" Podfile
+          # Set SWIFT_VERSION to 5.0 in Podfile (if needed for targets)
+          sed -i '' "s/^\(.*SWIFT_VERSION = \).*/\1'5.0'/" Podfile
+          # Display Podfile to confirm the changes
           cat Podfile
-      - name: Set Swift Version
-        script: |
-          cd ios
-          sed -i '' 's/\"SWIFT_VERSION\" = .*/\"SWIFT_VERSION\" = \"5.0\"/' Podfile
       - name: Install CocoaPods dependencies
         script: |
           cd ios
