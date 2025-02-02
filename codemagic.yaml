@@ -21,7 +21,7 @@ workflows:
         script: |
           cd ios
           echo "platform :ios, '13.0'" > Podfile.tmp
-          echo "use_frameworks!" >> Podfile.tmp
+          echo "use_frameworks! :linkage => :static" >> Podfile.tmp
           echo "\$RNFirebaseAsStaticFramework = true" >> Podfile.tmp
           echo "inhibit_all_warnings!" >> Podfile.tmp
           cat Podfile >> Podfile.tmp
@@ -30,6 +30,15 @@ workflows:
         script: |
           cd ios
           pod install --repo-update
+      - name: Set Xcode build settings (Non-modular includes)
+        script: |
+          cd ios
+          xcrun xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+            -configuration Release \
+            CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
+            VALID_ARCHS=arm64 \
+            ENABLE_BITCODE=NO \
+            ONLY_ACTIVE_ARCH=NO
       - name: Flutter build iOS
         script: |
           flutter build ios --release --no-codesign
