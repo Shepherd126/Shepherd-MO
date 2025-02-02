@@ -1,0 +1,44 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    environment:
+      xcode: latest
+      cocoapods: default
+      flutter: stable
+    scripts:
+      - name: Set up code signing settings
+        script: |
+          echo "Setting up code signing settings"
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Set up Podfile configurations
+        script: |
+          cd ios
+          echo "platform :ios, '12.0'" > Podfile.tmp
+          echo "use_frameworks! :linkage => :static" >> Podfile.tmp
+          echo "\$RNFirebaseAsStaticFramework = true" >> Podfile.tmp
+          cat Podfile >> Podfile.tmp
+          mv Podfile.tmp Podfile
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+      - name: Configure Firebase settings
+        script: |
+          cd ios
+          /usr/libexec/PlistBuddy -c "Add :FirebaseAppDelegateProxyEnabled bool false" Runner/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" Runner/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string 'remote-notification'" Runner/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:1 string 'fetch'" Runner/Info.plist || true
+      - name: Flutter build iOS
+        script: |
+          flutter build ios --release --no-codesign
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - nguyenviminhloc@gmail.com # Replace with your email
