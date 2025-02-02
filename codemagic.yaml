@@ -21,6 +21,12 @@ workflows:
         script: |
           cd ios
           pod install --repo-update
+      - name: Load environment variables from .env
+        script: |
+          # Load environment variables from .env file
+          set -a
+          source .env
+          set +a
       - name: Flutter build iOS
         script: |
           flutter build ios --release --no-codesign
@@ -33,5 +39,4 @@ ios:
   build_settings:
     ENABLE_BITCODE: NO
     CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: YES
-    IPHONEOS_DEPLOYMENT_TARGET: "12.0"
-    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "13.0"
