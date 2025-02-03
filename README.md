@@ -7,13 +7,21 @@ A **Flutter**-powered system designed for managing the activities of organizatio
 ## 🚀 Features
 
 ✅ **Real-time Notifications** – Stay updated instantly with push notifications that can navigate to relevant sections.
+
 ✅ **Kanban Task Management** – Organize and update progress in a dynamic and intuitive Kanban board.
+
 ✅ **Multi-language Support** – Available in **English** and **Vietnamese**.
+
 ✅ **Dark Mode** – Seamless switching between light and dark themes.
+
 ✅ **Advanced Navigation** – Multiple navigation flows ensure a smooth user experience.
+
 ✅ **Profile Customization** – Choose an image from the gallery or take a picture to update your profile.
+
 ✅ **Permission Handling** – Secure and user-friendly permissions for profile updates.
+
 ✅ **Event & Activity Management** – Plan, schedule, and track events and activities efficiently.
+
 ✅ **Flutter Mobile App** – Built with **Flutter** and **Firebase** for a fast and scalable experience.
 
 ---
