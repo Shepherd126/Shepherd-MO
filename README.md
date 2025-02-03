@@ -7,6 +7,7 @@ A **Flutter**-powered system designed for managing the activities of organizatio
 ## 🚀 Features
 
 ✅ **Real-time Notifications** – Stay updated instantly with push notifications that can navigate to relevant sections.
+
 ✅ **Kanban Task Management** – Organize and update progress in a dynamic and intuitive Kanban board.
 
 ✅ **Multi-language Support** – Available in **English** and **Vietnamese**.
