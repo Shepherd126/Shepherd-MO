@@ -10,6 +10,8 @@
 .history
 .svn/
 *.env
+ios/GoogleService-Info.plist
+android/app/google-services.json
 
 # IntelliJ related
 *.iml
