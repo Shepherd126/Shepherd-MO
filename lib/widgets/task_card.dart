@@ -30,10 +30,10 @@ class TaskCard extends StatefulWidget {
       this.totalCost});
 
   @override
-  _TaskCardState createState() => _TaskCardState();
+  TaskCardState createState() => TaskCardState();
 }
 
-class _TaskCardState extends State<TaskCard> {
+class TaskCardState extends State<TaskCard> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;

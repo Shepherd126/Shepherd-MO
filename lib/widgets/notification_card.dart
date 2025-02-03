@@ -30,10 +30,10 @@ class NotificationCard extends StatefulWidget {
   });
 
   @override
-  _NotificationCardState createState() => _NotificationCardState();
+  NotificationCardState createState() => NotificationCardState();
 }
 
-class _NotificationCardState extends State<NotificationCard> {
+class NotificationCardState extends State<NotificationCard> {
   List<GroupRole>? userGroups;
   final Stream<DateTime> _realTimeStream = Stream.periodic(
     const Duration(seconds: 1),

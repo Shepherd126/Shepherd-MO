@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/formatter/avatar.dart';
 import 'package:shepherd_mo/models/user.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/progressHUD.dart';
@@ -12,10 +14,10 @@ class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
 
   @override
-  _ChangePasswordPageState createState() => _ChangePasswordPageState();
+  ChangePasswordPageState createState() => ChangePasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
+class ChangePasswordPageState extends State<ChangePasswordPage> {
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
   var emailController = TextEditingController();
   var currentPasswordController = TextEditingController();
@@ -126,8 +128,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Widget _uiSetup(User loginInfo, BuildContext context) {
-    var isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
-
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;

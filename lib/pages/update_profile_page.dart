@@ -7,11 +7,13 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:shepherd_mo/api/api_service.dart';
 import 'package:shepherd_mo/constant/constant.dart';
 import 'package:shepherd_mo/controller/controller.dart';
 import 'package:shepherd_mo/formatter/avatar.dart';
 import 'package:shepherd_mo/models/user.dart';
+import 'package:shepherd_mo/providers/ui_provider.dart';
 import 'package:shepherd_mo/services/get_login.dart';
 import 'package:shepherd_mo/utils/toast.dart';
 import 'package:shepherd_mo/widgets/photo_viewer.dart';
@@ -291,8 +293,10 @@ class UpdateProfilePageState extends State<UpdateProfilePage> {
   }
 
   Widget _uiSetup(User loginInfo, BuildContext context) {
-    var isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
-
+    final uiProvider = Provider.of<UIProvider>(context);
+    bool isDark = uiProvider.themeMode == ThemeMode.dark ||
+        (uiProvider.themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     ApiService apiService = ApiService();
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;

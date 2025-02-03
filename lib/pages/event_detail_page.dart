@@ -13,10 +13,10 @@ class EventDetailsPage extends StatefulWidget {
   const EventDetailsPage({super.key, required this.eventId});
 
   @override
-  _EventDetailsPageState createState() => _EventDetailsPageState();
+  EventDetailsPageState createState() => EventDetailsPageState();
 }
 
-class _EventDetailsPageState extends State<EventDetailsPage> {
+class EventDetailsPageState extends State<EventDetailsPage> {
   Future<Event>? event;
   Future<void>? backgroundLoad;
   bool isLoading = true;

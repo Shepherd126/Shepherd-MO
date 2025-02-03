@@ -13,10 +13,10 @@ class ActivityDetailPage extends StatefulWidget {
   const ActivityDetailPage({super.key, required this.activityId});
 
   @override
-  _ActivityDetailPageState createState() => _ActivityDetailPageState();
+  ActivityDetailPageState createState() => ActivityDetailPageState();
 }
 
-class _ActivityDetailPageState extends State<ActivityDetailPage> {
+class ActivityDetailPageState extends State<ActivityDetailPage> {
   Future<Activity>? activity;
   Future<void>? backgroundLoad;
   bool isLoading = true;

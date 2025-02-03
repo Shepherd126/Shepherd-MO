@@ -12,10 +12,10 @@ class PhotoViewer extends StatefulWidget {
   const PhotoViewer({super.key, required this.imageUrl});
 
   @override
-  _PhotoViewerState createState() => _PhotoViewerState();
+  PhotoViewerState createState() => PhotoViewerState();
 }
 
-class _PhotoViewerState extends State<PhotoViewer>
+class PhotoViewerState extends State<PhotoViewer>
     with SingleTickerProviderStateMixin {
   late TransformationController _transformationController;
   late AnimationController _animationController;

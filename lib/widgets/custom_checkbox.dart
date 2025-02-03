@@ -17,10 +17,10 @@ class CustomCheckboxField extends StatefulWidget {
   });
 
   @override
-  _CustomCheckboxFieldState createState() => _CustomCheckboxFieldState();
+  CustomCheckboxFieldState createState() => CustomCheckboxFieldState();
 }
 
-class _CustomCheckboxFieldState extends State<CustomCheckboxField> {
+class CustomCheckboxFieldState extends State<CustomCheckboxField> {
   bool isPublic = false;
   final controller = TextEditingController();
 

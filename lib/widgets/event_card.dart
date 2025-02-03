@@ -91,7 +91,7 @@ class EventCard extends StatelessWidget {
                       final BottomNavController controller =
                           Get.find<BottomNavController>();
 
-                      if (controller.selectedIndex != 1) {
+                      if (controller.selectedIndex.value != 1) {
                         controller.changeTabIndex(1);
                       }
                       Get.to(

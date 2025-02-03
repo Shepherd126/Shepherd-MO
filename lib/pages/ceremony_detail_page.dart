@@ -19,10 +19,10 @@ class CeremonyDetailsPage extends StatefulWidget {
   });
 
   @override
-  _CeremonyDetailsPageState createState() => _CeremonyDetailsPageState();
+  CeremonyDetailsPageState createState() => CeremonyDetailsPageState();
 }
 
-class _CeremonyDetailsPageState extends State<CeremonyDetailsPage> {
+class CeremonyDetailsPageState extends State<CeremonyDetailsPage> {
   Future<Ceremony>? ceremony;
   Future<void>? backgroundLoad;
   bool isLoading = true;
