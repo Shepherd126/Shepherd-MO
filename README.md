@@ -6,14 +6,22 @@ A **Flutter**-powered system designed for managing the activities of organizatio
 
 ## 🚀 Features
 
-✅ **Real-time Notifications** – Stay updated instantly with push notifications that can navigate to relevant sections.
+✅ **Real-time Notifications** – Stay updated instantly with push notifications using SignalR that can navigate to relevant sections.
+
 ✅ **Kanban Task Management** – Organize and update progress in a dynamic and intuitive Kanban board.
+
 ✅ **Multi-language Support** – Available in **English** and **Vietnamese**.
+
 ✅ **Dark Mode** – Seamless switching between light and dark themes.
+
 ✅ **Advanced Navigation** – Multiple navigation flows ensure a smooth user experience.
+
 ✅ **Profile Customization** – Choose an image from the gallery or take a picture to update your profile.
+
 ✅ **Permission Handling** – Secure and user-friendly permissions for profile updates.
+
 ✅ **Event & Activity Management** – Plan, schedule, and track events and activities efficiently.
+
 ✅ **Flutter Mobile App** – Built with **Flutter** and **Firebase** for a fast and scalable experience.
 
 ---
@@ -22,51 +30,38 @@ A **Flutter**-powered system designed for managing the activities of organizatio
 
 ### 🔑 Login
 
-![Login Screen](screenshots/login.jpg)
+<img src="screenshots/login.jpg" width="300">
 
 ### 🏠 Home
 
-![Home Screen](screenshots/home.jpg)
-![Organizations](screenshots/organization.jpg)
-![Transactions](screenshots/transaction.jpg)
-![Upcoming Activities](screenshots/upcomingactivities.jpg)
-![Upcoming Events](screenshots/upcomingevents.jpg)
+<img src="screenshots/home.jpg" width="300"> <img src="screenshots/organization.jpg" width="300">
+<img src="screenshots/transaction.jpg" width="300"> <img src="screenshots/upcomingactivities.jpg" width="300">
+<img src="screenshots/upcomingevents.jpg" width="300">
 
 ### 🔔 Notifications & Requests
 
-![Requests](screenshots/request.jpg)
-![Notifications](screenshots/notification.jpg)
+<img src="screenshots/request.jpg" width="300"> <img src="screenshots/notification.jpg" width="300">
 
 ### 📅 Schedule Management
 
-![Schedule Overview](screenshots/schedule1.jpg)
-![Detailed Schedule](screenshots/schedule2.jpg)
-![Expanded Schedule](screenshots/schedule3.jpg)
-![Event Details](screenshots/eventdetails.jpg)
-![Activity Details](screenshots/activitydetails.jpg)
-![Ceremony](screenshots/ceremony.jpg)
-![Ceremony Activity Details](screenshots/ceremonyactivitydetails.jpg)
+<img src="screenshots/schedule1.jpg" width="300"> <img src="screenshots/schedule2.jpg" width="300">
+<img src="screenshots/schedule3.jpg" width="300"> <img src="screenshots/eventdetails.jpg" width="300">
+<img src="screenshots/activitydetails.jpg" width="300"> <img src="screenshots/ceremony.jpg" width="300">
+<img src="screenshots/ceremonyactivitydetails.jpg" width="300">
 
 ### 📌 Activities & Task Management
 
-![Activity Overview](screenshots/activity1.jpg)
-![Activity Details](screenshots/activity2.jpg)
-![Task Details](screenshots/taskdetail1.jpg)
-![Task Details Continued](screenshots/taskdetail2.jpg)
-![Task Leader View](screenshots/taskleader.jpg)
-![Create Task](screenshots/createtask.jpg)
-![Task Member View](screenshots/taskmember.jpg)
-![Update Progress](screenshots/updateprogress1.jpg)
-![Update Progress Continued](screenshots/updateprogress2.jpg)
+<img src="screenshots/activity1.jpg" width="300"> <img src="screenshots/activity2.jpg" width="300">
+<img src="screenshots/taskdetail1.jpg" width="300"> <img src="screenshots/taskdetail2.jpg" width="300">
+<img src="screenshots/taskleader.jpg" width="300"> <img src="screenshots/createtask.jpg" width="300">
+<img src="screenshots/taskmember.jpg" width="300"> <img src="screenshots/updateprogress1.jpg" width="300">
+<img src="screenshots/updateprogress2.jpg" width="300">
 
 ### ⚙️ Settings & Customization
 
-![Settings](screenshots/settings.jpg)
-![Change Language](screenshots/changelanguage1.jpg)
-![Language Options](screenshots/changelanguage2.jpg)
-![Dark Mode](screenshots/darkmode.jpg)
-![Update Password](screenshots/passwordupdate.jpg)
-![Update Profile](screenshots/updateprofile.jpg)
+<img src="screenshots/settings.jpg" width="300"> <img src="screenshots/changelanguage1.jpg" width="300">
+<img src="screenshots/changelanguage2.jpg" width="300"> <img src="screenshots/darkmode.jpg" width="300">
+<img src="screenshots/passwordupdate.jpg" width="300"> <img src="screenshots/updateprofile.jpg" width="300">
 
 ---
 
@@ -98,24 +93,10 @@ flutter build ios --release --no-codesign
 
 - **Flutter** – UI framework
 - **Firebase** – Backend services (Auth, Firestore, Cloud Messaging)
-- **SignalR** – Backend services (C#, deactivated)
+- **SignalR** – Backend services (C#, SignalR(Server Deactivated))
 - **GetX & Provider** – State management
 - **SharedPreferences** – Local storage
 - **AdvancedSwitch** – Theme toggling
-
----
-
-## 🎯 Roadmap
-
-- [ ] Implement Admin Dashboard
-- [ ] Add More Notification Features
-- [ ] Support More Languages
-
----
-
-## 📬 Contact & Support
-
-For any issues or feature requests, please open an issue or contact us directly.
 
 ---
 
